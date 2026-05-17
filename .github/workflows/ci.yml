@@ -20,6 +20,6 @@ jobs:
       - run: pnpm lint
       - run: pnpm build
         env:
-          NEXT_PUBLIC_SUPABASE_URL: https://mepowrsrbjddaqfvzvtc.supabase.co
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lcG93cnNyYmpkZGFxZnZ6dnRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNTY1ODEsImV4cCI6MjA5MzgzMjU4MX0.LPRaRyB8oKGEk1hUlDwrdkRKa-vtfPSl_4ZAWaiYrAg
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://xcuybxcfxvreppfaczsg.supabase.co' }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_vtXjpNidqHdGMxUz7Edhlw_C_9h_AdQ' }}
           APP_URL: http://localhost:3000

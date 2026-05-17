@@ -29,6 +29,7 @@ const nextConfig: NextConfig = {
   typedRoutes: false,
   images: {
     remotePatterns: [
+      { protocol: "https", hostname: "xcuybxcfxvreppfaczsg.supabase.co" },
       { protocol: "https", hostname: "mepowrsrbjddaqfvzvtc.supabase.co" },
       { protocol: "https", hostname: "images.unsplash.com" },
     ],
