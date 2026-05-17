@@ -17,11 +17,17 @@ export type ResolvedTenant = {
 
 const RESERVED_SUBDOMAINS = new Set(["www", "app", "admin", "api", "auth", "static"]);
 
+// Hosts that look subdomain-y but aren't tenant subdomains. *.vercel.app
+// is a preview/prod alias, not a college; we treat it as "no tenant" so the
+// caller falls back to DEFAULT_TENANT_SLUG.
+const NON_TENANT_HOST_SUFFIXES = [".vercel.app", ".vercel.sh"];
+
 export function tenantSlugFromHost(host: string | null | undefined): string | null {
   if (!host) return null;
   const clean = host.split(":")[0]?.toLowerCase() ?? "";
   if (!clean) return null;
   if (clean === "localhost" || clean === "127.0.0.1") return null;
+  if (NON_TENANT_HOST_SUFFIXES.some((s) => clean.endsWith(s))) return null;
   const parts = clean.split(".");
   if (parts.length < 2) return null;
   if (clean.endsWith(".localhost")) {
