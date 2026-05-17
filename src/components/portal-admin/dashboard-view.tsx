@@ -44,12 +44,14 @@ export function DashboardView({
   tenantName,
   ordersWeek,
   todayOrders,
+  lastWeekToday,
   logs: initialLogs,
   todayItems,
 }: {
   tenantName: string;
   ordersWeek: OrderRow[];
   todayOrders: OrderRow[];
+  lastWeekToday: OrderRow[];
   logs: StatusLog[];
   todayItems: ItemRow[];
 }) {
@@ -73,16 +75,51 @@ export function DashboardView({
   }, []);
 
   const kpis = useMemo(() => {
-    const paid = todayOrders.filter((o) => !["pending_payment", "rejected", "expired"].includes(o.status));
-    const revenue = paid.reduce((acc, o) => acc + o.total_paise, 0);
-    const count = paid.length;
+    const paid = (rows: OrderRow[]) =>
+      rows.filter((o) => !["pending_payment", "rejected", "expired"].includes(o.status));
+    const today = paid(todayOrders);
+    const prior = paid(lastWeekToday);
+
+    const revenue = today.reduce((acc, o) => acc + o.total_paise, 0);
+    const priorRevenue = prior.reduce((acc, o) => acc + o.total_paise, 0);
+    const count = today.length;
+    const priorCount = prior.length;
     const avgTicket = count ? Math.round(revenue / count) : 0;
-    const pickups = paid
-      .filter((o) => o.collected_at && o.placed_at)
-      .map((o) => (new Date(o.collected_at!).getTime() - new Date(o.placed_at).getTime()) / 1000);
+    const priorAvg = priorCount ? Math.round(priorRevenue / priorCount) : 0;
+
+    const pickupSecs = (rows: OrderRow[]) =>
+      rows
+        .filter((o) => o.collected_at && o.placed_at)
+        .map((o) => (new Date(o.collected_at!).getTime() - new Date(o.placed_at).getTime()) / 1000);
+    const pickups = pickupSecs(today);
+    const priorPickups = pickupSecs(prior);
     const avgPickup = pickups.length ? Math.round(pickups.reduce((a, b) => a + b, 0) / pickups.length) : 0;
-    return { revenue, count, avgTicket, avgPickup };
-  }, [todayOrders]);
+    const priorAvgPickup = priorPickups.length
+      ? Math.round(priorPickups.reduce((a, b) => a + b, 0) / priorPickups.length)
+      : 0;
+
+    return { revenue, priorRevenue, count, priorCount, avgTicket, priorAvg, avgPickup, priorAvgPickup };
+  }, [todayOrders, lastWeekToday]);
+
+  const deltaPct = (current: number, prior: number) => {
+    if (prior === 0 && current === 0) return { text: "—", up: true };
+    if (prior === 0) return { text: "new", up: true };
+    const pct = ((current - prior) / prior) * 100;
+    const sign = pct >= 0 ? "+" : "";
+    return { text: `${sign}${pct.toFixed(1)}%`, up: pct >= 0 };
+  };
+  const deltaTime = (current: number, prior: number) => {
+    if (prior === 0 && current === 0) return { text: "—", up: true };
+    if (prior === 0) return { text: "new", up: true };
+    const diff = current - prior;
+    const sign = diff <= 0 ? "-" : "+";
+    const abs = Math.abs(diff);
+    return { text: `${sign}${Math.floor(abs / 60)}:${String(abs % 60).padStart(2, "0")}`, up: diff <= 0 };
+  };
+  const dRev = deltaPct(kpis.revenue, kpis.priorRevenue);
+  const dCount = deltaPct(kpis.count, kpis.priorCount);
+  const dAvg = deltaPct(kpis.avgTicket, kpis.priorAvg);
+  const dPickup = deltaTime(kpis.avgPickup, kpis.priorAvgPickup);
 
   const dayBuckets = useMemo(() => {
     const start = dayjs().startOf("day").subtract(6, "day");
@@ -146,10 +183,10 @@ export function DashboardView({
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
-        <KpiCard label="Revenue today" value={formatRupees(kpis.revenue)} delta="+12.4%" deltaUp icon={IndianRupee} />
-        <KpiCard label="Orders" value={String(kpis.count)} delta="+8.1%" deltaUp icon={ListOrdered} />
-        <KpiCard label="Avg ticket" value={formatRupees(kpis.avgTicket)} delta="+₹6" deltaUp icon={Receipt} tone="amber" />
-        <KpiCard label="Avg pickup" value={kpis.avgPickup ? fmtElapsed(kpis.avgPickup) : "—"} delta="-0:18" deltaUp={false} icon={Timer} tone="rose" />
+        <KpiCard label="Revenue today" value={formatRupees(kpis.revenue)} delta={dRev.text} deltaUp={dRev.up} icon={IndianRupee} />
+        <KpiCard label="Orders" value={String(kpis.count)} delta={dCount.text} deltaUp={dCount.up} icon={ListOrdered} />
+        <KpiCard label="Avg ticket" value={formatRupees(kpis.avgTicket)} delta={dAvg.text} deltaUp={dAvg.up} icon={Receipt} tone="amber" />
+        <KpiCard label="Avg pickup" value={kpis.avgPickup ? fmtElapsed(kpis.avgPickup) : "—"} delta={dPickup.text} deltaUp={dPickup.up} icon={Timer} tone="rose" />
       </div>
 
       <div className="grid lg:grid-cols-[1.4fr_1fr] gap-2 mb-3">

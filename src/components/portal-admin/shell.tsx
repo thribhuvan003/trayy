@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, BookOpen, ClipboardList, Cog, KeyRound, LayoutGrid, LineChart, ListOrdered, LogOut, ScrollText, Users } from "lucide-react";
+import { Activity, BookOpen, ClipboardList, LayoutGrid, LineChart, ListOrdered, LogOut, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
@@ -13,10 +13,6 @@ const NAV = [
   { href: "/admin/menu", label: "Menu", icon: BookOpen, kbd: "G M" },
   { href: "/admin/staff", label: "Staff", icon: Users, kbd: "G S" },
   { href: "/admin/analytics", label: "Insights", icon: LineChart, kbd: "G I" },
-  { group: "Settings" },
-  { href: "/admin/settings/tenant", label: "Tenant", icon: Cog },
-  { href: "/admin/settings/api-keys", label: "API keys", icon: KeyRound },
-  { href: "/admin/audit", label: "Audit log", icon: ScrollText },
 ];
 
 export function AdminShell({

@@ -10,6 +10,10 @@ const schema = z.object({
   RESEND_API_KEY: z.string().optional(),
   UPSTASH_REDIS_REST_URL: z.string().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
+  QSTASH_URL: z.string().url().optional(),
+  QSTASH_TOKEN: z.string().optional(),
+  QSTASH_CURRENT_SIGNING_KEY: z.string().optional(),
+  QSTASH_NEXT_SIGNING_KEY: z.string().optional(),
   APP_URL: z.string().url().default("http://localhost:3000"),
   DEFAULT_TENANT_SLUG: z.string().default("aditya"),
 });
@@ -24,6 +28,10 @@ const parsed = schema.safeParse({
   RESEND_API_KEY: process.env.RESEND_API_KEY,
   UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
   UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
+  QSTASH_URL: process.env.QSTASH_URL,
+  QSTASH_TOKEN: process.env.QSTASH_TOKEN,
+  QSTASH_CURRENT_SIGNING_KEY: process.env.QSTASH_CURRENT_SIGNING_KEY,
+  QSTASH_NEXT_SIGNING_KEY: process.env.QSTASH_NEXT_SIGNING_KEY,
   APP_URL: process.env.APP_URL,
   DEFAULT_TENANT_SLUG: process.env.DEFAULT_TENANT_SLUG,
 });
@@ -40,6 +48,9 @@ export const featureFlags = {
   razorpayLive: Boolean(env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_SECRET),
   resendLive: Boolean(env.RESEND_API_KEY),
   upstashLive: Boolean(env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN),
+  qstashLive: Boolean(
+    env.QSTASH_TOKEN && env.QSTASH_CURRENT_SIGNING_KEY && env.QSTASH_NEXT_SIGNING_KEY
+  ),
 };
 
 // Public flag — readable in client bundles so we can hide the simulator button.

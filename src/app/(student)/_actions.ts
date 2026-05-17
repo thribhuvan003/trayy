@@ -119,6 +119,14 @@ export async function placeOrder(
     actor_user_id: user.id,
     note: "Order placed",
   });
+  await admin.from("audit_logs").insert({
+    tenant_id: tenant.id,
+    actor_user_id: user.id,
+    action: "order.placed",
+    target_type: "order",
+    target_id: order.id,
+    meta: { total_paise: total, items: validated.length, order_type: orderType },
+  });
 
   const rzp = await createRazorpayOrder({
     amountPaise: total,

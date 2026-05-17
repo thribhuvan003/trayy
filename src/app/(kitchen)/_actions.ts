@@ -49,6 +49,13 @@ export async function markPreparing(orderId: string): Promise<Outcome> {
     to_status: "preparing",
     actor_user_id: ctx.user.id,
   });
+  await admin.from("audit_logs").insert({
+    tenant_id: ctx.tenant.id,
+    actor_user_id: ctx.user.id,
+    action: "order.preparing",
+    target_type: "order",
+    target_id: orderId,
+  });
   revalidatePath("/kitchen");
   return { ok: true };
 }
@@ -89,6 +96,13 @@ export async function markReady(orderId: string): Promise<Outcome> {
     to_status: "ready",
     actor_user_id: ctx.user.id,
     note: "OTP issued",
+  });
+  await admin.from("audit_logs").insert({
+    tenant_id: ctx.tenant.id,
+    actor_user_id: ctx.user.id,
+    action: "order.ready",
+    target_type: "order",
+    target_id: orderId,
   });
   revalidatePath("/kitchen");
   return { ok: true };
@@ -136,6 +150,13 @@ export async function verifyAndCollect(
     actor_user_id: ctx.user.id,
     note: "OTP verified",
   });
+  await admin.from("audit_logs").insert({
+    tenant_id: ctx.tenant.id,
+    actor_user_id: ctx.user.id,
+    action: "order.collected",
+    target_type: "order",
+    target_id: orderId,
+  });
   revalidatePath("/kitchen");
   return { ok: true };
 }
@@ -164,6 +185,14 @@ export async function rejectOrder(orderId: string, reason: string): Promise<Outc
     to_status: "rejected",
     actor_user_id: ctx.user.id,
     note: reason.slice(0, 200),
+  });
+  await admin.from("audit_logs").insert({
+    tenant_id: ctx.tenant.id,
+    actor_user_id: ctx.user.id,
+    action: "order.rejected",
+    target_type: "order",
+    target_id: orderId,
+    meta: { reason: reason.slice(0, 200) },
   });
   revalidatePath("/kitchen");
   return { ok: true };

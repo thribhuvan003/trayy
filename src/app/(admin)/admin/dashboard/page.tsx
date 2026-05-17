@@ -44,18 +44,19 @@ export default async function DashboardPage() {
 
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
-  const start7d = new Date();
-  start7d.setDate(start7d.getDate() - 6);
-  start7d.setHours(0, 0, 0, 0);
+  const start14d = new Date();
+  start14d.setDate(start14d.getDate() - 13);
+  start14d.setHours(0, 0, 0, 0);
 
-  const [{ data: ordersWeek }, { data: logs }, { data: items }] = await Promise.all([
+  // Pull 14 days so we can compute deltas vs the prior 7-day window.
+  const [{ data: orders14 }, { data: logs }] = await Promise.all([
     supabase
       .from("orders")
       .select("id, short_code, status, total_paise, placed_at, collected_at, ready_at, customer_name, order_type")
       .eq("tenant_id", tenant.id)
-      .gte("placed_at", start7d.toISOString())
+      .gte("placed_at", start14d.toISOString())
       .order("placed_at", { ascending: false })
-      .limit(800)
+      .limit(1600)
       .returns<OrderRow[]>(),
     supabase
       .from("order_status_logs")
@@ -65,23 +66,44 @@ export default async function DashboardPage() {
       .order("created_at", { ascending: false })
       .limit(40)
       .returns<StatusLog[]>(),
-    supabase
-      .from("order_items")
-      .select("id, order_id, name_snapshot, qty, diet_snapshot, price_paise_snapshot")
-      .eq("tenant_id", tenant.id)
-      .returns<OrderItemRow[]>(),
   ]);
 
   const todayIso = startOfDay.toISOString();
-  const todayOrders = (ordersWeek ?? []).filter((o) => o.placed_at >= todayIso);
-  const todayIds = new Set(todayOrders.map((o) => o.id));
-  const todayItems = (items ?? []).filter((i) => todayIds.has(i.order_id));
+  const start7d = new Date();
+  start7d.setDate(start7d.getDate() - 6);
+  start7d.setHours(0, 0, 0, 0);
+  const start7dIso = start7d.toISOString();
+  const ordersWeek = (orders14 ?? []).filter((o) => o.placed_at >= start7dIso);
+  const todayOrders = ordersWeek.filter((o) => o.placed_at >= todayIso);
+  const todayIds = todayOrders.map((o) => o.id);
+
+  // Scope order_items to today only — the previous version pulled every row
+  // in the tenant.
+  let todayItems: OrderItemRow[] = [];
+  if (todayIds.length > 0) {
+    const { data } = await supabase
+      .from("order_items")
+      .select("id, order_id, name_snapshot, qty, diet_snapshot, price_paise_snapshot")
+      .in("order_id", todayIds)
+      .returns<OrderItemRow[]>();
+    todayItems = data ?? [];
+  }
+
+  // Yesterday-equivalent window: same number of hours today have elapsed,
+  // but exactly 7 days ago. Compares like for like for an active business day.
+  const elapsedMs = Date.now() - startOfDay.getTime();
+  const lwStart = new Date(startOfDay.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const lwEnd = new Date(lwStart.getTime() + elapsedMs);
+  const lastWeekToday = (orders14 ?? []).filter(
+    (o) => o.placed_at >= lwStart.toISOString() && o.placed_at < lwEnd.toISOString()
+  );
 
   return (
     <DashboardView
       tenantName={tenant.name}
-      ordersWeek={ordersWeek ?? []}
+      ordersWeek={ordersWeek}
       todayOrders={todayOrders}
+      lastWeekToday={lastWeekToday}
       logs={logs ?? []}
       todayItems={todayItems}
     />

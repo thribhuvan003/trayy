@@ -77,6 +77,13 @@ export async function inviteStaff(
     subject: `You're invited to join ${c.tenant.name} on Tray`,
     html: `<p>You've been invited as a ${role.replace("_", " ")}.</p><p><a href="${url}">Accept invite</a></p>`,
   });
+  await admin.from("audit_logs").insert({
+    tenant_id: c.tenant.id,
+    actor_user_id: c.user.id,
+    action: "staff.invited",
+    target_type: "invite",
+    meta: { email, role },
+  });
   revalidatePath("/admin/staff");
   return { ok: true, url };
 }
@@ -91,6 +98,13 @@ export async function revokeStaff(membershipId: string): Promise<{ ok: boolean; 
     .eq("id", membershipId)
     .eq("tenant_id", c.tenant.id);
   if (error) return { ok: false, error: error.message };
+  await admin.from("audit_logs").insert({
+    tenant_id: c.tenant.id,
+    actor_user_id: c.user.id,
+    action: "staff.revoked",
+    target_type: "membership",
+    target_id: membershipId,
+  });
   revalidatePath("/admin/staff");
   return { ok: true };
 }
