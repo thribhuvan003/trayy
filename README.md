@@ -1,201 +1,175 @@
 <div align="center">
 
+<br/>
+
 # Tray
 
-**Canteen ordering for college campuses.**
-Mobile-first menu · UPI payment · OTP pickup · live kitchen queue · dense admin console.
-One codebase, many colleges, isolated by subdomain.
+### Skip the queue. Order from your phone.
 
-[![CI](https://github.com/thribhuvan003/tray/actions/workflows/ci.yml/badge.svg)](https://github.com/thribhuvan003/tray/actions/workflows/ci.yml)
-[![Next.js 15](https://img.shields.io/badge/Next.js-15-000?logo=next.js)](https://nextjs.org)
-[![React 19](https://img.shields.io/badge/React-19-149eca?logo=react&logoColor=white)](https://react.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
-[![Supabase](https://img.shields.io/badge/Supabase-RLS-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com)
-[![Tailwind v4](https://img.shields.io/badge/Tailwind-v4-38bdf8?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+A full-stack canteen ordering system built for college campuses.  
+Students order and pay before they reach the counter. The kitchen sees everything live. The admin tracks every rupee.
+
+<br/>
+
+[![CI](https://github.com/thribhuvan003/Tray/actions/workflows/ci.yml/badge.svg)](https://github.com/thribhuvan003/Tray/actions/workflows/ci.yml)
+[![Next.js 15](https://img.shields.io/badge/Next.js-15-000000?logo=next.js&logoColor=white)](https://nextjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Supabase](https://img.shields.io/badge/Supabase-Postgres%20%2B%20RLS-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-38bdf8?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![Razorpay](https://img.shields.io/badge/Razorpay-UPI-0C2451?logo=razorpay&logoColor=white)](https://razorpay.com)
+
+<br/>
 
 </div>
 
 ---
 
-## Table of contents
+## The problem
 
-- [Overview](#overview)
-- [Stack](#stack)
-- [Architecture](#architecture)
-- [Getting started](#getting-started)
-- [Environment variables](#environment-variables)
-- [Order lifecycle](#order-lifecycle)
-- [Routes](#routes)
-- [Design decisions](#design-decisions)
-- [Project layout](#project-layout)
-- [Scripts](#scripts)
-- [Contributing](#contributing)
-- [Security](#security)
+College canteens are stuck in 2005. Students stand in line for 10–15 minutes, pay with printed tokens, and wait around hoping their name gets called. The kitchen has no visibility into what's coming. The admin has no idea what sold, what didn't, or where the money went.
+
+**Tray fixes all of this.**
 
 ---
 
-## Overview
+## Three portals, one system
 
-Tray serves three audiences from the same codebase, each with its own visual language:
+Everything runs from the same codebase. Each portal has its own design, its own role, and talks to the same live database.
 
-| Portal     | Path                                            | Look                          |
-| ---------- | ----------------------------------------------- | ----------------------------- |
-| Student    | `/menu` · `/cart` · `/pay/[id]` · `/track/[id]` | Ocean + serif, consumer       |
-| Kitchen    | `/kitchen`                                      | Cream + tomato, newspaper     |
-| Admin      | `/admin/*`                                      | Graphite + chartreuse, dense  |
+### 📱 Student App
+Browse today's menu, add to cart, pay via UPI QR code, and get a **4-digit OTP** to collect your order at the counter. Live status updates — order placed → preparing → ready.
 
-Multi-tenant by design — one deployment serves many colleges via subdomain (`aditya.tray.app`, `vit.tray.app`).
+### 🍳 Kitchen View
+A real-time order board showing every incoming ticket with prep timers and status lanes (Incoming → Preparing → Ready → Collected). OTP verification on every handover. Push a daily special and it lands on every student's phone in under 300ms.
 
-## Stack
+### 📊 Admin Dashboard
+Revenue charts, peak-hour heatmaps, top-selling items, a live activity feed, and full order history — all in one screen. Every event from every portal, in real time.
 
-- **Framework** — Next.js 15 App Router, React 19, TypeScript strict
-- **Styling** — Tailwind CSS v4 (CSS-first `@theme`, three portal themes, dark mode)
-- **Data** — Supabase (Postgres + RLS + Auth + Realtime)
-- **Payments** — Razorpay UPI (HMAC-verified webhook + in-app simulator for dev)
-- **State** — TanStack Query, Zustand (persisted cart per tenant)
-- **UI** — Radix UI, Vaul, Framer Motion, Sonner, lucide-react, react-qr-code
-- **Infra** — Upstash Ratelimit, Resend email, QStash scheduled jobs (graceful no-op without keys)
+---
 
-## Architecture
+## Tech stack
 
-Every tenant-scoped row carries `tenant_id`. The browser/server sends `x-tenant-id` on every PostgREST request; a Postgres `pre_request` hook installs it into `app.current_tenant`, which RLS keys off of:
+| Layer | What we use |
+|---|---|
+| **Framework** | Next.js 15 (App Router) + React 19 + TypeScript strict |
+| **Styling** | Tailwind CSS v4 — three separate portal themes |
+| **Database** | Supabase (Postgres) with Row Level Security — tenants are fully isolated |
+| **Auth** | Supabase Auth + role-based membership (student / kitchen staff / admin) |
+| **Realtime** | Supabase Realtime — orders update live across all tabs |
+| **Payments** | Razorpay UPI — HMAC-verified webhooks, no card data stored |
+| **State** | TanStack Query + Zustand (cart persisted per user) |
+| **UI** | Radix UI · Framer Motion · Vaul · Sonner · Lucide Icons |
+| **Infra** | Upstash (rate limiting) · Resend (email) · QStash (scheduled jobs) |
+| **Deployment** | Vercel Edge — live at [trayy.vercel.app](https://trayy.vercel.app) |
+
+---
+
+## How an order works
 
 ```
-subdomain → middleware → tenant slug → resolve_tenant() → x-tenant-id header
-                                                              ↓
-                                                       pre_request hook
-                                                              ↓
-                                                set_config('app.current_tenant')
-                                                              ↓
-                                                       RLS policies
+Student orders  →  pays via UPI  →  kitchen gets ticket
+      →  kitchen marks ready  →  student gets 4-digit OTP
+            →  shows OTP at counter  →  staff verifies  →  done
 ```
 
-The application never has to remember to filter by tenant — the database does it.
+If payment isn't captured in 15 minutes, the order auto-expires. If the kitchen rejects, a refund is triggered. Every state change is logged.
 
-## Getting started
+---
 
-Prerequisites: **Node 22**, **pnpm 10**, a Supabase project.
+## Multi-tenant — one deployment, any college
+
+One Vercel deployment serves multiple colleges at the same time. Each college gets its own subdomain (`aditya.tray.app`, `vit.tray.app`). The database isolates every row by tenant using Postgres RLS — students from one college never see another college's data.
+
+---
+
+## Run it locally
+
+**Requirements:** Node 22 · pnpm 10 · a Supabase project
 
 ```bash
+git clone https://github.com/thribhuvan003/Tray.git
+cd Tray
 pnpm install
-cp .env.example .env.local              # fill in Supabase + Razorpay keys
-pnpm dev                                # http://localhost:3000
+cp .env.example .env.local   # add your Supabase + Razorpay keys
+pnpm dev                     # → http://localhost:3000
 ```
 
-Subdomain-based tenants in dev:
+For multi-tenant dev: `http://aditya.localhost:3000` or `http://localhost:3000/?tenant=aditya`
 
-```bash
-http://aditya.localhost:3000            # subdomain
-http://localhost:3000/?tenant=aditya    # query override
-```
-
-### Database
-
-Migrations live in `supabase/migrations/`. Apply them with the Supabase CLI, then regenerate types:
+**Database setup:**
 
 ```bash
 supabase db push
-supabase gen types typescript --project-id <project-ref> --schema public > src/lib/db/types.ts
 ```
+
+Migrations are in `supabase/migrations/`. Run once on a fresh Supabase project.
+
+---
 
 ## Environment variables
 
-Required to build:
+**Required to build:**
 
-| Variable                          | Used for                |
-| --------------------------------- | ----------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`        | Supabase REST + Auth    |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY`   | Browser client          |
-| `SUPABASE_SERVICE_ROLE_KEY`       | Admin/server actions    |
+| Variable | What it's for |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public browser key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-side admin key |
 
-Optional (features degrade gracefully when absent):
+**Optional** (app runs fine without these — features just skip gracefully):
 
-| Variable                                                                   | Used for                |
-| -------------------------------------------------------------------------- | ----------------------- |
-| `RAZORPAY_KEY_ID` · `RAZORPAY_KEY_SECRET` · `RAZORPAY_WEBHOOK_SECRET`      | UPI payments            |
-| `RESEND_API_KEY`                                                           | Transactional email     |
-| `UPSTASH_REDIS_REST_URL` · `UPSTASH_REDIS_REST_TOKEN`                      | Rate limiting           |
-| `QSTASH_TOKEN` · `QSTASH_CURRENT_SIGNING_KEY` · `QSTASH_NEXT_SIGNING_KEY`  | Scheduled jobs          |
-| `APP_URL` · `DEFAULT_TENANT_SLUG`                                          | URL + tenant fallback   |
+| Variable | Feature |
+|---|---|
+| `RAZORPAY_KEY_ID` + `KEY_SECRET` + `WEBHOOK_SECRET` | UPI payments |
+| `RESEND_API_KEY` | Transactional emails |
+| `UPSTASH_REDIS_REST_URL` + `TOKEN` | Rate limiting |
+| `QSTASH_TOKEN` + signing keys | Scheduled jobs |
 
-See `.env.example` for the full list.
+See [`.env.example`](./.env.example) for the full list.
 
-## Order lifecycle
+---
 
-```
-pending_payment ── (capture) ─► placed ── (kitchen) ─► preparing ── (ready) ─► ready ── (OTP) ─► collected
-                       │                                                          │
-                       └─► expired (15 min)                                       └─► rejected (refund)
-```
-
-OTP is generated in the same transaction that flips status to `ready`, stored as a bcrypt hash, and surfaced to the student via a server action that re-verifies ownership.
-
-## Routes
-
-| Path                                                                | Audience            | Purpose                                         |
-| ------------------------------------------------------------------- | ------------------- | ----------------------------------------------- |
-| `/`                                                                 | public              | Landing                                         |
-| `/login` · `/signup` · `/auth/callback`                             | public              | Magic-link or password                          |
-| `/menu` · `/cart` · `/pay/[id]` · `/track/[id]` · `/orders`         | student             | The full ordering flow                          |
-| `/kitchen`                                                          | kitchen_staff+      | Live kanban + OTP verify                        |
-| `/admin/dashboard`                                                  | canteen_admin+      | KPIs, revenue, heatmap, activity feed           |
-| `/admin/menu`                                                       | canteen_admin+      | CRUD with draft / live / archived               |
-| `/admin/orders`                                                     | canteen_admin+      | Filterable list + CSV export                    |
-| `/admin/staff`                                                      | canteen_admin+      | Invite, revoke, list                            |
-| `/admin/analytics`                                                  | canteen_admin+      | Deeper insights                                 |
-| `/api/webhooks/razorpay`                                            | system              | Capture / fail / refund                         |
-| `/api/admin/export/orders`                                          | canteen_admin+      | Streamed CSV                                    |
-
-## Design decisions
-
-Architectural choices and their rationale live in [`docs/adr/`](./docs/adr):
-
-- [0001 — Multi-tenant via RLS](./docs/adr/0001-multi-tenant-via-rls.md)
-- [0002 — OTP at "ready"](./docs/adr/0002-otp-at-ready.md)
-- [0003 — QStash scheduled jobs](./docs/adr/0003-qstash-scheduled-jobs.md)
-
-Quick highlights:
-
-- **Auth** — Supabase Auth + a `tenant_memberships(user_id, tenant_id, role, is_active)` table, not JWT claims, so one human can be student@VIT + admin@LPU and revocation is instant.
-- **Money** — Razorpay direct, canteen's own UPI VPA, Tray takes 0%. Webhook verifies HMAC-SHA256 over the raw body, idempotent via unique `raw_event_id`.
-- **Realtime** — channels filter by `tenant_id`; on `visibilitychange === "visible"` the client snapshot-refetches. Realtime is never trusted as a source of truth.
-- **Performance** — Server Components by default; route-level dynamic for fresh data; `tabular-nums` everywhere money or time appears.
-
-## Project layout
+## Project structure
 
 ```
 src/
 ├── app/
-│   ├── (public)/         marketing + auth
-│   ├── (student)/        menu, cart, pay, track, orders
-│   ├── (kitchen)/        live queue
-│   ├── (admin)/          dashboard, menu, orders, staff, analytics
-│   ├── api/              route handlers (webhooks, exports)
-│   └── auth/             callbacks
-├── components/           shared UI primitives
-├── lib/                  env, supabase clients, tenant, auth, email
-├── styles/               theme + globals
-└── middleware.ts         subdomain → tenant resolution
+│   ├── (public)/      landing, login, signup
+│   ├── (student)/     menu, cart, payment, order tracking
+│   ├── (kitchen)/     live order queue + OTP verify
+│   ├── (admin)/       dashboard, menu manager, orders, analytics
+│   └── api/           webhooks, CSV export routes
+├── components/        portal UI + shared components
+├── lib/               Supabase clients, auth, tenant logic
+└── middleware.ts      subdomain → tenant resolution
+
 supabase/
-├── migrations/           schema + RLS
-└── setup.sql             one-shot setup for a fresh project
-docs/adr/                 architectural decision records
+└── migrations/        Postgres schema + RLS policies
 ```
 
-## Scripts
+---
+
+## Commands
 
 ```bash
-pnpm dev            # next dev
-pnpm build          # next build
-pnpm start          # next start
-pnpm lint           # next lint
-pnpm typecheck      # tsc --noEmit
+pnpm dev          # start dev server
+pnpm build        # production build
+pnpm typecheck    # TypeScript check
+pnpm lint         # ESLint
 ```
+
+---
 
 ## Contributing
 
-See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for branch naming, commit conventions, and the pre-PR checklist.
+Read [`CONTRIBUTING.md`](./CONTRIBUTING.md) before opening a PR — it covers branch names, commit style, and the PR checklist.
 
-## Security
+Found a security issue? Use [`SECURITY.md`](./SECURITY.md) for responsible disclosure instead of opening a public issue.
 
-If you've found a vulnerability, please follow the responsible disclosure process in [`SECURITY.md`](./SECURITY.md) rather than opening a public issue.
+---
+
+<div align="center">
+
+Built for college campuses &nbsp;·&nbsp; Made in India
+
+</div>
