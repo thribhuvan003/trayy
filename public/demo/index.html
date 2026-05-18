@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=1440"/>
 <title>Tray — A canteen system for the whole campus.</title>
 <meta name="description" content="Tray replaces the printed-token queue with a phone-first ordering system. One platform, three portals: student, kitchen, admin."/>
+<link rel="icon" href="/icon.svg" type="image/svg+xml"/>
+<link rel="apple-touch-icon" href="/apple-icon.svg"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -39,7 +41,12 @@
   --mono:'Geist Mono',ui-monospace,Menlo,monospace;
 }
 *,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;font-size:15px;line-height:1.55;font-feature-settings:"ss01"}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+/* portal iframes: gentle fade-in once loaded */
+.portal-frame iframe{opacity:0;transition:opacity .45s cubic-bezier(.2,.7,.3,1)}
+.portal-frame iframe.ready{opacity:1}
 body{overflow-x:hidden}
 ::selection{background:var(--persimmon);color:var(--bg)}
 a{color:inherit;text-decoration:none}
@@ -267,7 +274,7 @@ button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit
       <a href="#stack">Stack</a>
     </div>
     <div class="nav-cta">
-      <button class="btn btn-ghost">Sign in</button>
+      <a class="btn btn-ghost" href="/login">Sign in</a>
       <a class="btn btn-pri" href="student.html">Open the menu →</a>
     </div>
   </div>
@@ -549,15 +556,15 @@ button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit
     </div>
     <div>
       <h4>Product</h4>
-      <div class="links"><a href="student.html">Student app</a><a href="kitchen.html">Kitchen view</a><a href="admin.html">Admin console</a><a>Onboarding</a></div>
+      <div class="links"><a href="student.html">Student app</a><a href="kitchen.html">Kitchen view</a><a href="admin.html">Admin console</a><a href="/signup">Onboarding</a></div>
     </div>
     <div>
       <h4>Resources</h4>
-      <div class="links"><a>Spec sheet</a><a>Schema</a><a>API · v1</a><a>Changelog</a></div>
+      <div class="links"><a href="https://github.com/thribhuvan003/Tray#readme" target="_blank" rel="noopener">Spec sheet</a><a href="https://github.com/thribhuvan003/Tray/tree/main/supabase/migrations" target="_blank" rel="noopener">Schema</a><a href="https://github.com/thribhuvan003/Tray/tree/main/src/app/api" target="_blank" rel="noopener">API · v1</a><a href="https://github.com/thribhuvan003/Tray/commits/production-ui-fidelity" target="_blank" rel="noopener">Changelog</a></div>
     </div>
     <div>
       <h4>Contact</h4>
-      <div class="links"><a>hello@tray.example</a><a>github.com/tray</a><a>twitter.com/tray</a></div>
+      <div class="links"><a href="mailto:thribhuvan003@gmail.com">hello@tray.dev</a><a href="https://github.com/thribhuvan003/Tray" target="_blank" rel="noopener">github.com/thribhuvan003/Tray</a><a href="https://github.com/thribhuvan003" target="_blank" rel="noopener">@thribhuvan003</a></div>
     </div>
   </div>
   <div class="footer-mark">tra<span class="it">y</span></div>
@@ -574,6 +581,15 @@ const io = new IntersectionObserver((entries) => {
   });
 }, {threshold:0.12});
 document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+/* Portal iframes: fade in once they signal load — feels intentional even if CSP/network is slow */
+document.querySelectorAll('.portal-frame iframe').forEach(f => {
+  if (f.contentDocument && f.contentDocument.readyState === 'complete') f.classList.add('ready');
+  f.addEventListener('load', () => f.classList.add('ready'), { once: true });
+  // Fail-open: if the iframe is still hidden after 4s, reveal it anyway so a slow CSP/font load
+  // never leaves a blank gray box on the landing page.
+  setTimeout(() => f.classList.add('ready'), 4000);
+});
 </script>
 </body>
 </html>

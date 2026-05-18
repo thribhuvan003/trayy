@@ -3,7 +3,10 @@ import type { NextConfig } from "next";
 const securityHeaders = [
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
   { key: "X-Content-Type-Options", value: "nosniff" },
-  { key: "X-Frame-Options", value: "DENY" },
+  // SAMEORIGIN so the landing-page "Three portals" section can embed
+  // /demo/student.html, /demo/kitchen.html, /demo/admin.html as live previews.
+  // Cross-origin framing is still blocked by frame-ancestors below.
+  { key: "X-Frame-Options", value: "SAMEORIGIN" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), interest-cohort=()" },
   // Loose CSP: Next + Supabase Realtime + Google Fonts. Tighten before going
@@ -17,7 +20,8 @@ const securityHeaders = [
       "font-src 'self' https://fonts.gstatic.com data:",
       "img-src 'self' data: blob: https:",
       "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://qstash-eu-central-1.upstash.io https://qstash.upstash.io https://*.upstash.io https://api.razorpay.com",
-      "frame-ancestors 'none'",
+      "frame-src 'self'",
+      "frame-ancestors 'self'",
       "base-uri 'self'",
       "form-action 'self'",
     ].join("; "),
