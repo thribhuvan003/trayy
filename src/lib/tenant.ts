@@ -1,5 +1,6 @@
 import "server-only";
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { createClient } from "@supabase/supabase-js";
 import { env } from "@/lib/env";
 import type { Database } from "@/lib/db/types";
@@ -13,6 +14,21 @@ export type ResolvedTenant = {
   logo_url: string | null;
   allowed_domain: string | null;
   upi_vpa: string | null;
+};
+
+export type CollegeCanteen = {
+  slug: string;
+  name: string;
+  hero_tagline: string | null;
+  building: string | null;
+  zone: string | null;
+  mess_type: string | null;
+  is_open: boolean;
+  paused_until: string | null;
+  opens_at: string | null;
+  closes_at: string | null;
+  logo_url: string | null;
+  pending_orders_count: number;
 };
 
 const RESERVED_SUBDOMAINS = new Set(["www", "app", "admin", "api", "auth", "static"]);
@@ -47,7 +63,10 @@ const _resolverClient = () =>
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-export const resolveTenant = cache(async (slug: string): Promise<ResolvedTenant | null> => {
+// Edge-cached tenant lookup: 500 concurrent students hitting /c/iitb-h9/menu within
+// a minute trigger ONE Supabase call, not 500. React.cache() is still wrapped on top
+// so within a single request the same slug resolves once.
+const fetchTenantUncached = async (slug: string): Promise<ResolvedTenant | null> => {
   const client = _resolverClient();
   const { data, error } = await client.rpc("resolve_tenant", { p_slug: slug });
   if (error || !data || data.length === 0) return null;
@@ -72,4 +91,35 @@ export const resolveTenant = cache(async (slug: string): Promise<ResolvedTenant 
     allowed_domain: row.allowed_domain ?? null,
     upi_vpa: row.upi_vpa ?? null,
   };
+};
+
+const fetchTenantEdgeCached = unstable_cache(
+  fetchTenantUncached,
+  ["resolve-tenant"],
+  { revalidate: 60, tags: ["tenant"] }
+);
+
+export const resolveTenant = cache(async (slug: string): Promise<ResolvedTenant | null> => {
+  return fetchTenantEdgeCached(slug);
+});
+
+// College portal: list all canteens at a college with live wait/open status.
+// RPC type isn't yet in generated types (added in migration 0009) — cast through unknown.
+const fetchCollegeCanteensUncached = async (collegeSlug: string): Promise<CollegeCanteen[]> => {
+  const client = _resolverClient();
+  const { data, error } = await (client as unknown as {
+    rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
+  }).rpc("college_canteens", { p_college_slug: collegeSlug });
+  if (error || !data) return [];
+  return (data as unknown as CollegeCanteen[]) ?? [];
+};
+
+const fetchCollegeCanteensCached = unstable_cache(
+  fetchCollegeCanteensUncached,
+  ["college-canteens"],
+  { revalidate: 30, tags: ["college-canteens"] }
+);
+
+export const collegeCanteens = cache(async (slug: string): Promise<CollegeCanteen[]> => {
+  return fetchCollegeCanteensCached(slug);
 });
