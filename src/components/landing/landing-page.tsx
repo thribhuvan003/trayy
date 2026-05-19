@@ -1,29 +1,31 @@
 import Link from "next/link";
 import type { ResolvedTenant } from "@/lib/tenant";
+import { LandingLineLeave } from "@/components/landing/landing-line-leave";
+import { LandingMotion } from "@/components/landing/landing-motion";
 
-// Editorial dark landing — warm dark + persimmon, Instrument Serif headlines.
-// All styles scoped to .tray-landing so they never bleed into the student /
-// kitchen / admin portals. Forces dark regardless of the user's theme.
+// Pre-Monsoon Dusk — sky slate + bone + amber accent. Instrument Serif headlines.
+// Scoped to .tray-landing only; student/kitchen/admin portals stay separate.
 
 const SCOPED_CSS = `
 .tray-landing {
-  --tl-bg: #0e0a06;
-  --tl-bg-2: #161108;
-  --tl-bg-3: #1f1810;
-  --tl-bg-4: #2a2218;
-  --tl-line: rgba(245, 239, 228, 0.10);
-  --tl-line-2: rgba(245, 239, 228, 0.18);
-  --tl-ink: #f5efe4;
-  --tl-ink-2: #c8b89e;
-  --tl-ink-3: #8a7960;
-  --tl-ink-4: #5b4d3a;
-  --tl-persimmon: #ef6a3a;
-  --tl-student: #5cb1ff;
-  --tl-kitchen: #ef5749;
-  --tl-admin: #cdfa50;
-  --tl-good: #7cc788;
+  --tl-bg: #0d1220;
+  --tl-bg-2: #141d38;
+  --tl-bg-3: #1a2548;
+  --tl-bg-4: #243060;
+  --tl-line: rgba(232, 228, 220, 0.10);
+  --tl-line-2: rgba(232, 228, 220, 0.18);
+  --tl-ink: #e8e4dc;
+  --tl-ink-2: rgba(232, 228, 220, 0.62);
+  --tl-ink-3: rgba(232, 228, 220, 0.38);
+  --tl-ink-4: rgba(232, 228, 220, 0.22);
+  --tl-accent: #c4a882;
+  --tl-persimmon: #c4a882;
+  --tl-student: #7eb8ff;
+  --tl-kitchen: #ff7b6e;
+  --tl-admin: #b8e86a;
+  --tl-good: #6dd4a0;
 
-  background: var(--tl-bg);
+  background: linear-gradient(180deg, #0d1220 0%, #111827 42%, #141d38 100%);
   color: var(--tl-ink);
   font-family: var(--font-geist), var(--font-inter), ui-sans-serif, system-ui;
   font-feature-settings: "ss01";
@@ -47,12 +49,12 @@ const SCOPED_CSS = `
 @media (min-width: 768px) { .tray-landing .tl-wrap { padding: 0 56px; } }
 
 /* Nav */
-.tray-landing .tl-nav { position: sticky; top: 0; z-index: 50; backdrop-filter: blur(20px) saturate(1.4); background: rgba(14, 10, 6, 0.72); border-bottom: 1px solid var(--tl-line); }
+.tray-landing .tl-nav { position: sticky; top: 0; z-index: 50; backdrop-filter: blur(20px) saturate(1.4); background: rgba(13, 18, 32, 0.78); border-bottom: 1px solid var(--tl-line); }
 .tray-landing .tl-nav-inner { max-width: 1280px; margin: 0 auto; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 @media (min-width: 768px) { .tray-landing .tl-nav-inner { padding: 14px 56px; } }
 .tray-landing .tl-brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-instrument-serif), serif; font-size: 26px; letter-spacing: -0.02em; font-weight: 400; }
 .tray-landing .tl-brand .tl-brand-dot { font-style: italic; color: var(--tl-persimmon); }
-.tray-landing .tl-brand-mark { width: 32px; height: 32px; border-radius: 7px; background: linear-gradient(135deg, var(--tl-persimmon), #c5421d); display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-instrument-serif), serif; font-weight: 400; font-size: 18px; color: var(--tl-ink); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .15); }
+.tray-landing .tl-brand-mark { width: 32px; height: 32px; border-radius: 7px; background: linear-gradient(135deg, var(--tl-accent), #8a7358); display: inline-flex; align-items: center; justify-content: center; font-family: var(--font-instrument-serif), serif; font-weight: 400; font-size: 18px; color: var(--tl-bg); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12); }
 .tray-landing .tl-nav-links { display: none; gap: 32px; font-size: 14px; color: var(--tl-ink-2); }
 @media (min-width: 900px) { .tray-landing .tl-nav-links { display: flex; } }
 .tray-landing .tl-nav-links a:hover { color: var(--tl-ink); }
@@ -65,10 +67,44 @@ const SCOPED_CSS = `
 .tray-landing .tl-btn-ghost:hover { background: rgba(255, 255, 255, .05); border-color: var(--tl-ink-3); }
 .tray-landing .tl-btn-lg { padding: 14px 24px; font-size: 15px; }
 
+.tray-landing a:focus { outline: none; }
+.tray-landing a:focus-visible,
+.tray-landing .tl-btn:focus-visible {
+  outline: 2px solid var(--tl-accent);
+  outline-offset: 3px;
+}
+
+.tray-landing .tl-skip {
+  position: absolute;
+  left: -9999px;
+  top: 12px;
+  z-index: 100;
+  padding: 10px 16px;
+  background: var(--tl-ink);
+  color: var(--tl-bg);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.tray-landing .tl-skip:focus {
+  left: 12px;
+}
+
 /* Hero */
 .tray-landing .tl-hero { padding: 80px 0 64px; position: relative; }
 @media (min-width: 768px) { .tray-landing .tl-hero { padding: 96px 0 80px; } }
-.tray-landing .tl-hero::before { content: ""; position: absolute; left: 50%; top: -200px; width: 1200px; height: 1200px; border-radius: 50%; background: radial-gradient(circle, rgba(239, 106, 58, 0.18) 0%, rgba(239, 106, 58, 0) 60%); transform: translateX(-50%); pointer-events: none; z-index: 0; }
+.tray-landing .tl-hero::before { content: ""; position: absolute; left: 50%; top: -220px; width: 1100px; height: 900px; border-radius: 50%; background: radial-gradient(ellipse at center, rgba(126, 184, 255, 0.14) 0%, rgba(196, 168, 130, 0.08) 35%, transparent 68%); transform: translateX(-50%); pointer-events: none; z-index: 0; }
+.tray-landing .tl-h1 .tl-word { display: inline-block; transform-origin: 50% 100%; }
+.tray-landing [data-reveal] { will-change: transform, opacity; }
+.tray-landing .tl-ticker { overflow: hidden; border-block: 1px solid var(--tl-line); background: rgba(20, 29, 56, 0.55); position: relative; z-index: 2; }
+.tray-landing .tl-ticker-track { display: flex; width: max-content; animation: tlTicker 42s linear infinite; }
+.tray-landing .tl-ticker:hover .tl-ticker-track { animation-play-state: paused; }
+.tray-landing .tl-ticker-item { flex-shrink: 0; padding: 14px 28px; font-family: var(--font-geist-mono), monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--tl-ink-3); white-space: nowrap; }
+.tray-landing .tl-ticker-item em { font-style: normal; color: var(--tl-accent); font-weight: 600; }
+@keyframes tlTicker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) {
+  .tray-landing .tl-ticker-track { animation: none; flex-wrap: wrap; width: 100%; justify-content: center; }
+}
 .tray-landing .tl-hero-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; font-family: var(--font-geist-mono), monospace; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--tl-ink-3); padding-bottom: 24px; border-bottom: 1px solid var(--tl-line); margin-bottom: 40px; font-weight: 500; flex-wrap: wrap; }
 .tray-landing .tl-hero-top .tl-l, .tray-landing .tl-hero-top .tl-r { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
 .tray-landing .tl-live { display: inline-flex; align-items: center; gap: 8px; color: var(--tl-good); text-transform: none; letter-spacing: 0.02em; font-family: var(--font-geist), sans-serif; font-weight: 500; font-size: 12px; }
@@ -224,7 +260,20 @@ const SCOPED_CSS = `
 .tray-landing .tl-footer .tl-links a:hover { color: var(--tl-ink); }
 .tray-landing .tl-footer-tag { font-size: 14px; color: var(--tl-ink-2); max-width: 32ch; line-height: 1.6; margin-top: 14px; }
 .tray-landing .tl-footer-mark { font-family: var(--font-instrument-serif), serif; font-size: clamp(120px, 22vw, 240px); line-height: 0.86; letter-spacing: -0.04em; color: rgba(245, 239, 228, 0.04); text-align: center; font-weight: 400; user-select: none; margin: 32px 0 0; overflow: hidden; border-top: 1px solid var(--tl-line); padding-top: 24px; }
-.tray-landing .tl-footer-mark .tl-it { font-style: italic; color: rgba(239, 106, 58, 0.12); }
+.tray-landing .tl-footer-mark .tl-it { font-style: italic; color: rgba(196, 168, 130, 0.14); }
+.tray-landing .tl-closing::before { background: radial-gradient(ellipse at center top, rgba(196, 168, 130, 0.12), transparent 70%); }
+
+.tray-landing .tl-line-leave { padding: 64px 0; position: relative; z-index: 2; }
+.tray-landing .tl-line-leave-grid { display: grid; grid-template-columns: 1fr; gap: 28px; align-items: start; }
+@media (min-width: 900px) { .tray-landing .tl-line-leave-grid { grid-template-columns: 1.1fr 1fr; gap: 48px; } }
+.tray-landing .tl-line-leave-title { font-family: var(--font-instrument-serif), serif; font-size: clamp(32px, 5vw, 48px); letter-spacing: -0.03em; margin: 0 0 12px; font-weight: 400; line-height: 1.05; }
+.tray-landing .tl-line-leave-title .tl-it { font-style: italic; color: var(--tl-persimmon); }
+.tray-landing .tl-line-leave-lede { color: var(--tl-ink-2); font-size: 15px; line-height: 1.55; margin: 0; max-width: 42ch; }
+.tray-landing .tl-line-leave-panel { display: flex; flex-direction: column; gap: 10px; padding: 20px; border-radius: 16px; border: 1px solid var(--tl-line); background: var(--tl-bg-2); }
+.tray-landing .tl-line-chip { text-align: left; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--tl-line); background: var(--tl-bg-3); font-size: 14px; font-weight: 500; transition: border-color .2s, background .2s, transform .15s; }
+.tray-landing .tl-line-chip:hover { border-color: var(--tl-ink-4); }
+.tray-landing .tl-line-chip.is-on { border-color: rgba(196, 168, 130, 0.55); background: rgba(196, 168, 130, 0.12); color: var(--tl-ink); }
+.tray-landing .tl-line-hint { margin: 8px 2px 0; font-size: 14px; line-height: 1.5; color: var(--tl-ink-2); min-height: 3em; }
 .tray-landing .tl-footer-bot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: center; padding-top: 24px; font-family: var(--font-geist-mono), monospace; font-size: 11px; color: var(--tl-ink-4); letter-spacing: 0.08em; font-weight: 500; }
 `;
 
@@ -251,18 +300,48 @@ function PortalPreview({ src, title }: { src: string; title: string }) {
   );
 }
 
+const TICKER_ITEMS = [
+  "Hostel mess · 47 orders live",
+  "Night canteen · queue 3 min",
+  "Sports cafe · specials updated",
+  "UPI confirmed · avg 8s",
+  "OTP verified · handover 12:04",
+  "Kitchen SLA · 94% on time",
+  "Multi-canteen · one campus",
+  "Realtime sync · 240ms p95",
+] as const;
+
+function HeroWords({ text, italicFrom }: { text: string; italicFrom?: number }) {
+  const words = text.split(/\s+/);
+  return (
+    <>
+      {words.map((w, i) => (
+        <span key={`${w}-${i}`} className={italicFrom !== undefined && i >= italicFrom ? "tl-word tl-it" : "tl-word"}>
+          {w}{" "}
+        </span>
+      ))}
+    </>
+  );
+}
+
 export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
-  const college = tenant?.college_name ?? "Aditya Engineering College";
+  void tenant;
+  const tickerDoubled = [...TICKER_ITEMS, ...TICKER_ITEMS];
   return (
     <div className="tray-landing">
       <style dangerouslySetInnerHTML={{ __html: SCOPED_CSS }} />
       <div className="tl-grain" />
+      <LandingMotion />
+      <a href="#main" className="tl-skip">
+        Skip to content
+      </a>
 
       <nav className="tl-nav">
         <div className="tl-nav-inner">
           <BrandMark />
           <div className="tl-nav-links">
             <a href="#system">System</a>
+            <a href="#where">Dine · Takeaway</a>
             <a href="#sync">How it syncs</a>
             <a href="#flow">How it works</a>
             <a href="#stack">Stack</a>
@@ -275,24 +354,27 @@ export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
         </div>
       </nav>
 
+      <main id="main">
       <section className="tl-hero tl-wrap">
         <div className="tl-hero-top">
           <div className="tl-l">
-            <span>EDITION 03 · 2026</span>
+            <span>TRAY · v3.0</span>
             <span style={{ color: "var(--tl-ink-4)" }}>/</span>
-            <span>{college.toUpperCase()}</span>
+            <span>CAMPUS EDITION</span>
           </div>
           <div className="tl-r">
             <span className="tl-live"><span className="tl-d" />Kitchen open</span>
           </div>
         </div>
         <h1 className="tl-h1">
-          A canteen system<br />for the <span className="tl-it">whole campus.</span>
+          <HeroWords text="A canteen system" />
+          <br />
+          <HeroWords text="for the whole campus." italicFrom={2} />
         </h1>
         <div className="tl-hero-meta">
           <p className="tl-hero-lede">
             Tray replaces the printed-token queue with a phone-first ordering system.{" "}
-            <span className="tl-em">Students order and pay before they walk to the counter.</span>{" "}
+            <span className="tl-em">Students choose dine-in or takeaway, pay on phone, then walk to handover.</span>{" "}
             The kitchen sees a live queue. Pickup is verified with a four-digit code. One system, three portals, every metric in real time.
           </p>
           <div className="tl-hero-cta">
@@ -311,7 +393,17 @@ export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
         </div>
       </section>
 
-      <section className="tl-section tl-wrap" id="system">
+      <div className="tl-ticker" aria-hidden>
+        <div className="tl-ticker-track">
+          {tickerDoubled.map((item, i) => (
+            <span key={`${item}-${i}`} className="tl-ticker-item">
+              <em>●</em> {item}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <section className="tl-section tl-wrap" id="system" data-reveal>
         <div className="tl-section-num"><span className="tl-bar" /><span className="tl-num">01</span> / The system</div>
         <div className="tl-section-head">
           <h2>Three portals,<br /><span className="tl-it">one source of truth.</span></h2>
@@ -331,16 +423,19 @@ export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
               <span className="tl-portal-dot" />
             </div>
             <div className="tl-portal-frame">
-              <span className="tl-device-tag">📱 Mobile · 480×</span>
+              <span className="tl-device-tag">💻 Laptop · sidebar cart</span>
               <PortalPreview src="/demo/student.html" title="Student app preview" />
             </div>
             <div className="tl-portal-body">
-              <p>Browse the daily menu, pay through UPI, and receive a four-digit pickup code. Mobile-first, made for the phone in their hand.</p>
+              <p>
+                Dine-in or takeaway up front (QSR-style), veg lane, UPI checkout, pickup-window ETA, and OTP handover —
+                full laptop layout with sidebar cart on wide screens.
+              </p>
               <div className="tl-feat-tags">
+                <span className="tl-feat-tag">Dine · Takeaway</span>
                 <span className="tl-feat-tag">UPI · QR</span>
-                <span className="tl-feat-tag">OTP pickup</span>
-                <span className="tl-feat-tag">Live tracking</span>
-                <span className="tl-feat-tag">Veg / non-veg</span>
+                <span className="tl-feat-tag">Pickup window</span>
+                <span className="tl-feat-tag">Veg lane</span>
               </div>
               <a href="/demo/student.html" className="tl-portal-open">
                 <span>Open the student app</span>
@@ -405,7 +500,7 @@ export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
         </div>
       </section>
 
-      <section className="tl-sync" id="sync">
+      <section className="tl-sync" id="sync" data-reveal>
         <div className="tl-wrap">
           <div className="tl-section-num"><span className="tl-bar" /><span className="tl-num">02</span> / The connected canteen</div>
           <div className="tl-sync-grid">
@@ -435,7 +530,7 @@ export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
                 <div className="tl-ic">DB</div>
                 <div className="tl-info">
                   <div className="tl-n">Postgres · menu_items table</div>
-                  <div className="tl-d">tenant_id = 'aditya' · row inserted</div>
+                  <div className="tl-d">tenant_id scoped · row inserted</div>
                 </div>
                 <span className="tl-role">SOURCE OF TRUTH</span>
               </div>
@@ -452,7 +547,7 @@ export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
                 <div className="tl-ic">A</div>
                 <div className="tl-info">
                   <div className="tl-n">Admin audit-log row</div>
-                  <div className="tl-d">menu.add by chef@aditya · logged</div>
+                  <div className="tl-d">menu.add · audit logged</div>
                 </div>
                 <span className="tl-role">CLIENT</span>
               </div>
@@ -461,12 +556,14 @@ export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
         </div>
       </section>
 
-      <section className="tl-pull tl-wrap">
+      <LandingLineLeave />
+
+      <section className="tl-pull tl-wrap" data-reveal>
         <p>Lunch is thirty minutes. Students currently spend <span className="tl-it">twelve of them</span> standing in line.</p>
-        <div className="tl-cite">{college.toUpperCase()} · CANTEEN AUDIT · 2025</div>
+        <div className="tl-cite">CAMPUS CANTEEN AUDIT · 2025</div>
       </section>
 
-      <section className="tl-section tl-wrap" id="flow">
+      <section className="tl-section tl-wrap" id="flow" data-reveal>
         <div className="tl-section-num"><span className="tl-bar" /><span className="tl-num">03</span> / How it works</div>
         <div className="tl-section-head">
           <h2>Phone to plate,<br /><span className="tl-it">in eleven minutes.</span></h2>
@@ -504,7 +601,7 @@ export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
         </div>
       </section>
 
-      <section className="tl-section tl-wrap" id="stack">
+      <section className="tl-section tl-wrap" id="stack" data-reveal>
         <div className="tl-section-num"><span className="tl-bar" /><span className="tl-num">04</span> / Built with</div>
         <div className="tl-section-head">
           <h2>A boring stack,<br /><span className="tl-it">on purpose.</span></h2>
@@ -529,7 +626,7 @@ export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
         </div>
       </section>
 
-      <section className="tl-closing">
+      <section className="tl-closing" data-reveal>
         <div className="tl-wrap">
           <div className="tl-section-num" style={{ justifyContent: "center", marginBottom: 24 }}>
             <span className="tl-bar" /><span className="tl-num">DEMO</span> / Live · clickable · no sign-up
@@ -543,6 +640,7 @@ export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
           </div>
         </div>
       </section>
+      </main>
 
       <footer className="tl-footer tl-wrap">
         <div className="tl-footer-row1">

@@ -1,922 +1,1656 @@
-<!doctype html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
-<title>Tray — Order from Aditya Canteen</title>
-<meta name="theme-color" content="#0066ff"/>
-<link rel="icon" href="/icon.svg" type="image/svg+xml"/>
-<link rel="apple-touch-icon" href="/apple-icon.svg"/>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-/* =====================================================
-   TRAY · STUDENT APP
-   Ocean blue + sky white · Bricolage + Instrument Serif
-   ===================================================== */
-:root{
-  --sky:#FAF8F4;            /* warm neutral background */
-  --sky-2:#F4F0E8;          /* slightly deeper warm */
-  --paper:#ffffff;
-  --ink:#1B1408;            /* warm near-black · AA on FAF8F4 */
-  --ink-2:#4A3D2A;          /* secondary warm grey · AA */
-  --ink-3:#7A6B53;          /* tertiary warm grey · AA on paper */
-  --ink-4:#B8A98D;          /* hint warm */
-  --line:#ECE5D7;
-  --line-2:#D9CFB8;
-  --ocean:#0066ff;
-  --ocean-2:#0050cc;
-  --ocean-3:#3387ff;
-  --foam:#a3d4ff;
-  --seaglass:#7ad9c7;
-  --coral:#ff7a59;
-  --veg:#2fa55c;
-  --nv:#d44e3a;
-  --ok:#1f7a48;
-  --warn:#c47a17;
-  --display:'Plus Jakarta Sans',ui-sans-serif,system-ui,sans-serif;
-  --serif:'Instrument Serif',serif;
-  --sans:'Plus Jakarta Sans',ui-sans-serif,system-ui,sans-serif;
-  --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
-}
-*,*::before,*::after{box-sizing:border-box}
-html,body{margin:0;background:var(--sky);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;font-size:15px;line-height:1.5;overscroll-behavior:none}
-body{min-height:100vh;min-height:100dvh}
-::selection{background:var(--ocean);color:#fff}
-a{color:inherit;text-decoration:none}
-button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Tray â€” Student Order</title>
+  <meta name="theme-color" content="#060A14" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #060A14;
+      --text: #E8F0FF;
+      --muted: rgba(232, 240, 255, 0.45);
+      --muted-2: rgba(232, 240, 255, 0.28);
+      --accent: #FFD87A;
+      --accent-dim: rgba(255, 216, 122, 0.15);
+      --accent-glow: rgba(255, 216, 122, 0.35);
+      --surface: rgba(232, 240, 255, 0.06);
+      --surface-2: rgba(232, 240, 255, 0.09);
+      --border: rgba(232, 240, 255, 0.1);
+      --veg: #5ee08a;
+      --nv: #ff7b6b;
+      --ok: #5ee08a;
+      --serif: "Instrument Serif", Georgia, serif;
+      --sans: "Inter", system-ui, sans-serif;
+      --mono: "Space Mono", ui-monospace, monospace;
+      --topbar-h: 64px;
+      --cart-w: 320px;
+      --nav-w: 200px;
+      --radius: 14px;
+      --radius-sm: 10px;
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    }
 
-/* desktop "phone" framing */
-.viewport{
-  max-width:480px;margin:0 auto;background:var(--paper);min-height:100vh;min-height:100dvh;
-  display:flex;flex-direction:column;position:relative;
-  box-shadow:0 0 0 1px var(--line);
-}
-@media (min-width:760px){
-  body{background:var(--sky);padding:32px 0;display:flex;justify-content:center;align-items:flex-start}
-  body::before{content:"";position:fixed;left:50%;top:-200px;width:1200px;height:1200px;border-radius:50%;background:radial-gradient(circle,rgba(0,102,255,0.14),transparent 60%);transform:translateX(-50%);pointer-events:none}
-  .viewport{
-    max-width:440px;min-height:auto;height:calc(100vh - 64px);
-    border-radius:36px;overflow:clip;
-    box-shadow:0 30px 80px rgba(8,33,58,.18),0 0 0 1px var(--line);
-    position:relative;z-index:2;
-  }
-}
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      min-height: 100dvh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 15px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
 
-@media (prefers-reduced-motion: reduce){
-  *, *::before, *::after{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; scroll-behavior:auto !important; }
-}
-.italic{font-family:var(--serif);font-style:italic;font-weight:400}
-.mono{font-family:var(--mono);font-feature-settings:"ss01"}
-.eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-3);font-weight:500}
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background:
+        radial-gradient(1px 1px at 12% 18%, rgba(255,255,255,0.55) 0, transparent 100%),
+        radial-gradient(1px 1px at 28% 72%, rgba(255,255,255,0.35) 0, transparent 100%),
+        radial-gradient(1.5px 1.5px at 45% 32%, rgba(255,255,255,0.4) 0, transparent 100%),
+        radial-gradient(1px 1px at 62% 8%, rgba(255,255,255,0.5) 0, transparent 100%),
+        radial-gradient(1px 1px at 78% 58%, rgba(255,255,255,0.3) 0, transparent 100%),
+        radial-gradient(1.2px 1.2px at 88% 24%, rgba(255,255,255,0.45) 0, transparent 100%),
+        radial-gradient(1px 1px at 6% 48%, rgba(255,255,255,0.25) 0, transparent 100%),
+        radial-gradient(1px 1px at 92% 82%, rgba(255,255,255,0.35) 0, transparent 100%),
+        radial-gradient(1px 1px at 35% 92%, rgba(255,255,255,0.28) 0, transparent 100%),
+        radial-gradient(ellipse 120% 55% at 50% -15%, rgba(120, 160, 255, 0.22) 0%, transparent 55%),
+        radial-gradient(ellipse 80% 40% at 80% 0%, rgba(255, 216, 122, 0.08) 0%, transparent 50%);
+    }
 
-/* ───── HEADER ───── */
-.appbar{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:18px 18px 14px;background:var(--paper);
-  position:sticky;top:0;z-index:30;border-bottom:1px solid transparent;
-  transition:border-color .2s,background .2s,backdrop-filter .2s;
-}
-.appbar.scrolled{backdrop-filter:blur(14px) saturate(1.3);background:rgba(255,255,255,0.88);border-bottom-color:var(--line)}
-.brand{display:flex;align-items:center;gap:9px;font-family:var(--display);font-weight:600;font-size:20px;letter-spacing:-0.02em;color:var(--ink)}
-.brand .dot{font-family:var(--serif);font-style:italic;color:var(--ocean);font-weight:400;font-size:24px;line-height:0;margin-left:-2px}
-.brand-mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--ocean),#5aa9ff);display:inline-flex;align-items:center;justify-content:center;color:#fff;font-family:var(--display);font-weight:700;font-size:14px;box-shadow:0 4px 10px rgba(0,102,255,.32),inset 0 1px 0 rgba(255,255,255,.35)}
-.appbar-right{display:flex;align-items:center;gap:8px}
-.btn-icon{width:38px;height:38px;border-radius:50%;background:var(--sky);color:var(--ink);display:flex;align-items:center;justify-content:center;transition:all .15s}
-.btn-icon:hover{background:var(--line)}
-.btn-icon.has-badge{position:relative}
-.btn-icon .badge{position:absolute;top:-4px;right:-4px;background:var(--coral);color:#fff;font-size:10px;font-weight:700;width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);border:2px solid var(--paper)}
-.avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--ocean),#5aa9ff);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-family:var(--display);font-size:13px}
+    button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+    input { font: inherit; color: inherit; }
+    ::selection { background: var(--accent); color: var(--bg); }
 
-/* ───── PAGE wrapper ───── */
-.page-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:96px}
-.view{display:none;animation:viewIn .2s cubic-bezier(.2,.7,.3,1)}
-.view.active{display:block}
-@keyframes viewIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .app {
+      position: relative;
+      z-index: 1;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
 
-/* ───── MENU HERO ───── */
-.menu-hero{padding:6px 22px 16px;display:flex;flex-direction:column;gap:8px}
-.menu-hero .greet{font-size:13px;color:var(--ink-3);display:flex;align-items:center;gap:6px}
-.menu-hero .greet .pulse{width:8px;height:8px;border-radius:50%;background:var(--ok);position:relative}
-.menu-hero .greet .pulse::before{content:"";position:absolute;inset:0;border-radius:50%;background:var(--ok);animation:pulseRipple 2s infinite}
-@keyframes pulseRipple{0%{transform:scale(1);opacity:.5}100%{transform:scale(3);opacity:0}}
-.menu-hero h1{font-family:var(--display);font-size:42px;line-height:1.02;letter-spacing:-0.035em;margin:6px 0 4px;font-weight:700}
-.menu-hero h1 .it{font-family:var(--serif);font-style:italic;font-weight:400;color:var(--ocean)}
-.menu-hero .meta{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--ink-3);flex-wrap:wrap}
-.menu-hero .meta .sep{width:3px;height:3px;border-radius:50%;background:var(--ink-4)}
-.menu-hero .meta strong{color:var(--ink-2);font-weight:600}
+    /* â”€â”€â”€ Topbar â”€â”€â”€ */
+    .topbar {
+      height: var(--topbar-h);
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(6, 10, 20, 0.72);
+      backdrop-filter: blur(16px);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
 
-/* ───── SEARCH ───── */
-.search{display:flex;align-items:center;gap:10px;padding:11px 14px;margin:16px 22px 0;background:var(--sky);border-radius:14px;border:1px solid var(--line)}
-.search input{flex:1;border:none;background:transparent;outline:none;font-family:inherit;font-size:14px;color:var(--ink)}
-.search input::placeholder{color:var(--ink-3)}
-.search svg{color:var(--ink-3);flex-shrink:0}
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
 
-/* ───── DIET TABS ───── */
-.diet{display:flex;gap:6px;padding:14px 22px 0;overflow-x:auto;scrollbar-width:none}
-.diet::-webkit-scrollbar{display:none}
-.diet button{flex-shrink:0;padding:7px 13px;border-radius:999px;background:var(--paper);color:var(--ink-2);border:1px solid var(--line);font-size:12.5px;font-weight:500;display:flex;align-items:center;gap:6px;transition:all .15s}
-.diet button.active{background:var(--ink);color:#fff;border-color:var(--ink)}
-.veg-dot{width:10px;height:10px;border:1.5px solid var(--veg);display:inline-block;position:relative}
-.veg-dot::after{content:"";position:absolute;inset:1.5px;background:var(--veg);border-radius:50%}
-.veg-dot.nv{border-color:var(--nv)}
-.veg-dot.nv::after{background:var(--nv)}
+    .brand__name {
+      font-family: var(--serif);
+      font-size: 1.35rem;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
 
-/* ───── TODAY'S SPECIALS RAIL ───── */
-.section-head{display:flex;justify-content:space-between;align-items:flex-end;padding:24px 22px 12px}
-.section-head h2{font-family:var(--display);font-size:24px;font-weight:600;letter-spacing:-0.025em;margin:0;line-height:1.1}
-.section-head h2 .it{font-family:var(--serif);font-style:italic;color:var(--ocean);font-weight:400}
-.section-head .right{font-size:11px;color:var(--ink-3);font-family:var(--mono);letter-spacing:0.06em;display:flex;align-items:center;gap:6px}
-.section-head .right .pulse{width:6px;height:6px;border-radius:50%;background:var(--ok)}
+    .brand__sub {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
 
-.specials{display:flex;gap:12px;padding:0 22px 4px;overflow-x:auto;scrollbar-width:none}
-.specials::-webkit-scrollbar{display:none}
-.special{flex-shrink:0;width:200px;background:linear-gradient(160deg,#dfeefb 0%,#bfdcf4 100%);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px;position:relative;border:1px solid var(--foam);overflow:hidden}
-.special.new{animation:specialIn .6s cubic-bezier(.34,1.26,.64,1)}
-@keyframes specialIn{from{transform:scale(.92) translateY(8px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
-.special .new-badge{position:absolute;top:12px;right:12px;background:var(--coral);color:#fff;font-family:var(--mono);font-size:9px;letter-spacing:0.08em;padding:3px 7px;border-radius:4px;font-weight:700;text-transform:uppercase}
-.special .ico{width:56px;height:56px;border-radius:14px;background:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-style:italic;font-size:30px;color:var(--ocean);font-weight:400;box-shadow:0 4px 12px rgba(0,102,255,.12)}
-.special h3{font-family:var(--display);font-size:18px;font-weight:600;letter-spacing:-0.02em;margin:0;line-height:1.1;color:var(--ink)}
-.special h3 .it{font-family:var(--serif);font-style:italic;color:var(--ocean);font-weight:400}
-.special .desc{font-size:12px;color:var(--ink-2);line-height:1.4}
-.special .row{display:flex;justify-content:space-between;align-items:center;margin-top:auto}
-.special .price{font-family:var(--mono);font-size:14px;color:var(--ink);font-weight:600}
-.special .quick-add{padding:6px 12px;background:var(--ocean);color:#fff;border-radius:999px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px;transition:transform .15s}
-.special .quick-add:hover{transform:scale(1.06)}
+    .topbar__actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
 
-/* ───── MENU LIST ───── */
-.cat-rail{display:flex;gap:6px;padding:8px 22px;overflow-x:auto;scrollbar-width:none;position:sticky;top:78px;background:var(--paper);z-index:10;border-bottom:1px solid var(--line);margin-top:8px}
-.cat-rail::-webkit-scrollbar{display:none}
-.cat-rail button{flex-shrink:0;padding:8px 12px;border-radius:8px;background:transparent;color:var(--ink-3);font-size:13px;font-weight:500;transition:all .15s;position:relative}
-.cat-rail button.active{color:var(--ink)}
-.cat-rail button.active::after{content:"";position:absolute;left:12px;right:12px;bottom:-1px;height:2px;background:var(--ocean);border-radius:2px}
+    .pill-status {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
 
-.menu-list{padding:14px 22px 12px;display:flex;flex-direction:column;gap:8px}
-.cat-label{font-family:var(--mono);font-size:10.5px;letter-spacing:0.16em;text-transform:uppercase;color:var(--ink-3);font-weight:600;margin:18px 0 6px;display:flex;align-items:center;gap:10px}
-.cat-label::after{content:"";flex:1;height:1px;background:var(--line)}
-.cat-label:first-child{margin-top:0}
+    .pill-status.is-live {
+      color: var(--accent);
+      border-color: rgba(255, 216, 122, 0.35);
+      background: var(--accent-dim);
+    }
 
-.dish{display:grid;grid-template-columns:1fr 88px;gap:14px;padding:14px 0;border-bottom:1px solid var(--line);position:relative}
-.dish:last-child{border-bottom:none}
-.dish .info{display:flex;flex-direction:column;gap:6px;min-width:0}
-.dish .name{font-size:15px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:8px;letter-spacing:-0.005em}
-.dish .desc{font-size:12.5px;color:var(--ink-3);line-height:1.45;max-width:30ch}
-.dish .meta{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:11px;color:var(--ink-2);margin-top:2px;font-weight:500}
-.dish .meta .price{color:var(--ink);font-size:13px;font-weight:600}
-.dish .meta .sep{width:3px;height:3px;border-radius:50%;background:var(--ink-4)}
-.dish .img{width:88px;height:88px;border-radius:14px;background:linear-gradient(135deg,#eaf3fb,#cce0f0);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-style:italic;font-size:36px;color:var(--ocean);position:relative;overflow:hidden}
-.dish .img::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 70% 30%,rgba(255,255,255,.4),transparent 50%)}
-.dish .add-row{position:absolute;right:0;bottom:8px}
-.add-btn{padding:7px 16px;border-radius:999px;background:#fff;color:var(--ocean);border:1.5px solid var(--ocean);font-size:12px;font-weight:600;letter-spacing:0.02em;text-transform:uppercase;transition:all .15s cubic-bezier(.2,.7,.3,1);font-family:inherit;display:inline-flex;align-items:center;gap:4px;box-shadow:0 4px 12px rgba(0,102,255,0.18)}
-.add-btn:hover{background:var(--ocean);color:#fff;transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,102,255,0.32)}
-.add-btn:active{transform:scale(0.97)}
-.btn-pay:active{transform:scale(0.97)}
-.qty-pill button:active{transform:scale(0.92)}
-.qty-pill{display:inline-flex;align-items:center;gap:8px;background:var(--ocean);color:#fff;border-radius:999px;padding:5px 10px;font-family:var(--mono);font-size:12px;font-weight:700;box-shadow:0 4px 12px rgba(0,102,255,0.3)}
-.qty-pill button{width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.22);color:#fff;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;font-weight:600}
-.qty-pill button:hover{background:rgba(255,255,255,.35)}
-.qty-pill span{min-width:14px;text-align:center}
+    .btn-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      display: grid;
+      place-items: center;
+      transition: border-color 0.2s, background 0.2s;
+    }
 
-/* ───── PERSISTENT BOTTOM CART BAR ───── */
-.cart-fab{
-  position:fixed;left:0;right:0;bottom:0;
-  height:72px;z-index:40;
-  background:var(--ocean);color:#fff;
-  padding:0 22px;
-  display:flex;align-items:center;justify-content:space-between;gap:14px;
-  font-size:15px;font-weight:600;
-  box-shadow:0 -8px 24px rgba(0,102,255,.22),inset 0 1px 0 rgba(255,255,255,.18);
-  transition:opacity .25s cubic-bezier(.2,.7,.3,1),transform .25s cubic-bezier(.2,.7,.3,1);
-  opacity:1;cursor:pointer;font-family:inherit;border:0;
-  text-align:left;width:100%;
-}
-.cart-fab:active{transform:scale(0.99)}
-.cart-fab.hidden{opacity:0;transform:translateY(80px);pointer-events:none}
-.cart-fab .l{display:flex;align-items:center;gap:14px}
-.cart-fab .cnt{background:#fff;color:var(--ocean);font-size:12px;font-weight:700;min-width:26px;height:26px;padding:0 8px;border-radius:13px;display:inline-flex;align-items:center;justify-content:center;font-family:var(--mono)}
-.cart-fab .sep{opacity:.55}
-.cart-fab .total{font-family:var(--mono);font-weight:700}
-.cart-fab .arrow{font-size:18px;line-height:1;margin-left:6px}
-@media (min-width:760px){
-  /* When the phone viewport is centered on desktop, dock the bar to the phone width */
-  .cart-fab{left:50%;right:auto;transform:translateX(-50%);width:440px;max-width:calc(100vw - 32px);bottom:32px;border-radius:18px;height:64px}
-  .cart-fab.hidden{transform:translateX(-50%) translateY(120px)}
-}
+    .btn-icon:hover { border-color: rgba(232,240,255,0.22); background: var(--surface-2); }
+    .btn-icon svg { width: 18px; height: 18px; opacity: 0.85; }
 
-/* ───── CART VIEW ───── */
-.view-head{padding:18px 22px 8px;display:flex;align-items:center;gap:12px}
-.view-head .back{width:38px;height:38px;border-radius:50%;background:var(--sky);color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;flex-shrink:0;transition:background .15s}
-.view-head .back:hover{background:var(--line)}
-.view-head .title{font-family:var(--display);font-size:28px;letter-spacing:-0.03em;font-weight:600;line-height:1}
-.view-head .title .it{font-family:var(--serif);font-style:italic;color:var(--ocean);font-weight:400}
-.view-sub{padding:0 22px 14px;color:var(--ink-3);font-size:13px}
+    /* â”€â”€â”€ Layout shell â”€â”€â”€ */
+    .shell {
+      flex: 1;
+      display: flex;
+      min-height: 0;
+    }
 
-.cart-list{padding:0 22px;display:flex;flex-direction:column}
-.cart-row{display:grid;grid-template-columns:60px 1fr auto;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);align-items:center}
-.cart-row .img{width:60px;height:60px;border-radius:12px;background:linear-gradient(135deg,#eaf3fb,#cce0f0);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-style:italic;font-size:26px;color:var(--ocean)}
-.cart-row .info .name{font-size:14px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:6px}
-.cart-row .info .price{font-family:var(--mono);font-size:12px;color:var(--ink-3);margin-top:2px}
-.cart-row .right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
-.cart-row .total{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--ink)}
+    .cat-nav {
+      display: none;
+      width: var(--nav-w);
+      flex-shrink: 0;
+      padding: 20px 12px 20px 16px;
+      border-right: 1px solid var(--border);
+    }
 
-.cart-summary{margin:14px 22px;padding:14px 16px;border:1px dashed var(--line-2);border-radius:12px;display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--ink-2)}
-.cart-summary .row{display:flex;justify-content:space-between}
-.cart-summary .row .v{font-family:var(--mono);font-weight:500;color:var(--ink)}
-.cart-summary .row.tot{padding-top:10px;border-top:1px solid var(--line);margin-top:4px}
-.cart-summary .row.tot .l{font-weight:600;color:var(--ink);font-size:14px}
-.cart-summary .row.tot .v{font-family:var(--display);font-size:24px;font-weight:600;letter-spacing:-0.025em;color:var(--ink)}
+    .cat-nav__label {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 12px 14px;
+    }
 
-.bottom-cta{position:sticky;bottom:0;background:var(--paper);padding:14px 22px 22px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
-.btn-pay{
-  display:flex;align-items:center;justify-content:space-between;width:100%;
-  padding:15px 22px;background:var(--ocean);color:#fff;border-radius:14px;
-  font-size:15px;font-weight:600;
-  box-shadow:0 8px 20px rgba(0,102,255,.35);
-  transition:transform .15s cubic-bezier(.34,1.56,.64,1)
-}
-.btn-pay:hover{transform:translateY(-2px)}
-.btn-pay .left{display:flex;align-items:center;gap:10px}
-.btn-pay .amt{font-family:var(--mono);font-weight:700}
-.cart-empty{padding:80px 22px;text-align:center;color:var(--ink-3)}
-.cart-empty .ic{font-family:var(--serif);font-style:italic;font-size:80px;color:var(--ocean);opacity:.4;line-height:1}
-.cart-empty h3{font-family:var(--display);font-size:20px;color:var(--ink);margin:12px 0 4px}
-.cart-empty p{font-size:13px;max-width:24ch;margin:0 auto}
+    .cat-nav__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 
-/* ───── PAYMENT ───── */
-.pay-stage{padding:22px;display:flex;flex-direction:column;align-items:center;gap:20px;text-align:center}
-.pay-stage .chip{font-family:var(--mono);font-size:11px;background:rgba(0,102,255,0.08);color:var(--ocean);padding:6px 12px;border-radius:999px;letter-spacing:0.08em;font-weight:600;text-transform:uppercase}
-.pay-stage h2{font-family:var(--display);font-size:36px;letter-spacing:-0.03em;margin:0;font-weight:600;line-height:1}
-.pay-stage h2 .it{font-family:var(--serif);font-style:italic;color:var(--ocean);font-weight:400}
-.pay-stage .amount{font-family:var(--display);font-size:64px;letter-spacing:-0.04em;font-weight:600;line-height:1;color:var(--ink)}
-.pay-stage .order-id{font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:0.1em;text-transform:uppercase;font-weight:500}
-.qr-box{width:220px;height:220px;background:#fff;border-radius:18px;display:flex;align-items:center;justify-content:center;padding:10px;position:relative;box-shadow:0 8px 20px rgba(8,33,58,.06),0 0 0 1px var(--line)}
-.qr-box .corner{position:absolute;width:20px;height:20px;border:2.5px solid var(--ocean)}
-.qr-box .c-tl{top:-12px;left:-12px;border-right:0;border-bottom:0;border-radius:3px 0 0 0}
-.qr-box .c-tr{top:-12px;right:-12px;border-left:0;border-bottom:0;border-radius:0 3px 0 0}
-.qr-box .c-bl{bottom:-12px;left:-12px;border-right:0;border-top:0;border-radius:0 0 0 3px}
-.qr-box .c-br{bottom:-12px;right:-12px;border-left:0;border-top:0;border-radius:0 0 3px 0}
-.qr-box svg{width:100%;height:100%;display:block}
-.qr-box .beam{position:absolute;left:10px;right:10px;height:2px;background:linear-gradient(90deg,transparent,var(--ocean),transparent);border-radius:2px;top:10px;animation:scan 2.4s ease-in-out infinite}
-@keyframes scan{0%,100%{top:10px}50%{top:calc(100% - 14px)}}
-.pay-id-row{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--sky);border:1px solid var(--line);border-radius:12px;margin:0 22px;font-family:var(--mono);font-size:13px;width:calc(100% - 44px)}
-.pay-id-row .v{color:var(--ocean);font-weight:600;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer}
-.pay-apps{display:flex;gap:8px;padding:0 22px;margin-top:4px}
-.pay-apps .app{flex:1;padding:10px;background:var(--paper);border:1px solid var(--line);border-radius:10px;text-align:center;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink-2);display:flex;align-items:center;justify-content:center;gap:6px;letter-spacing:0.02em;transition:all .15s}
-.pay-apps .app:hover{border-color:var(--ocean);color:var(--ocean)}
-.pay-apps .app .d{width:8px;height:8px;border-radius:50%}
-.pay-apps .app[data-app="gpay"] .d{background:#4285f4}
-.pay-apps .app[data-app="phonepe"] .d{background:#5f259f}
-.pay-apps .app[data-app="paytm"] .d{background:#00baf2}
+    .cat-btn {
+      width: 100%;
+      text-align: left;
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--muted);
+      transition: color 0.2s, background 0.2s;
+    }
 
-/* ───── OTP / SUCCESS ───── */
-.otp-stage{padding:30px 22px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
-.otp-check{width:80px;height:80px;border-radius:50%;background:var(--ocean);color:#fff;font-size:38px;display:flex;align-items:center;justify-content:center;box-shadow:0 16px 36px rgba(0,102,255,.32);animation:popIn .55s cubic-bezier(.34,1.56,.64,1)}
-@keyframes popIn{0%{transform:scale(0)}60%{transform:scale(1.1)}100%{transform:scale(1)}}
-.otp-stage h2{font-family:var(--display);font-size:36px;letter-spacing:-0.03em;margin:8px 0 0;font-weight:600}
-.otp-stage h2 .it{font-family:var(--serif);font-style:italic;color:var(--ocean);font-weight:400}
-.otp-stage .sub{font-size:14px;color:var(--ink-3);max-width:30ch}
-.otp-digits{display:flex;gap:10px;margin:16px 0 8px}
-.otp-d{width:54px;height:72px;background:var(--paper);border:1.5px solid var(--ocean);border-radius:14px;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-style:italic;font-size:46px;color:var(--ocean);font-weight:400;box-shadow:0 8px 20px rgba(0,102,255,.14)}
-.otp-instr{font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:0.08em;font-weight:500}
+    .cat-btn:hover { color: var(--text); background: var(--surface); }
+    .cat-btn.is-active {
+      color: var(--text);
+      background: var(--accent-dim);
+      box-shadow: inset 0 0 0 1px rgba(255, 216, 122, 0.25);
+    }
 
-/* ───── ORDER TRACK ───── */
-.track-card{margin:18px 22px;padding:20px;background:linear-gradient(160deg,#dfeefb 0%,#ffffff 60%);border:1px solid var(--foam);border-radius:18px;display:flex;flex-direction:column;gap:12px;position:relative;overflow:hidden}
-.track-card::before{content:"";position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(0,102,255,.2),transparent 60%)}
-.track-head{display:flex;justify-content:space-between;align-items:flex-start;position:relative;z-index:2}
-.track-head .l .oid{font-family:var(--mono);font-size:11px;color:var(--ink-2);letter-spacing:0.08em;font-weight:600}
-.track-head .l h3{font-family:var(--display);font-size:24px;letter-spacing:-0.025em;margin:4px 0 0;font-weight:600}
-.track-head .l h3 .it{font-family:var(--serif);font-style:italic;color:var(--ocean);font-weight:400}
-.track-head .r{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
-.track-status{font-family:var(--mono);font-size:11px;color:var(--ocean);font-weight:600;background:rgba(255,255,255,0.8);padding:5px 10px;border-radius:6px;letter-spacing:0.08em;text-transform:uppercase;display:flex;align-items:center;gap:6px}
-.track-status .pulse{width:6px;height:6px;border-radius:50%;background:var(--ocean);animation:pulseRipple 2s infinite}
-.track-eta{font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:0.04em}
+    .cat-btn span { display: block; font-family: var(--mono); font-size: 10px; color: var(--muted-2); margin-top: 2px; font-weight: 400; }
 
-.track-otp{margin:16px 22px;padding:18px;background:var(--ink);color:#fff;border-radius:18px;text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center}
-.track-otp .lbl{font-family:var(--mono);font-size:11px;letter-spacing:0.12em;color:var(--foam);text-transform:uppercase;font-weight:600}
-.track-otp .digits{display:flex;gap:8px;margin-top:6px}
-.track-otp .digits .d{width:44px;height:56px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-style:italic;font-size:36px;color:var(--foam);font-weight:400}
+    .main {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
 
-.timeline{padding:8px 22px 24px;display:flex;flex-direction:column;gap:0;position:relative}
-.tl-item{display:grid;grid-template-columns:32px 1fr;gap:14px;position:relative;padding-bottom:18px}
-.tl-item .node{width:14px;height:14px;border-radius:50%;background:var(--line-2);margin-top:6px;margin-left:9px;position:relative;z-index:2;flex-shrink:0}
-.tl-item.done .node{background:var(--ocean);box-shadow:0 0 0 4px rgba(0,102,255,.16)}
-.tl-item.now .node{background:var(--ocean);box-shadow:0 0 0 0 rgba(0,102,255,.6);animation:nodeNow 1.4s infinite}
-@keyframes nodeNow{0%{box-shadow:0 0 0 0 rgba(0,102,255,.5)}70%{box-shadow:0 0 0 12px rgba(0,102,255,0)}100%{box-shadow:0 0 0 0 rgba(0,102,255,0)}}
-.tl-item:not(:last-child)::before{content:"";position:absolute;left:15px;top:24px;width:2px;height:calc(100% - 16px);background:var(--line-2)}
-.tl-item.done:not(:last-child)::before{background:var(--ocean)}
-.tl-item .body h4{font-size:14px;font-weight:600;margin:0;color:var(--ink)}
-.tl-item.todo .body h4{color:var(--ink-3)}
-.tl-item .body .when{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:2px;letter-spacing:0.02em}
-.tl-item .body .desc{font-size:12.5px;color:var(--ink-2);margin-top:4px;line-height:1.5}
+    .content {
+      flex: 1;
+      padding: 20px 16px 100px;
+      max-width: 900px;
+    }
 
-.track-actions{padding:8px 22px 24px;display:flex;gap:8px}
-.track-actions .a-btn{flex:1;padding:11px;background:var(--sky);color:var(--ink);border-radius:12px;font-size:13px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:6px;transition:background .15s}
-.track-actions .a-btn:hover{background:var(--line)}
+    @media (min-width: 900px) {
+      .cat-nav { display: block; }
+      .content { padding: 24px 28px 32px; margin: 0 auto; width: 100%; }
+      .cat-pills { display: none !important; }
+    }
 
-/* ───── TOAST  ───── */
-.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(60px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px;box-shadow:0 12px 28px rgba(0,0,0,.2);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);z-index:60;pointer-events:none;font-family:inherit;white-space:nowrap}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.toast .d{width:6px;height:6px;border-radius:50%;background:var(--ocean)}
+    /* â”€â”€â”€ Category pills (mobile) â”€â”€â”€ */
+    .cat-pills {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 0 0 16px;
+      margin: 0 -4px;
+      scrollbar-width: none;
+    }
 
-/* link to other portals (footer) */
-.foot-links{padding:32px 22px;border-top:1px solid var(--line);background:var(--sky-2);display:flex;flex-direction:column;gap:14px;align-items:flex-start;margin-top:24px}
-.foot-links .small{font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:0.1em;text-transform:uppercase;font-weight:600}
-.foot-links .links{display:flex;gap:8px;flex-wrap:wrap}
-.foot-links .links a{padding:7px 12px;background:var(--paper);border:1px solid var(--line);border-radius:8px;font-size:12px;font-weight:500;color:var(--ink-2);transition:all .15s;display:flex;align-items:center;gap:6px}
-.foot-links .links a:hover{border-color:var(--ocean);color:var(--ocean)}
-.foot-links .links a .arrow{font-size:13px}
-</style>
+    .cat-pills::-webkit-scrollbar { display: none; }
+
+    .pill-cat {
+      flex-shrink: 0;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      background: var(--surface);
+      transition: all 0.2s var(--ease);
+    }
+
+    .pill-cat.is-active {
+      color: var(--bg);
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    /* â”€â”€â”€ Search â”€â”€â”€ */
+    .search-wrap {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .search-wrap svg {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 18px;
+      height: 18px;
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    .search {
+      width: 100%;
+      padding: 13px 14px 13px 42px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .search::placeholder { color: var(--muted-2); }
+    .search:focus {
+      border-color: rgba(255, 216, 122, 0.4);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+
+    /* â”€â”€â”€ Section header â”€â”€â”€ */
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: 1.75rem;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+    }
+
+    .section-head p {
+      margin: 0;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+    }
+
+    /* â”€â”€â”€ Menu grid â”€â”€â”€ */
+    .menu-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    @media (min-width: 900px) {
+      .menu-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    }
+
+    .menu-card {
+      display: flex;
+      gap: 14px;
+      padding: 16px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: linear-gradient(145deg, rgba(232,240,255,0.07) 0%, rgba(232,240,255,0.03) 100%);
+      transition: border-color 0.2s, transform 0.2s var(--ease);
+    }
+
+    .menu-card:hover { border-color: rgba(232,240,255,0.18); }
+    .menu-card.is-hidden { display: none; }
+
+    .menu-card__visual {
+      width: 72px;
+      height: 72px;
+      border-radius: 12px;
+      flex-shrink: 0;
+      background: var(--surface-2);
+      display: grid;
+      place-items: center;
+      font-size: 28px;
+      border: 1px solid var(--border);
+    }
+
+    .menu-card__body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
+    .menu-card__top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .menu-card__title {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .diet-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      flex-shrink: 0;
+      margin-top: 5px;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.3);
+    }
+
+    .diet-dot--veg { background: var(--veg); }
+    .diet-dot--nv { background: var(--nv); }
+
+    .menu-card__desc {
+      margin: 4px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .menu-card__foot {
+      margin-top: auto;
+      padding-top: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .price {
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .qty-control {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      background: rgba(6, 10, 20, 0.5);
+    }
+
+    .qty-control.is-empty .qty-val { display: none; }
+    .qty-control.is-empty .qty-minus { display: none; }
+
+    .qty-btn {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--text);
+      transition: background 0.15s;
+    }
+
+    .qty-btn:hover { background: var(--surface-2); }
+    .qty-btn--add { color: var(--accent); font-size: 20px; }
+
+    .qty-val {
+      min-width: 28px;
+      text-align: center;
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+  .btn-add-initial {
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      background: var(--accent-dim);
+      color: var(--accent);
+      border: 1px solid rgba(255, 216, 122, 0.3);
+      transition: background 0.2s, transform 0.15s;
+    }
+
+    .btn-add-initial:hover { background: rgba(255, 216, 122, 0.22); }
+    .btn-add-initial:active { transform: scale(0.97); }
+
+    .menu-card.has-qty .btn-add-initial { display: none; }
+    .menu-card.has-qty .qty-control { display: flex; }
+    .menu-card:not(.has-qty) .qty-control { display: none; }
+
+    /* â”€â”€â”€ Cart sidebar (desktop) â”€â”€â”€ */
+    .cart-sidebar {
+      display: none;
+      width: var(--cart-w);
+      flex-shrink: 0;
+      border-left: 1px solid var(--border);
+      background: rgba(6, 10, 20, 0.85);
+      backdrop-filter: blur(12px);
+      flex-direction: column;
+      position: sticky;
+      top: var(--topbar-h);
+      height: calc(100dvh - var(--topbar-h));
+      align-self: flex-start;
+    }
+
+    @media (min-width: 900px) {
+      .cart-sidebar { display: flex; }
+    }
+
+    .cart-sidebar__head {
+      padding: 20px 20px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .cart-sidebar__head h3 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: 1.35rem;
+      font-weight: 400;
+    }
+
+    .cart-sidebar__head p {
+      margin: 4px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .cart-lines {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 16px;
+    }
+
+    .cart-empty {
+      padding: 32px 12px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .cart-empty__icon { font-size: 32px; opacity: 0.5; margin-bottom: 8px; }
+
+    .cart-line {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .cart-line:last-child { border-bottom: none; }
+
+    .cart-line__info { flex: 1; min-width: 0; }
+    .cart-line__name { font-size: 14px; font-weight: 600; margin: 0; }
+    .cart-line__meta { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    .cart-line__qty {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .cart-line__qty button {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    .cart-line__qty span {
+      font-family: var(--mono);
+      font-size: 12px;
+      min-width: 18px;
+      text-align: center;
+    }
+
+    .cart-sidebar__foot {
+      padding: 16px 20px 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 14px;
+    }
+
+    .total-row span:first-child { color: var(--muted); font-size: 14px; }
+    .total-row span:last-child {
+      font-family: var(--mono);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 14px 20px;
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      font-weight: 600;
+      background: var(--accent);
+      color: var(--bg);
+      transition: filter 0.2s, transform 0.15s;
+    }
+
+    .btn-primary:hover:not(:disabled) { filter: brightness(1.06); }
+    .btn-primary:active:not(:disabled) { transform: scale(0.98); }
+    .btn-primary:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .btn-ghost {
+      width: 100%;
+      padding: 12px;
+      margin-top: 8px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover { color: var(--text); border-color: rgba(232,240,255,0.2); }
+
+    /* â”€â”€â”€ Mobile bottom cart bar â”€â”€â”€ */
+    .cart-bar {
+      display: none;
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: calc(12px + env(safe-area-inset-bottom, 0));
+      z-index: 60;
+      padding: 14px 16px;
+      border-radius: var(--radius);
+      background: rgba(12, 18, 32, 0.94);
+      border: 1px solid rgba(255, 216, 122, 0.25);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(232,240,255,0.06);
+      backdrop-filter: blur(20px);
+      align-items: center;
+      gap: 14px;
+      animation: slideUp 0.35s var(--ease);
+    }
+
+    .cart-bar.is-visible { display: flex; }
+
+    @media (min-width: 900px) {
+      .cart-bar { display: none !important; }
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .cart-bar__count {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--accent);
+      color: var(--bg);
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: 16px;
+      display: grid;
+      place-items: center;
+      transition: transform 0.25s var(--ease);
+    }
+
+    .cart-bar__count.bump { animation: bump 0.35s var(--ease); }
+
+    @keyframes bump {
+      0%, 100% { transform: scale(1); }
+      40% { transform: scale(1.12); }
+    }
+
+    .cart-bar__text { flex: 1; min-width: 0; }
+    .cart-bar__text strong { display: block; font-size: 15px; }
+    .cart-bar__text span { font-size: 13px; color: var(--muted); }
+
+    .cart-bar .btn-primary { width: auto; padding: 12px 18px; flex-shrink: 0; }
+
+    /* â”€â”€â”€ Views (payment, tracking, otp) â”€â”€â”€ */
+    .view { display: none; }
+    .view.is-active { display: block; }
+
+    .view-panel {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 8px 0 40px;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 24px;
+      padding: 6px 0;
+      transition: color 0.2s;
+    }
+
+    .back-link:hover { color: var(--text); }
+
+    .view-title {
+      margin: 0 0 8px;
+      font-family: var(--serif);
+      font-size: 2rem;
+      font-weight: 400;
+      letter-spacing: -0.03em;
+    }
+
+    .view-sub {
+      margin: 0 0 28px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    /* Payment */
+    .pay-card {
+      padding: 24px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      text-align: center;
+    }
+
+    .qr-box {
+      width: 200px;
+      height: 200px;
+      margin: 0 auto 20px;
+      border-radius: 16px;
+      background:
+        linear-gradient(135deg, #fff 25%, transparent 25%) -12px 0/24px 24px,
+        linear-gradient(225deg, #fff 25%, transparent 25%) -12px 0/24px 24px,
+        linear-gradient(315deg, #fff 25%, transparent 25%) 0 0/24px 24px,
+        linear-gradient(45deg, #fff 25%, #0a0e18 25%) 0 0/24px 24px;
+      background-color: #f8fafc;
+      border: 2px solid rgba(232,240,255,0.2);
+      position: relative;
+      display: grid;
+      place-items: center;
+    }
+
+    .qr-box::after {
+      content: "UPI";
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      color: #334155;
+      position: absolute;
+      bottom: 12px;
+    }
+
+    .qr-placeholder {
+      width: 48px;
+      height: 48px;
+      border: 3px solid #0f172a;
+      border-radius: 8px;
+      opacity: 0.85;
+    }
+
+    .upi-id {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    .upi-id strong { color: var(--text); display: block; margin-top: 4px; font-size: 15px; }
+
+    .timer-ring {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .timer-val {
+      font-family: var(--mono);
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+      min-width: 3ch;
+    }
+
+    .timer-label { font-size: 13px; color: var(--muted); text-align: left; }
+
+    .order-ref {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted-2);
+      margin-bottom: 20px;
+    }
+
+    /* Tracking */
+    .track-steps {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      position: relative;
+    }
+
+    .track-steps::before {
+      content: "";
+      position: absolute;
+      left: 15px;
+      top: 24px;
+      bottom: 24px;
+      width: 2px;
+      background: var(--border);
+    }
+
+    .track-step {
+      display: flex;
+      gap: 16px;
+      padding: 16px 0;
+      position: relative;
+    }
+
+    .track-dot {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--bg);
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+      z-index: 1;
+      transition: all 0.35s var(--ease);
+    }
+
+    .track-step.is-done .track-dot {
+      border-color: var(--ok);
+      background: rgba(94, 224, 138, 0.15);
+      color: var(--ok);
+    }
+
+    .track-step.is-current .track-dot {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+      box-shadow: 0 0 0 4px rgba(255, 216, 122, 0.12);
+    }
+
+    .track-step.is-pending .track-dot { opacity: 0.5; }
+
+    .track-step__body h4 {
+      margin: 0 0 4px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .track-step__body p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .track-step.is-current .track-step__body h4 { color: var(--accent); }
+
+    .progress-bar {
+      height: 4px;
+      border-radius: 999px;
+      background: var(--border);
+      margin: 24px 0;
+      overflow: hidden;
+    }
+
+    .progress-bar__fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--ok));
+      border-radius: inherit;
+      width: 0%;
+      transition: width 0.6s var(--ease);
+    }
+
+    /* OTP */
+    .otp-display {
+      text-align: center;
+      padding: 40px 24px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(255, 216, 122, 0.3);
+      background: linear-gradient(180deg, var(--accent-dim) 0%, transparent 100%);
+      margin-bottom: 24px;
+    }
+
+    .otp-label {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .otp-code {
+      font-family: var(--mono);
+      font-size: clamp(3rem, 12vw, 4.5rem);
+      font-weight: 700;
+      letter-spacing: 0.28em;
+      color: var(--accent);
+      text-shadow: 0 0 40px var(--accent-glow);
+      margin: 0;
+      padding-left: 0.28em;
+    }
+
+    .otp-hint {
+      margin: 20px 0 0;
+      font-size: 14px;
+      color: var(--muted);
+      max-width: 280px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .success-note {
+      padding: 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(94, 224, 138, 0.25);
+      background: rgba(94, 224, 138, 0.08);
+      font-size: 14px;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+
+    /* Hide menu layout when not on menu view */
+    body[data-view="menu"] .shell--menu { display: flex; }
+    body:not([data-view="menu"]) .shell--menu { display: none; }
+
+    body[data-view="menu"] .views-flow { display: none; }
+    body:not([data-view="menu"]) .views-flow { display: block; flex: 1; padding: 20px 16px; }
+    @media (min-width: 900px) {
+      body:not([data-view="menu"]) .views-flow { padding: 24px 28px; }
+    }
+
+    .service-bar {
+      margin-bottom: 18px;
+      padding: 16px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .service-bar__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .service-bar__label {
+      margin: 0;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .veg-lane {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      transition: border-color 0.2s, background 0.2s, color 0.2s;
+    }
+
+    .veg-lane[aria-pressed="true"] {
+      border-color: rgba(94, 224, 138, 0.55);
+      background: rgba(94, 224, 138, 0.12);
+      color: var(--veg);
+    }
+
+    .service-modes {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .service-mode {
+      text-align: left;
+      padding: 14px 14px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: rgba(6, 10, 20, 0.35);
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s var(--ease);
+    }
+
+    .service-mode:hover { border-color: rgba(232, 240, 255, 0.22); }
+
+    .service-mode.is-active {
+      border-color: rgba(255, 216, 122, 0.55);
+      box-shadow: 0 0 0 1px rgba(255, 216, 122, 0.2), 0 12px 32px rgba(0, 0, 0, 0.35);
+    }
+
+    .service-mode__icon { font-size: 1.35rem; display: block; margin-bottom: 6px; }
+    .service-mode__title { display: block; font-weight: 600; font-size: 14px; }
+    .service-mode__hint { display: block; margin-top: 4px; font-size: 12px; color: var(--muted); line-height: 1.35; }
+
+    .table-field {
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .table-field label {
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .table-field input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: rgba(6, 10, 20, 0.5);
+    }
+
+    .table-field input:focus {
+      outline: none;
+      border-color: rgba(255, 216, 122, 0.45);
+    }
+
+    .pickup-ribbon {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      margin-bottom: 18px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255, 216, 122, 0.35);
+      background: var(--accent-dim);
+    }
+
+    .pickup-ribbon[hidden] { display: none !important; }
+
+    .pickup-ribbon__eta {
+      font-family: var(--mono);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--accent);
+      min-width: 4.5ch;
+    }
+
+    .pickup-ribbon__text {
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.4;
+    }
+
+    .order-mode-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
 </head>
-<body>
-
-<div class="viewport">
-
-  <!-- HEADER -->
-  <header class="appbar" id="appbar">
-    <a class="brand" href="index.html"><span class="brand-mark">T</span>Tray<span class="dot">.</span></a>
-    <div class="appbar-right">
-      <button class="btn-icon" id="searchBtn" aria-label="Search">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      </button>
-      <button class="btn-icon has-badge" onclick="showView('cart')" aria-label="Cart">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/></svg>
-        <span class="badge" id="hdrBadge" style="display:none">0</span>
-      </button>
-      <div class="avatar">A</div>
-    </div>
-  </header>
-
-  <div class="page-body" id="body">
-
-    <!-- =============== MENU VIEW =============== -->
-    <section class="view active" id="view-menu">
-
-      <div class="menu-hero">
-        <div class="greet"><span class="pulse"></span> Kitchen open · ~7 min wait</div>
-        <h1>What's <span class="it">cooking, Ananya?</span></h1>
-        <div class="meta">
-          <span><strong>17</strong> dishes today</span>
-          <span class="sep"></span>
-          <span>Aditya Eng. Canteen</span>
-          <span class="sep"></span>
-          <span>Lunch · 11:42 AM</span>
-        </div>
+<body data-view="menu">
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand__name">Campus Canteen</span>
+        <span class="brand__sub" id="topbarContext">Takeaway · Order</span>
       </div>
-
-      <div class="search">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <input id="searchInput" placeholder="Search biryani, dosa, chai…"/>
-      </div>
-
-      <div class="diet" id="dietTabs">
-        <button class="active" data-diet="all"><span class="veg-dot"></span><span class="veg-dot nv"></span>All</button>
-        <button data-diet="veg"><span class="veg-dot"></span>Veg</button>
-        <button data-diet="nonveg"><span class="veg-dot nv"></span>Non-veg</button>
-      </div>
-
-      <!-- TODAY'S SPECIALS (live from kitchen) -->
-      <div class="section-head">
-        <h2>Today's <span class="it">specials.</span></h2>
-        <div class="right"><span class="pulse"></span><span>JUST ADDED</span></div>
-      </div>
-      <div class="specials" id="specials"></div>
-
-      <!-- CATEGORY RAIL -->
-      <div class="cat-rail" id="catRail"></div>
-
-      <!-- MENU LIST -->
-      <div class="menu-list" id="menuList"></div>
-
-      <!-- FOOTER PORTALS -->
-      <div class="foot-links">
-        <span class="small">Tray · v3.0 · Other portals</span>
-        <div class="links">
-          <a href="kitchen.html">Kitchen view <span class="arrow">→</span></a>
-          <a href="admin.html">Admin console <span class="arrow">→</span></a>
-          <a href="index.html">About <span class="arrow">→</span></a>
-        </div>
-      </div>
-    </section>
-
-    <!-- =============== CART VIEW =============== -->
-    <section class="view" id="view-cart">
-      <div class="view-head">
-        <button class="back" onclick="showView('menu')" aria-label="Back">←</button>
-        <div>
-          <div class="eyebrow">Step 02 of 04</div>
-          <h2 class="title">Your <span class="it">order.</span></h2>
-        </div>
-      </div>
-      <div class="view-sub" id="cartSub">Review and pay by UPI</div>
-      <div id="cartContents"></div>
-    </section>
-
-    <!-- =============== PAYMENT VIEW =============== -->
-    <section class="view" id="view-pay">
-      <div class="view-head">
-        <button class="back" onclick="showView('cart')" aria-label="Back">←</button>
-        <div>
-          <div class="eyebrow">Step 03 of 04 · Payment</div>
-          <h2 class="title">Pay by <span class="it">UPI.</span></h2>
-        </div>
-      </div>
-      <div class="view-sub">Scan with any UPI app — we'll confirm automatically.</div>
-      <div class="pay-stage">
-        <div class="qr-box">
-          <span class="corner c-tl"></span><span class="corner c-tr"></span>
-          <span class="corner c-bl"></span><span class="corner c-br"></span>
-          <div class="beam"></div>
-          <div id="qrHost" style="width:100%;height:100%"></div>
-        </div>
-        <div class="amount">₹<span id="payAmt">0</span></div>
-        <div class="order-id">ORDER #T-<span id="payOid">2422</span></div>
-      </div>
-      <div class="pay-id-row">
-        <span>tray@aditya</span>
-        <span class="v" onclick="copyId()">COPY ID</span>
-      </div>
-      <div class="pay-apps">
-        <div class="app" data-app="gpay"><span class="d"></span>GPay</div>
-        <div class="app" data-app="phonepe"><span class="d"></span>PhonePe</div>
-        <div class="app" data-app="paytm"><span class="d"></span>Paytm</div>
-      </div>
-      <div class="bottom-cta">
-        <button class="btn-pay" onclick="completePayment()">
-          <span class="left">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5 9-11"/></svg>
-            I've paid · Verify
-          </span>
-          <span class="amt">₹<span id="payCtaAmt">0</span></span>
-        </button>
-        <div style="text-align:center;font-size:11px;color:var(--ink-3);font-family:var(--mono);letter-spacing:0.06em">QR EXPIRES IN <span id="payCountdown">04:58</span></div>
-      </div>
-    </section>
-
-    <!-- =============== OTP / SUCCESS VIEW =============== -->
-    <section class="view" id="view-otp">
-      <div class="view-head">
-        <button class="back" onclick="showView('pay')" aria-label="Back">←</button>
-        <div>
-          <div class="eyebrow">Step 04 of 04 · Pickup</div>
-          <h2 class="title">Almost <span class="it">there.</span></h2>
-        </div>
-      </div>
-      <div class="otp-stage">
-        <div class="otp-check">✓</div>
-        <h2>Order <span class="it">placed.</span></h2>
-        <div class="sub">Show this 4-digit code at the counter when your order is ready. Don't share it.</div>
-        <div class="otp-digits" id="otpDigits">
-          <div class="otp-d">8</div><div class="otp-d">4</div><div class="otp-d">2</div><div class="otp-d">1</div>
-        </div>
-        <div class="otp-instr">PICKUP CODE · ORDER #T-<span id="otpOid">2422</span></div>
-        <button class="btn-pay" style="margin-top:24px" onclick="showView('track')">
-          <span class="left">Track my order</span>
-          <span>→</span>
+      <div class="topbar__actions">
+        <span class="pill-status is-live" id="openBadge">Open now</span>
+        <button type="button" class="btn-icon" id="btnReset" title="Start over" aria-label="Start over">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
         </button>
       </div>
-    </section>
+    </header>
 
-    <!-- =============== TRACK VIEW =============== -->
-    <section class="view" id="view-track">
-      <div class="view-head">
-        <button class="back" onclick="showView('menu')" aria-label="Back">←</button>
-        <div>
-          <div class="eyebrow">Active order</div>
-          <h2 class="title">Almost <span class="it">there.</span></h2>
-        </div>
-      </div>
+    <!-- Menu layout -->
+    <div class="shell shell--menu">
+      <nav class="cat-nav" aria-label="Categories">
+        <p class="cat-nav__label">Browse</p>
+        <ul class="cat-nav__list" id="catNavList"></ul>
+      </nav>
 
-      <div class="track-card">
-        <div class="track-head">
-          <div class="l">
-            <div class="oid">ORDER #T-<span id="trkOid">2422</span></div>
-            <h3>3 items · <span class="it">~6 min</span></h3>
-          </div>
-          <div class="r">
-            <span class="track-status"><span class="pulse"></span><span id="trkStatus">Preparing</span></span>
-            <span class="track-eta">PLACED 11:42 · ETA 11:54</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="track-otp">
-        <span class="lbl">Pickup code</span>
-        <div class="digits">
-          <span class="d">8</span><span class="d">4</span><span class="d">2</span><span class="d">1</span>
-        </div>
-      </div>
-
-      <div class="timeline" id="timeline">
-        <div class="tl-item done"><div class="node"></div>
-          <div class="body"><h4>Order placed</h4><div class="when">11:42 · 0 min ago</div><div class="desc">Your tray is in the queue. Kitchen has been notified.</div></div>
-        </div>
-        <div class="tl-item done"><div class="node"></div>
-          <div class="body"><h4>Payment confirmed</h4><div class="when">11:42 · ₹<span id="trkAmt">0</span> via UPI</div><div class="desc">Receipt sent to your email.</div></div>
-        </div>
-        <div class="tl-item now"><div class="node"></div>
-          <div class="body"><h4>Preparing your meal</h4><div class="when">11:43 · ~6 min remaining</div><div class="desc">Chef is on it. We'll notify you when it's ready.</div></div>
-        </div>
-        <div class="tl-item todo"><div class="node"></div>
-          <div class="body"><h4>Ready for pickup</h4><div class="when">— estimated 11:50</div><div class="desc">You'll get a push notification with your code.</div></div>
-        </div>
-        <div class="tl-item todo"><div class="node"></div>
-          <div class="body"><h4>Collected</h4><div class="when">— after OTP verification</div><div class="desc">Hand over the 4-digit code at the counter.</div></div>
-        </div>
-      </div>
-
-      <div class="track-actions">
-        <button class="a-btn" onclick="showView('menu')">← Back to menu</button>
-        <button class="a-btn" onclick="toast('Help requested. The kitchen will reach out.')">Need help?</button>
-      </div>
-    </section>
-
-  </div><!-- /page-body -->
-</div>
-
-<!-- Persistent bottom cart bar (only on menu, only when cart has items) -->
-<button class="cart-fab hidden" id="cartFab" onclick="showView('cart')" aria-label="View cart">
-  <span class="l">
-    <span class="cnt" id="fabCnt">0</span>
-    <span><span id="fabCntLbl">0 items</span> <span class="sep">·</span> ₹<span id="fabTotal">0</span></span>
-  </span>
-  <span class="l">
-    <span>View cart</span>
-    <span class="arrow" aria-hidden="true">→</span>
-  </span>
-</button>
-
-<!-- Toast -->
-<div class="toast" id="toast"><span class="d"></span><span id="toastMsg">Added.</span></div>
-
-<script>
-/* =====================================================
-   STATE + DATA
-   ===================================================== */
-const STORAGE_KEY = 'tray_student_state';
-
-const TODAYS_SPECIALS = JSON.parse(localStorage.getItem('tray_specials') || 'null') || [
-  {id:'sp1', name:'Hyderabadi Dum Biryani', desc:'Slow-cooked, sealed in dum', price:240, prep:8, diet:'nonveg', icon:'B', addedAt: Date.now() - 6*60*1000},
-  {id:'sp2', name:'Mushroom Manchurian',    desc:'Indo-Chinese, dry', price:120, prep:5, diet:'veg', icon:'M', addedAt: Date.now() - 18*60*1000},
-];
-
-const MENU = [
-  {id:'1', cat:'Mains', name:'Chicken Biryani',     desc:'Long-grain basmati, slow-cooked', price:180, prep:8, diet:'nonveg', icon:'B'},
-  {id:'2', cat:'Mains', name:'Paneer Butter Masala',desc:'Creamy tomato gravy + 2 rotis',  price:160, prep:6, diet:'veg',    icon:'P'},
-  {id:'3', cat:'Mains', name:'Mutton Curry',        desc:'Slow-cooked Andhra style',        price:220, prep:9, diet:'nonveg', icon:'M'},
-  {id:'4', cat:'Mains', name:'Veg Thali',           desc:'4 curries · rice · roti · sweet', price:140, prep:7, diet:'veg',    icon:'T'},
-  {id:'5', cat:'South',  name:'Masala Dosa',         desc:'Crisp dosa with spiced potato',   price:90,  prep:4, diet:'veg',    icon:'D'},
-  {id:'6', cat:'South',  name:'Idli + Sambar',       desc:'3 idlis, chutneys, hot sambar',   price:60,  prep:3, diet:'veg',    icon:'I'},
-  {id:'7', cat:'South',  name:'Uttapam',             desc:'Onion-tomato, ghee-roasted',      price:80,  prep:5, diet:'veg',    icon:'U'},
-  {id:'8', cat:'Drinks', name:'Filter Coffee',       desc:'Decoction, frothed milk',         price:30,  prep:2, diet:'veg',    icon:'C'},
-  {id:'9', cat:'Drinks', name:'Masala Chai',         desc:'Cardamom, ginger, full leaf',     price:20,  prep:2, diet:'veg',    icon:'M'},
-  {id:'10',cat:'Drinks', name:'Sweet Lassi',         desc:'Yogurt, sugar, rose',             price:50,  prep:2, diet:'veg',    icon:'L'},
-  {id:'11',cat:'Snacks', name:'Samosa (2 pc)',       desc:'Potato-pea, tamarind chutney',    price:40,  prep:3, diet:'veg',    icon:'S'},
-  {id:'12',cat:'Snacks', name:'Veg Cutlet',          desc:'Beetroot · carrot · potato',      price:60,  prep:4, diet:'veg',    icon:'V'},
-];
-
-let state = (() => {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {cart:{}, diet:'all', activeCat:'all', orderId:null, otp:null, paid:false}; }
-  catch { return {cart:{}, diet:'all', activeCat:'all', orderId:null, otp:null, paid:false}; }
-})();
-
-function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-
-const $ = q => document.querySelector(q);
-const $$ = q => document.querySelectorAll(q);
-
-/* =====================================================
-   VIEWS
-   ===================================================== */
-function showView(name){
-  $$('.view').forEach(v => v.classList.remove('active'));
-  $('#view-'+name).classList.add('active');
-  $('#body').scrollTop = 0;
-  $('#cartFab').classList.toggle('hidden', name !== 'menu' || cartCount() === 0);
-  if (name === 'cart') renderCart();
-  if (name === 'pay') initPayment();
-  if (name === 'track') initTrack();
-}
-
-/* =====================================================
-   MENU RENDER
-   ===================================================== */
-function renderSpecials(){
-  const host = $('#specials');
-  host.innerHTML = '';
-  const visible = TODAYS_SPECIALS.filter(s => state.diet === 'all' || s.diet === state.diet);
-  visible.forEach(s => {
-    const card = document.createElement('div');
-    card.className = 'special';
-    const minsAgo = Math.max(1, Math.round((Date.now()-s.addedAt)/60000));
-    card.innerHTML = `
-      ${minsAgo < 30 ? `<span class="new-badge">New · ${minsAgo}m</span>` : ''}
-      <div class="ico">${s.icon}</div>
-      <div>
-        <h3>${s.name.split(' ').slice(0,-1).join(' ')} <span class="it">${s.name.split(' ').slice(-1)[0]}.</span></h3>
-        <div class="desc">${s.desc}</div>
-      </div>
-      <div class="row">
-        <span class="price">₹${s.price}</span>
-        <button class="quick-add" data-id="${s.id}" data-special="1">+ Add</button>
-      </div>`;
-    host.appendChild(card);
-  });
-  // wire quick-add
-  host.querySelectorAll('.quick-add').forEach(b => b.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const sp = TODAYS_SPECIALS.find(x => x.id === b.dataset.id);
-    if (!sp) return;
-    addToCart(sp.id, sp);
-    toast(`Added · ${sp.name}`);
-  }));
-}
-
-function renderCategoryRail(){
-  const cats = ['all', ...new Set(MENU.map(m => m.cat))];
-  const host = $('#catRail');
-  host.innerHTML = cats.map(c =>
-    `<button class="${c === state.activeCat ? 'active' : ''}" data-cat="${c}">${c === 'all' ? 'All' : c}</button>`
-  ).join('');
-  host.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
-    state.activeCat = b.dataset.cat;
-    save(); renderCategoryRail(); renderMenuList();
-  }));
-}
-
-function renderMenuList(){
-  const filtered = MENU.filter(m =>
-    (state.diet === 'all' || m.diet === state.diet) &&
-    (state.activeCat === 'all' || m.cat === state.activeCat)
-  );
-  const grouped = filtered.reduce((acc, m) => {
-    (acc[m.cat] = acc[m.cat] || []).push(m); return acc;
-  }, {});
-  const host = $('#menuList');
-  host.innerHTML = '';
-  Object.entries(grouped).forEach(([cat, items]) => {
-    host.insertAdjacentHTML('beforeend', `<div class="cat-label">${cat} · ${items.length}</div>`);
-    items.forEach(m => {
-      const inCart = state.cart[m.id]?.qty || 0;
-      host.insertAdjacentHTML('beforeend', `
-        <div class="dish" data-id="${m.id}">
-          <div class="info">
-            <div class="name"><span class="veg-dot ${m.diet==='nonveg'?'nv':''}"></span>${m.name}</div>
-            <div class="desc">${m.desc}</div>
-            <div class="meta">
-              <span class="price">₹${m.price}</span>
-              <span class="sep"></span>
-              <span>${m.prep} min</span>
+      <main class="main">
+        <div class="content">
+          <div class="service-bar" id="serviceBar">
+            <div class="service-bar__head">
+              <p class="service-bar__label">How are you eating today?</p>
+              <button type="button" class="veg-lane" id="btnVegOnly" aria-pressed="false">Veg lane</button>
+            </div>
+            <div class="service-modes" role="group" aria-label="Service mode">
+              <button type="button" class="service-mode is-active" data-service="takeaway">
+                <span class="service-mode__icon" aria-hidden="true">🥡</span>
+                <span class="service-mode__title">Takeaway</span>
+                <span class="service-mode__hint">Counter pickup · OTP handover</span>
+              </button>
+              <button type="button" class="service-mode" data-service="dine">
+                <span class="service-mode__icon" aria-hidden="true">🍽</span>
+                <span class="service-mode__title">Dine in</span>
+                <span class="service-mode__hint">Mess seating · optional table</span>
+              </button>
+            </div>
+            <div class="table-field" id="tableField" hidden>
+              <label for="tableInput">Table or block (optional)</label>
+              <input id="tableInput" type="text" inputmode="text" maxlength="12" placeholder="e.g. T4, Block B" autocomplete="off" />
             </div>
           </div>
-          <div class="img">${m.icon}</div>
-          <div class="add-row">
-            ${inCart === 0
-              ? `<button class="add-btn" data-act="add" data-id="${m.id}">+ Add</button>`
-              : `<div class="qty-pill"><button data-act="sub" data-id="${m.id}">−</button><span>${inCart}</span><button data-act="add" data-id="${m.id}">+</button></div>`}
+
+          <div class="cat-pills" id="catPills" role="tablist" aria-label="Categories"></div>
+
+          <div class="search-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input type="search" class="search" id="searchInput" placeholder="Search menuâ€¦" autocomplete="off" />
           </div>
-        </div>`);
+
+          <div class="section-head">
+            <div>
+              <h2 id="sectionTitle">All items</h2>
+              <p id="itemCount">6 dishes</p>
+            </div>
+          </div>
+
+          <div class="menu-grid" id="menuGrid"></div>
+        </div>
+      </main>
+
+      <aside class="cart-sidebar" aria-label="Your cart">
+        <div class="cart-sidebar__head">
+          <h3>Your order</h3>
+          <p>Pay at counter or UPI after checkout</p>
+        </div>
+        <div class="cart-lines" id="cartLinesDesktop"></div>
+        <div class="cart-sidebar__foot">
+          <div class="total-row">
+            <span>Total</span>
+            <span id="totalDesktop">â‚¹0</span>
+          </div>
+          <button type="button" class="btn-primary" id="btnCheckoutDesktop" disabled>Proceed to pay</button>
+          <button type="button" class="btn-ghost" id="btnClearCart">Clear cart</button>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Flow views -->
+    <div class="views-flow">
+      <section class="view" id="viewPayment" data-view-id="payment">
+        <div class="view-panel">
+          <button type="button" class="back-link" data-go="menu">â† Back to menu</button>
+          <h1 class="view-title">Complete payment</h1>
+          <p class="view-sub">Scan the QR with any UPI app. Your order is held for 60 seconds.</p>
+          <div class="pay-card">
+            <div class="qr-box" aria-hidden="true"><div class="qr-placeholder"></div></div>
+            <p class="upi-id">Pay to <strong>aditya-canteen@upi</strong></p>
+            <div class="timer-ring">
+              <span class="timer-val" id="payTimer">60</span>
+              <span class="timer-label">seconds<br/>remaining</span>
+            </div>
+            <p class="order-ref" id="orderRef">Order â€”</p>
+            <button type="button" class="btn-primary" id="btnPaid">I've paid</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="viewTracking" data-view-id="tracking">
+        <div class="view-panel">
+          <h1 class="view-title">Order status</h1>
+          <p class="view-sub" id="trackingSub">We're preparing your food.</p>
+          <div class="success-note" id="trackingNote">Payment received. Kitchen notified.</div>
+          <div class="pickup-ribbon" id="pickupRibbon" hidden>
+            <span class="pickup-ribbon__eta" id="pickupEta">~4 min</span>
+            <span class="pickup-ribbon__text" id="pickupEtaText">Head to the counter when your status hits ready.</span>
+          </div>
+
+          <div class="progress-bar" aria-hidden="true">
+            <div class="progress-bar__fill" id="progressFill"></div>
+          </div>
+          <ol class="track-steps" id="trackSteps">
+            <li class="track-step is-done" data-step="placed">
+              <span class="track-dot" aria-hidden="true">âœ“</span>
+              <div class="track-step__body">
+                <h4>Placed</h4>
+                <p>Order confirmed · <span id="placedTime">â€”</span></p>
+              </div>
+            </li>
+            <li class="track-step is-current" data-step="preparing">
+              <span class="track-dot" aria-hidden="true">â—‰</span>
+              <div class="track-step__body">
+                <h4>Preparing</h4>
+                <p>Kitchen is working on your items</p>
+              </div>
+            </li>
+            <li class="track-step is-pending" data-step="ready">
+              <span class="track-dot" aria-hidden="true">â—‹</span>
+              <div class="track-step__body">
+                <h4>Ready</h4>
+                <p>Collect at the pickup counter</p>
+              </div>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="view" id="viewOtp" data-view-id="otp">
+        <div class="view-panel">
+          <h1 class="view-title">Ready for pickup</h1>
+          <p class="view-sub">Show this code at the counter. Staff will verify before handing over your order.</p>
+          <div class="otp-display">
+            <p class="otp-label">Pickup code</p>
+            <p class="otp-code" id="otpCode" aria-live="polite">----</p>
+            <p class="order-mode-tag" id="orderModeTag">Takeaway</p>
+          <p class="otp-hint">Do not share this code. It expires when your order is collected.</p>
+          </div>
+          <button type="button" class="btn-primary" id="btnNewOrder">Place another order</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="cart-bar" id="cartBar" hidden>
+      <div class="cart-bar__count" id="cartBarCount">0</div>
+      <div class="cart-bar__text">
+        <strong id="cartBarTotal">â‚¹0</strong>
+        <span id="cartBarItems">0 items</span>
+      </div>
+      <button type="button" class="btn-primary" id="btnCheckoutMobile">Proceed to pay</button>
+    </div>
+  </div>
+
+  <script>
+(function () {
+  "use strict";
+
+  var MENU = [
+    { id: "dal", name: "Dal Makhani", desc: "Slow-cooked black lentils, cream finish", price: 80, cat: "mains", diet: "veg", emoji: "ðŸ›" },
+    { id: "thali", name: "Veg Thali", desc: "Rice, dal, sabzi, roti, salad", price: 120, cat: "mains", diet: "veg", emoji: "ðŸ¥—" },
+    { id: "noodles", name: "Noodles", desc: "Wok-tossed hakka, mild spice", price: 60, cat: "snacks", diet: "veg", emoji: "ðŸœ" },
+    { id: "coffee", name: "Coffee", desc: "South Indian filter, hot", price: 25, cat: "drinks", diet: "veg", emoji: "â˜•" },
+    { id: "biryani", name: "Chicken Biryani", desc: "Dum-style, raita on request", price: 140, cat: "mains", diet: "nv", emoji: "ðŸ—" },
+    { id: "vada", name: "Vada Pav", desc: "Mumbai-style, chutney loaded", price: 35, cat: "snacks", diet: "veg", emoji: "ðŸ¥ª" }
+  ];
+
+  var CATEGORIES = [
+    { id: "all", label: "All items", sub: "Full menu" },
+    { id: "mains", label: "Mains", sub: "Hearty plates" },
+    { id: "snacks", label: "Snacks", sub: "Quick bites" },
+    { id: "drinks", label: "Drinks", sub: "Hot & cold" }
+  ];
+
+  var cart = {};
+  var activeCat = "all";
+  var searchQuery = "";
+  var currentView = "menu";
+  var payInterval = null;
+  var trackInterval = null;
+  var serviceMode = "takeaway";
+  var vegOnly = false;
+  var tableLabel = "";
+  var pickupOtp = "";
+  var orderId = "";
+
+  var $ = function (sel) { return document.querySelector(sel); };
+  var $$ = function (sel) { return document.querySelectorAll(sel); };
+
+
+  function serviceModeLabel() {
+    return serviceMode === "dine" ? "Dine in" : "Takeaway";
+  }
+
+  function updateServiceUI() {
+    $$(".service-mode").forEach(function (btn) {
+      btn.classList.toggle("is-active", btn.getAttribute("data-service") === serviceMode);
     });
-  });
-  host.querySelectorAll('button[data-id]').forEach(b => b.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const m = MENU.find(x => x.id === b.dataset.id);
-    if (b.dataset.act === 'add'){ addToCart(m.id, m); toast(`Added · ${m.name}`); }
-    else { subFromCart(m.id); }
-  }));
-}
-
-/* =====================================================
-   CART
-   ===================================================== */
-function addToCart(id, item){
-  state.cart[id] = state.cart[id] || { qty: 0, ref: item };
-  state.cart[id].qty += 1;
-  state.cart[id].ref = item;
-  save(); syncCart(); renderMenuList(); renderSpecials();
-}
-function subFromCart(id){
-  if (!state.cart[id]) return;
-  state.cart[id].qty -= 1;
-  if (state.cart[id].qty <= 0) delete state.cart[id];
-  save(); syncCart(); renderMenuList();
-}
-function cartItems(){ return Object.values(state.cart); }
-function cartCount(){ return cartItems().reduce((a,c) => a + c.qty, 0); }
-function cartTotal(){ return cartItems().reduce((a,c) => a + c.ref.price * c.qty, 0); }
-
-function syncCart(){
-  const c = cartCount();
-  $('#fabCnt').textContent = c;
-  $('#fabTotal').textContent = cartTotal();
-  const lbl = $('#fabCntLbl');
-  if (lbl) lbl.textContent = c + ' item' + (c === 1 ? '' : 's');
-  $('#cartFab').classList.toggle('hidden', !($('#view-menu').classList.contains('active') && c > 0));
-  const hdr = $('#hdrBadge');
-  hdr.textContent = c;
-  hdr.style.display = c > 0 ? 'flex' : 'none';
-}
-
-function renderCart(){
-  const host = $('#cartContents');
-  const items = cartItems();
-  if (!items.length){
-    host.innerHTML = `<div class="cart-empty"><div class="ic">∅</div><h3>Empty.</h3><p>Nothing in your tray yet. Head back to the menu to add something.</p><button class="btn-pay" style="margin-top:24px" onclick="showView('menu')"><span class="left">Open the menu</span><span>→</span></button></div>`;
-    return;
+    $("#tableField").hidden = serviceMode !== "dine";
+    $("#btnVegOnly").setAttribute("aria-pressed", vegOnly ? "true" : "false");
+    if (currentView === "menu") {
+      $("#topbarContext").textContent = serviceModeLabel() + " · Order";
+    }
+    renderMenu();
   }
-  const total = cartTotal();
-  const platformFee = 0; // student-facing: free
-  $('#cartSub').textContent = `${items.length} item${items.length>1?'s':''} · est. ${Math.max(...items.map(i => i.ref.prep || 5))} min total`;
-  host.innerHTML = `
-    <div class="cart-list">
-      ${items.map(i => `
-        <div class="cart-row" data-id="${i.ref.id}">
-          <div class="img">${i.ref.icon}</div>
-          <div class="info">
-            <div class="name"><span class="veg-dot ${i.ref.diet==='nonveg'?'nv':''}"></span>${i.ref.name}</div>
-            <div class="price">₹${i.ref.price} × ${i.qty}</div>
-          </div>
-          <div class="right">
-            <div class="total">₹${i.ref.price*i.qty}</div>
-            <div class="qty-pill"><button data-act="sub" data-id="${i.ref.id}">−</button><span>${i.qty}</span><button data-act="add" data-id="${i.ref.id}">+</button></div>
-          </div>
-        </div>`).join('')}
-    </div>
-    <div class="cart-summary">
-      <div class="row"><span>Subtotal</span><span class="v">₹${total}</span></div>
-      <div class="row"><span>Platform fee</span><span class="v">₹0 · waived</span></div>
-      <div class="row"><span>Taxes (incl.)</span><span class="v">₹${Math.round(total*0.05)}</span></div>
-      <div class="row tot"><span class="l">Total</span><span class="v">₹${total}</span></div>
-    </div>
-    <div class="bottom-cta">
-      <button class="btn-pay" onclick="showView('pay')">
-        <span class="left">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20"/></svg>
-          Pay by UPI
-        </span>
-        <span class="amt">₹${total}</span>
-      </button>
-    </div>`;
-  host.querySelectorAll('button[data-id]').forEach(b => b.addEventListener('click', () => {
-    const id = b.dataset.id;
-    const m = state.cart[id]?.ref;
-    if (b.dataset.act === 'add') addToCart(id, m);
-    else subFromCart(id);
+
+  function updatePickupRibbon() {
+    var ribbon = $("#pickupRibbon");
+    if (!ribbon) return;
+    var mins = serviceMode === "dine" ? "~6 min" : "~4 min";
+    var msg = serviceMode === "dine"
+      ? (tableLabel ? "We'll bring to " + tableLabel + " when ready." : "Find a seat — we'll call your table.")
+      : "Walk to the pickup counter when status hits ready.";
+    $("#pickupEta").textContent = mins;
+    $("#pickupEtaText").textContent = msg;
+    ribbon.hidden = false;
+  }
+
+  function updateFlowCopy() {
+    var readyStep = document.querySelector('.track-step[data-step="ready"] p');
+    if (readyStep) {
+      readyStep.textContent = serviceMode === "dine"
+        ? "Serving to your table"
+        : "Collect at the pickup counter";
+    }
+    var otpTitle = $("#viewOtp .view-title");
+    var otpSub = $("#viewOtp .view-sub");
+    if (otpTitle) otpTitle.textContent = serviceMode === "dine" ? "Ready at your table" : "Ready for pickup";
+    if (otpSub) {
+      otpSub.textContent = serviceMode === "dine"
+        ? "Show this code to staff when your tray arrives."
+        : "Show this code at the counter. Staff verify before handover.";
+    }
+    var tag = $("#orderModeTag");
+    if (tag) tag.textContent = serviceModeLabel() + (tableLabel ? " · " + tableLabel : "");
+  }
+
+  function formatMoney(n) {
+    return "â‚¹" + n;
+  }
+
+  function getCartCount() {
+    return Object.keys(cart).reduce(function (sum, id) {
+      return sum + (cart[id] || 0);
+    }, 0);
+  }
+
+  function getCartTotal() {
+    return Object.keys(cart).reduce(function (sum, id) {
+      var item = MENU.find(function (m) { return m.id === id; });
+      return sum + (item ? item.price * cart[id] : 0);
+    }, 0);
+  }
+
+  function getQty(id) {
+    return cart[id] || 0;
+  }
+
+  function setQty(id, qty) {
+    if (qty <= 0) {
+      delete cart[id];
+    } else {
+      cart[id] = Math.min(qty, 99);
+    }
     renderCart();
-  }));
-}
-
-/* =====================================================
-   PAYMENT
-   ===================================================== */
-function initPayment(){
-  if (!state.orderId) state.orderId = 2420 + Math.floor(Math.random()*200);
-  const total = cartTotal();
-  $('#payAmt').textContent = total;
-  $('#payCtaAmt').textContent = total;
-  $('#payOid').textContent = state.orderId;
-  drawQR();
-  startCountdown();
-  save();
-}
-function drawQR(){
-  const host = $('#qrHost');
-  host.innerHTML = '';
-  const N = 25;
-  const ns = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(ns, 'svg');
-  svg.setAttribute('viewBox', `0 0 ${N} ${N}`);
-  svg.setAttribute('shape-rendering', 'crispEdges');
-  svg.innerHTML = `<rect width="${N}" height="${N}" fill="#fff"/>`;
-  // finders
-  const finder = (x,y) => `<rect x="${x}" y="${y}" width="7" height="7" fill="#08213a"/><rect x="${x+1}" y="${y+1}" width="5" height="5" fill="#fff"/><rect x="${x+2}" y="${y+2}" width="3" height="3" fill="#08213a"/>`;
-  svg.innerHTML += finder(0,0) + finder(N-7,0) + finder(0,N-7);
-  let s = state.orderId || 42;
-  const rnd = () => { s = (s*9301 + 49297) % 233280; return s/233280; };
-  for (let y=0;y<N;y++) for (let x=0;x<N;x++){
-    const inFinder = (x<8&&y<8)||(x>N-9&&y<8)||(x<8&&y>N-9);
-    if (inFinder) continue;
-    if (rnd() < 0.46) svg.innerHTML += `<rect x="${x}" y="${y}" width="1" height="1" fill="#08213a"/>`;
+    renderMenu();
   }
-  host.appendChild(svg);
-}
-let countdown = null;
-function startCountdown(){
-  clearInterval(countdown);
-  let sec = 4*60 + 58;
-  const el = $('#payCountdown');
-  countdown = setInterval(() => {
-    sec--; if (sec < 0) { clearInterval(countdown); el.textContent = 'EXPIRED'; return; }
-    el.textContent = String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');
-  }, 1000);
-}
-function copyId(){
-  navigator.clipboard?.writeText('tray@aditya');
-  toast('UPI ID copied');
-}
-function completePayment(){
-  clearInterval(countdown);
-  state.paid = true;
-  state.otp = String(1000 + Math.floor(Math.random()*9000));
-  $('#otpDigits').innerHTML = state.otp.split('').map(d => `<div class="otp-d">${d}</div>`).join('');
-  $('#otpOid').textContent = state.orderId;
-  save();
-  showView('otp');
-}
 
-/* =====================================================
-   TRACK
-   ===================================================== */
-function initTrack(){
-  $('#trkOid').textContent = state.orderId || '2422';
-  $('#trkAmt').textContent = cartTotal();
-  if (state.otp){
-    const otp = state.otp.split('');
-    document.querySelectorAll('.track-otp .digits .d').forEach((d,i) => d.textContent = otp[i] || '0');
+  function changeQty(id, delta) {
+    setQty(id, getQty(id) + delta);
   }
-}
 
-/* =====================================================
-   DIET TABS
-   ===================================================== */
-$$('#dietTabs button').forEach(b => b.addEventListener('click', () => {
-  $$('#dietTabs button').forEach(x => x.classList.remove('active'));
-  b.classList.add('active');
-  state.diet = b.dataset.diet;
-  save(); renderMenuList(); renderSpecials();
-}));
-
-/* Search filter */
-$('#searchInput').addEventListener('input', (e) => {
-  const q = e.target.value.toLowerCase().trim();
-  document.querySelectorAll('.dish').forEach(d => {
-    const m = MENU.find(x => x.id === d.dataset.id);
-    const match = !q || m.name.toLowerCase().includes(q) || m.desc.toLowerCase().includes(q);
-    d.style.display = match ? '' : 'none';
-  });
-});
-
-/* =====================================================
-   TOAST
-   ===================================================== */
-let toastTimer = null;
-function toast(msg){
-  $('#toastMsg').textContent = msg;
-  $('#toast').classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => $('#toast').classList.remove('show'), 1800);
-}
-
-/* =====================================================
-   APPBAR SCROLL
-   ===================================================== */
-$('#body').addEventListener('scroll', () => {
-  $('#appbar').classList.toggle('scrolled', $('#body').scrollTop > 12);
-});
-
-/* =====================================================
-   SEARCH BUTTON · PAY-APPS · OTP COPY
-   ===================================================== */
-const searchBtn = document.getElementById('searchBtn');
-if (searchBtn) searchBtn.addEventListener('click', () => {
-  const input = document.querySelector('#searchInput, .search input');
-  if (input) {
-    input.scrollIntoView({behavior:'smooth', block:'center'});
-    setTimeout(() => input.focus(), 320);
-  } else {
-    toast('Search · type to filter the menu');
+  function clearCart() {
+    cart = {};
+    renderCart();
+    renderMenu();
   }
-});
 
-document.querySelectorAll('.pay-apps .app').forEach(a => {
-  a.setAttribute('role','button');
-  a.setAttribute('tabindex','0');
-  const trigger = () => toast(`Opening ${a.dataset.app.toUpperCase()}…`);
-  a.addEventListener('click', trigger);
-  a.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); trigger(); } });
-});
-
-/* =====================================================
-   BOOT
-   ===================================================== */
-renderSpecials();
-renderCategoryRail();
-renderMenuList();
-syncCart();
-
-// Restore active diet tab on load
-$$('#dietTabs button').forEach(b => b.classList.toggle('active', b.dataset.diet === state.diet));
-
-// Listen for live additions from kitchen (cross-tab via storage event)
-window.addEventListener('storage', (e) => {
-  if (e.key === 'tray_specials'){
-    const next = JSON.parse(e.newValue || '[]');
-    // Find newly added
-    const known = new Set(TODAYS_SPECIALS.map(x => x.id));
-    next.forEach(n => { if (!known.has(n.id)) { TODAYS_SPECIALS.unshift(n); toast(`Kitchen added · ${n.name}`); } });
-    renderSpecials();
+  function filteredMenu() {
+    return MENU.filter(function (item) {
+      var catOk = activeCat === "all" || item.cat === activeCat;
+      var q = searchQuery.trim().toLowerCase();
+      var searchOk = !q || item.name.toLowerCase().indexOf(q) !== -1 || item.desc.toLowerCase().indexOf(q) !== -1;
+      var vegOk = !vegOnly || item.diet === "veg";
+      return catOk && searchOk && vegOk;
+    });
   }
-});
-</script>
+
+  function renderCategories() {
+    var navHtml = "";
+    var pillsHtml = "";
+    CATEGORIES.forEach(function (c) {
+      var active = c.id === activeCat ? " is-active" : "";
+      navHtml += '<li><button type="button" class="cat-btn' + active + '" data-cat="' + c.id + '">' + c.label + "<span>" + c.sub + "</span></button></li>";
+      pillsHtml += '<button type="button" class="pill-cat' + active + '" data-cat="' + c.id + '" role="tab">' + c.label + "</button>";
+    });
+    $("#catNavList").innerHTML = navHtml;
+    $("#catPills").innerHTML = pillsHtml;
+
+    var catLabel = CATEGORIES.find(function (c) { return c.id === activeCat; });
+    $("#sectionTitle").textContent = catLabel ? catLabel.label : "All items";
+  }
+
+  function renderMenu() {
+    var items = filteredMenu();
+    var html = "";
+
+    items.forEach(function (item) {
+      var qty = getQty(item.id);
+      var hasQty = qty > 0;
+      var dietClass = item.diet === "veg" ? "diet-dot--veg" : "diet-dot--nv";
+      html +=
+        '<article class="menu-card' + (hasQty ? " has-qty" : "") + '" data-id="' + item.id + '" data-cat="' + item.cat + '">' +
+        '<div class="menu-card__visual" aria-hidden="true">' + item.emoji + "</div>" +
+        '<div class="menu-card__body">' +
+        '<div class="menu-card__top">' +
+        "<h3 class=\"menu-card__title\">" + item.name + "</h3>" +
+        '<span class="diet-dot ' + dietClass + '" title="' + (item.diet === "veg" ? "Vegetarian" : "Non-vegetarian") + '"></span>' +
+        "</div>" +
+        '<p class="menu-card__desc">' + item.desc + "</p>" +
+        '<div class="menu-card__foot">' +
+        '<span class="price">' + formatMoney(item.price) + "</span>" +
+        '<button type="button" class="btn-add-initial" data-action="add" data-id="' + item.id + '">Add</button>' +
+        '<div class="qty-control' + (hasQty ? "" : " is-empty") + '">' +
+        '<button type="button" class="qty-btn qty-minus" data-action="minus" data-id="' + item.id + '" aria-label="Decrease">âˆ’</button>' +
+        '<span class="qty-val">' + qty + "</span>" +
+        '<button type="button" class="qty-btn" data-action="plus" data-id="' + item.id + '" aria-label="Increase">+</button>' +
+        "</div>" +
+        "</div></div></article>";
+    });
+
+    if (!items.length) {
+      html = '<p style="color:var(--muted);text-align:center;padding:32px 0;">No items match your search.</p>';
+    }
+
+    $("#menuGrid").innerHTML = html;
+    $("#itemCount").textContent = items.length + (items.length === 1 ? " dish" : " dishes");
+  }
+
+  function renderCart() {
+    var count = getCartCount();
+    var total = getCartTotal();
+    var linesHtml = "";
+
+    if (count === 0) {
+      linesHtml =
+        '<div class="cart-empty">' +
+        '<div class="cart-empty__icon">â˜¾</div>' +
+        "<p>Your cart is empty.<br/>Add something from the menu.</p></div>";
+    } else {
+      Object.keys(cart).forEach(function (id) {
+        var item = MENU.find(function (m) { return m.id === id; });
+        if (!item) return;
+        var q = cart[id];
+        linesHtml +=
+          '<div class="cart-line">' +
+          '<div class="cart-line__info">' +
+          '<p class="cart-line__name">' + item.name + "</p>" +
+          '<p class="cart-line__meta">' + formatMoney(item.price) + " each</p>" +
+          "</div>" +
+          '<div class="cart-line__qty">' +
+          '<button type="button" data-cart-minus="' + id + '" aria-label="Remove one">âˆ’</button>' +
+          "<span>" + q + "</span>" +
+          '<button type="button" data-cart-plus="' + id + '" aria-label="Add one">+</button>' +
+          "</div></div>";
+      });
+    }
+
+    $("#cartLinesDesktop").innerHTML = linesHtml;
+    $("#totalDesktop").textContent = formatMoney(total);
+    $("#cartBarTotal").textContent = formatMoney(total);
+    $("#cartBarItems").textContent = count + (count === 1 ? " item" : " items");
+    $("#cartBarCount").textContent = count;
+
+    var bar = $("#cartBar");
+    var checkoutDisabled = count === 0;
+    $("#btnCheckoutDesktop").disabled = checkoutDisabled;
+
+    if (count > 0 && currentView === "menu") {
+      bar.classList.add("is-visible");
+      bar.hidden = false;
+    } else {
+      bar.classList.remove("is-visible");
+      bar.hidden = true;
+    }
+  }
+
+  function bumpCartCount() {
+    var el = $("#cartBarCount");
+    el.classList.remove("bump");
+    void el.offsetWidth;
+    el.classList.add("bump");
+  }
+
+  function genOrderId() {
+    return "TR-" + Date.now().toString(36).toUpperCase().slice(-6);
+  }
+
+  function genOtp() {
+    return String(Math.floor(1000 + Math.random() * 9000));
+  }
+
+  function setView(view) {
+    currentView = view;
+    document.body.setAttribute("data-view", view);
+
+    $$(".view").forEach(function (v) {
+      v.classList.toggle("is-active", v.getAttribute("data-view-id") === view);
+    });
+
+    var contexts = {
+      menu: serviceModeLabel() + " · Order",
+      payment: "Payment · " + serviceModeLabel(),
+      tracking: "Live status",
+      otp: serviceMode === "dine" ? "Dine in" : "Pickup"
+    };
+    $("#topbarContext").textContent = contexts[view] || "Tray";
+    if (view === "tracking") updatePickupRibbon();
+    if (view === "otp" || view === "tracking") updateFlowCopy();
+
+    if (view === "menu") {
+      renderCart();
+    }
+  }
+
+  function startPayment() {
+    if (getCartCount() === 0) return;
+    orderId = genOrderId();
+    $("#orderRef").textContent = "Order " + orderId;
+    setView("payment");
+
+    var seconds = 60;
+    $("#payTimer").textContent = seconds;
+    if (payInterval) clearInterval(payInterval);
+    payInterval = setInterval(function () {
+      seconds -= 1;
+      $("#payTimer").textContent = Math.max(0, seconds);
+      if (seconds <= 0) {
+        clearInterval(payInterval);
+        payInterval = null;
+      }
+    }, 1000);
+  }
+
+  function confirmPaid() {
+    if (payInterval) {
+      clearInterval(payInterval);
+      payInterval = null;
+    }
+    pickupOtp = genOtp();
+    var now = new Date();
+    $("#placedTime").textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    updateFlowCopy();
+    setView("tracking");
+    runTrackingSimulation();
+  }
+
+  function runTrackingSimulation() {
+    var steps = ["placed", "preparing", "ready"];
+    var progress = [33, 66, 100];
+    var idx = 1;
+    $("#progressFill").style.width = progress[0] + "%";
+    updateTrackUI(1);
+
+    if (trackInterval) clearInterval(trackInterval);
+    trackInterval = setInterval(function () {
+      idx += 1;
+      if (idx >= steps.length) {
+        clearInterval(trackInterval);
+        trackInterval = null;
+        updateTrackUI(2);
+        $("#progressFill").style.width = "100%";
+        updateFlowCopy();
+        $("#trackingSub").textContent = serviceMode === "dine" ? "Your order is on the way to your table." : "Your order is ready at the counter.";
+        setTimeout(function () {
+          $("#otpCode").textContent = pickupOtp;
+          setView("otp");
+        }, 1200);
+        return;
+      }
+      updateTrackUI(idx);
+      $("#progressFill").style.width = progress[idx] + "%";
+    }, 2200);
+  }
+
+  function updateTrackUI(currentIndex) {
+    var stepEls = $$(".track-step");
+    stepEls.forEach(function (el, i) {
+      el.classList.remove("is-done", "is-current", "is-pending");
+      if (i < currentIndex) el.classList.add("is-done");
+      else if (i === currentIndex) el.classList.add("is-current");
+      else el.classList.add("is-pending");
+    });
+  }
+
+  function resetAll() {
+    if (payInterval) clearInterval(payInterval);
+    if (trackInterval) clearInterval(trackInterval);
+    payInterval = null;
+    trackInterval = null;
+    clearCart();
+    activeCat = "all";
+    searchQuery = "";
+    $("#searchInput").value = "";
+    serviceMode = "takeaway";
+    vegOnly = false;
+    tableLabel = "";
+    $("#tableInput").value = "";
+    $("#pickupRibbon").hidden = true;
+    pickupOtp = "";
+    orderId = "";
+    $("#payTimer").textContent = "60";
+    $("#progressFill").style.width = "0%";
+    updateTrackUI(0);
+    renderCategories();
+    renderMenu();
+    setView("menu");
+  }
+
+  function bindEvents() {
+
+    $$(".service-mode").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        serviceMode = btn.getAttribute("data-service") || "takeaway";
+        updateServiceUI();
+      });
+    });
+    $("#btnVegOnly").addEventListener("click", function () {
+      vegOnly = !vegOnly;
+      updateServiceUI();
+    });
+    $("#tableInput").addEventListener("input", function (e) {
+      tableLabel = e.target.value.trim();
+      updateFlowCopy();
+    });
+    updateServiceUI();
+
+    document.body.addEventListener("click", function (e) {
+      var t = e.target;
+      var catBtn = t.closest("[data-cat]");
+      if (catBtn && catBtn.hasAttribute("data-cat") && (catBtn.classList.contains("cat-btn") || catBtn.classList.contains("pill-cat"))) {
+        activeCat = catBtn.getAttribute("data-cat");
+        renderCategories();
+        renderMenu();
+        return;
+      }
+
+      var actionBtn = t.closest("[data-action]");
+      if (actionBtn) {
+        var id = actionBtn.getAttribute("data-id");
+        var action = actionBtn.getAttribute("data-action");
+        if (action === "add") changeQty(id, 1);
+        if (action === "plus") changeQty(id, 1);
+        if (action === "minus") changeQty(id, -1);
+        if (getCartCount() > 0) bumpCartCount();
+        return;
+      }
+
+      var minusId = t.getAttribute("data-cart-minus");
+      var plusId = t.getAttribute("data-cart-plus");
+      if (minusId) { changeQty(minusId, -1); return; }
+      if (plusId) { changeQty(plusId, 1); return; }
+
+      var go = t.closest("[data-go]");
+      if (go) {
+        setView(go.getAttribute("data-go"));
+        return;
+      }
+    });
+
+    $("#searchInput").addEventListener("input", function (e) {
+      searchQuery = e.target.value;
+      renderMenu();
+    });
+
+    $("#btnCheckoutDesktop").addEventListener("click", startPayment);
+    $("#btnCheckoutMobile").addEventListener("click", startPayment);
+    $("#btnClearCart").addEventListener("click", clearCart);
+    $("#btnPaid").addEventListener("click", confirmPaid);
+    $("#btnNewOrder").addEventListener("click", resetAll);
+    $("#btnReset").addEventListener("click", function () {
+      if (currentView === "menu" && getCartCount() === 0) return;
+      if (window.confirm("Start over? Your current order progress will be cleared.")) {
+        resetAll();
+      }
+    });
+  }
+
+  renderCategories();
+  renderMenu();
+  renderCart();
+  bindEvents();
+  setView("menu");
+})();
+  </script>
 </body>
 </html>
