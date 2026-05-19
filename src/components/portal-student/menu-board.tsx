@@ -42,7 +42,7 @@ export function MenuBoard({ categories, items }: Props) {
   }, [filtered]);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 sm:px-6 pt-6 pb-10">
+    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-0 lg:max-w-none pt-6 pb-10">
       <div className="mb-6 sm:mb-8">
         <h1 className="font-display text-[clamp(32px,5.5vw,52px)] leading-[1.04] tracking-[-0.035em] font-medium">
           What&rsquo;s <span className="italic text-ocean-500">cooking.</span>
@@ -52,7 +52,7 @@ export function MenuBoard({ categories, items }: Props) {
         </p>
       </div>
 
-      <div className="sticky top-14 z-30 -mx-4 px-4 sm:-mx-6 sm:px-6 py-3 bg-[color:var(--color-paper)]/85 backdrop-blur-xl border-b border-[color:var(--color-line)] flex flex-col gap-3">
+      <div className="sticky top-14 z-30 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 py-3 bg-[color:var(--color-paper)]/85 backdrop-blur-xl border-b border-[color:var(--color-line)] flex flex-col gap-3">
         <label className="relative">
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[color:var(--color-ink)]/40" />
           <input
@@ -83,7 +83,7 @@ export function MenuBoard({ categories, items }: Props) {
                     {list.length} item{list.length === 1 ? "" : "s"}
                   </span>
                 </div>
-                <div className={cn("grid gap-3", "grid-cols-2 md:grid-cols-3 lg:grid-cols-4")}>
+                <div className={cn("grid gap-3", "grid-cols-2 md:grid-cols-3 lg:grid-cols-3")}>
                   {list.map((it) => (
                     <MenuItemCard key={it.id} item={it} />
                   ))}

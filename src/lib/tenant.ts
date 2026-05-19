@@ -104,14 +104,11 @@ export const resolveTenant = cache(async (slug: string): Promise<ResolvedTenant 
 });
 
 // College portal: list all canteens at a college with live wait/open status.
-// RPC type isn't yet in generated types (added in migration 0009) — cast through unknown.
 const fetchCollegeCanteensUncached = async (collegeSlug: string): Promise<CollegeCanteen[]> => {
   const client = _resolverClient();
-  const { data, error } = await (client as unknown as {
-    rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
-  }).rpc("college_canteens", { p_college_slug: collegeSlug });
+  const { data, error } = await client.rpc("college_canteens", { p_college_slug: collegeSlug });
   if (error || !data) return [];
-  return (data as unknown as CollegeCanteen[]) ?? [];
+  return data as unknown as CollegeCanteen[];
 };
 
 const fetchCollegeCanteensCached = unstable_cache(

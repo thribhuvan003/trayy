@@ -14,8 +14,13 @@ export default async function StudentLayout({ children }: { children: React.Reac
     <div data-portal="student" className="min-h-screen bg-[color:var(--color-paper)] text-[color:var(--color-ink)] antialiased">
       <CartTenantSync slug={tenant.slug} />
       <StudentTopBar tenant={tenant} />
-      <main className="pb-32 sm:pb-20">{children}</main>
-      <CartDrawer tenantUpi={tenant.name} />
+      {/* Desktop reserves a 20rem right column for the sticky cart sidebar.
+          Mobile stays single-column; the CartDrawer self-promotes to a
+          floating button + Vaul drawer below the lg breakpoint. */}
+      <main className="pb-32 sm:pb-20 lg:pb-12 lg:grid lg:grid-cols-[1fr,20rem] lg:gap-6 lg:max-w-7xl lg:mx-auto lg:px-6">
+        <div className="min-w-0">{children}</div>
+        <CartDrawer tenantUpi={tenant.name} />
+      </main>
     </div>
   );
 }

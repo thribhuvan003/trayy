@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Mail, KeyRound, ArrowRight } from "lucide-react";
 import { getBrowserClient } from "@/lib/supabase/browser";
@@ -12,6 +12,37 @@ export function LoginForm({ next }: { next: string }) {
   const [password, setPassword] = useState("");
   const [pending, start] = useTransition();
   const [sent, setSent] = useState(false);
+  const [otpVisible, setOtpVisible] = useState(false);
+  const [otpCountdown, setOtpCountdown] = useState(60);
+  const [otp, setOtp] = useState("");
+  const [verifying, setVerifying] = useState(false);
+
+  // Countdown after the magic-link email is sent. When it reaches zero, the
+  // OTP fallback input fades in so the user can type the 6-digit code from
+  // the same email instead of clicking the link.
+  useEffect(() => {
+    if (!sent || otpVisible) return;
+    if (otpCountdown <= 0) {
+      setOtpVisible(true);
+      return;
+    }
+    const t = setTimeout(() => setOtpCountdown((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [sent, otpVisible, otpCountdown]);
+
+  const onVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (otp.length !== 6 || verifying) return;
+    setVerifying(true);
+    const sb = getBrowserClient();
+    const { error } = await sb.auth.verifyOtp({ email, token: otp, type: "email" });
+    if (error) {
+      toast.error(error.message);
+      setVerifying(false);
+      return;
+    }
+    window.location.href = next;
+  };
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +75,47 @@ export function LoginForm({ next }: { next: string }) {
         <p className="text-[13px] text-[color:var(--color-ink)]/65 mt-1">
           We just sent a link to <b className="text-[color:var(--color-ink)]">{email}</b>. It expires in 15 minutes.
         </p>
+        <div
+          className={cn(
+            "mt-5 transition-opacity duration-700 ease-out",
+            otpVisible ? "opacity-100" : "opacity-0 pointer-events-none h-0 overflow-hidden"
+          )}
+          aria-hidden={!otpVisible}
+        >
+          <div className="border-t border-ocean-500/20 pt-4 text-left">
+            <label className="block text-[12.5px] font-medium text-[color:var(--color-ink)]/75 mb-2">
+              Or enter the 6-digit code from the same email
+            </label>
+            <form onSubmit={onVerifyOtp} className="flex gap-2">
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]{6}"
+                maxLength={6}
+                autoComplete="one-time-code"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder="123456"
+                className="flex-1 h-12 px-4 rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-paper)] text-[15px] tracking-[0.4em] text-center focus:outline-none focus:border-ocean-500"
+              />
+              <button
+                type="submit"
+                disabled={otp.length !== 6 || verifying}
+                className={cn(
+                  "h-12 px-4 rounded-xl bg-ocean-500 text-white text-[13.5px] font-medium inline-flex items-center justify-center gap-1.5 hover:bg-ocean-600 transition-colors",
+                  (otp.length !== 6 || verifying) && "opacity-60 cursor-not-allowed"
+                )}
+              >
+                {verifying ? "Verifying…" : "Verify"} <ArrowRight size={14} />
+              </button>
+            </form>
+          </div>
+        </div>
+        {!otpVisible && (
+          <p className="text-[11.5px] text-[color:var(--color-ink)]/45 mt-4">
+            Prefer a code? It will appear in {otpCountdown}s.
+          </p>
+        )}
       </div>
     );
   }

@@ -99,15 +99,9 @@ create table if not exists public.order_events (
 create index if not exists oe_order_idx  on public.order_events(order_id);
 create index if not exists oe_tenant_idx on public.order_events(tenant_id, created_at desc);
 
--- ── Enum extensions ──
--- (these must run outside transactions; supabase migrate handles that)
-do $$
-begin
-  begin alter type public.member_role add value if not exists 'college_admin'; exception when others then null; end;
-  begin alter type public.order_status add value if not exists 'cancelled_by_kitchen'; exception when others then null; end;
-  begin alter type public.order_status add value if not exists 'partially_ready'; exception when others then null; end;
-  begin alter type public.order_status add value if not exists 'refunded'; exception when others then null; end;
-end$$;
+-- ── Enum extensions are applied in 0009a_enums.sql (separate migration so
+-- ALTER TYPE ADD VALUE has its own transaction; Postgres 17 supports this
+-- inside transactions, but splitting is the safer pattern). ──
 
 -- ── Operating-hours + pause guard on order insert ──
 create or replace function public.guard_canteen_open()

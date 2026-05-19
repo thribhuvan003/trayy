@@ -37,5 +37,29 @@ export async function GET(req: NextRequest) {
       // membership creation is best-effort — RLS may also handle it on first call
     }
   }
+
+  // Auto-enroll the user into every canteen belonging to their college (based on
+  // email domain). The RPC is SECURITY DEFINER and uses auth.uid() internally,
+  // so we call it with the user's authenticated server client.
+  if (u.user) {
+    const { error: enrollError } = await supabase.rpc("auto_enroll_student");
+    if (enrollError) {
+      console.error("[auth/callback] auto_enroll_student failed:", enrollError.message);
+    }
+
+    // Hard-block users with zero memberships — they have no canteen access yet
+    // (likely an unrecognised email domain). Send them home with a message.
+    const { count, error: countError } = await supabase
+      .from("tenant_memberships")
+      .select("tenant_id", { count: "exact", head: true })
+      .eq("user_id", u.user.id)
+      .eq("is_active", true);
+    if (countError) {
+      console.error("[auth/callback] membership count failed:", countError.message);
+    } else if ((count ?? 0) === 0) {
+      return NextResponse.redirect(new URL("/?msg=no-college", origin));
+    }
+  }
+
   return NextResponse.redirect(new URL(next, origin));
 }

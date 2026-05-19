@@ -79,6 +79,38 @@ export function verifyWebhookSignature(rawBody: string, signature: string): bool
   return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
 }
 
+/**
+ * Polls Razorpay's REST API for the current order status. Used by the
+ * "I've paid" manual-verify path and the QStash reconcile cron when a webhook
+ * was dropped. In simulator mode (no live keys) we treat sim orders as
+ * 'paid' so the manual-verify path mirrors the simulate-capture button.
+ */
+export async function fetchRazorpayOrderStatus(
+  razorpayOrderId: string
+): Promise<"created" | "attempted" | "paid" | "failed" | "unknown"> {
+  if (!featureFlags.razorpayLive) {
+    return razorpayOrderId.startsWith("order_sim_") ? "paid" : "unknown";
+  }
+  const auth = Buffer.from(`${env.RAZORPAY_KEY_ID}:${env.RAZORPAY_KEY_SECRET}`).toString(
+    "base64"
+  );
+  const res = await fetch(`https://api.razorpay.com/v1/orders/${razorpayOrderId}`, {
+    method: "GET",
+    headers: { Authorization: `Basic ${auth}` },
+    cache: "no-store",
+  });
+  if (res.status === 404) return "unknown";
+  if (!res.ok) {
+    // Don't throw — callers treat unknown as "keep waiting" so a transient
+    // Razorpay 5xx never accidentally marks an order paid or failed.
+    return "unknown";
+  }
+  const data = (await res.json()) as { status?: string };
+  const s = data.status;
+  if (s === "paid" || s === "attempted" || s === "created" || s === "failed") return s;
+  return "unknown";
+}
+
 export function upiQrPayload(opts: { vpa: string; name: string; amountPaise: number; note?: string }) {
   const params = new URLSearchParams({
     pa: opts.vpa,

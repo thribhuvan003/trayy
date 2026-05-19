@@ -11,6 +11,110 @@ import { rateLimit } from "@/lib/rate-limit";
 import { createRazorpayOrder } from "@/lib/payments/razorpay";
 import type { Diet, OrderType } from "@/lib/db/types";
 
+// ── Student-initiated cancel (Phase 8) ─────────────────────────────────
+// Lives at the TOP of this file so a parallel Phase 6 edit appending new
+// actions at the bottom does not collide on the same line range.
+// Refund itself is handled out-of-band by the reconciliation cron / admin —
+// we just flip status and emit an append-only event for Realtime listeners.
+
+type CancelResult = { ok: true } | { ok: false; error: string };
+
+export async function cancelOrderByStudent(orderId: string): Promise<CancelResult> {
+  const h = await headers();
+  const slug = h.get("x-tenant-slug") ?? "aditya";
+  const tenant = await resolveTenant(slug);
+  if (!tenant) return { ok: false, error: "Tenant not found" };
+
+  const user = await getCurrentUser();
+  if (!user) return { ok: false, error: "Sign in to cancel" };
+
+  const rl = await rateLimit(`cancelOrder:${user.id}`, { limit: 5, windowMs: 60_000 });
+  if (!rl.success) return { ok: false, error: "Too many cancel attempts — slow down" };
+
+  const admin = getAdminClient(tenant.id);
+
+  // Re-check ownership, status, and the 5-minute window on the server.
+  // Never trust the client clock — derive elapsed from placed_at server-side.
+  const { data: order, error: loadErr } = await admin
+    .from("orders")
+    .select("id, user_id, status, placed_at, total_paise")
+    .eq("id", orderId)
+    .eq("tenant_id", tenant.id)
+    .maybeSingle<{
+      id: string;
+      user_id: string | null;
+      status: string;
+      placed_at: string;
+      total_paise: number;
+    }>();
+  if (loadErr || !order) return { ok: false, error: "Order not found" };
+  if (order.user_id !== user.id) return { ok: false, error: "Not your order" };
+  if (order.status !== "placed") {
+    return { ok: false, error: "Too late — kitchen has already started." };
+  }
+  const elapsedMs = Date.now() - new Date(order.placed_at).getTime();
+  if (elapsedMs >= 5 * 60 * 1000) {
+    return { ok: false, error: "Cancel window has closed (5 minutes)." };
+  }
+
+  // We reuse cancelled_by_kitchen because the downstream effects (release
+  // stock, notify kitchen UI, queue refund) are identical regardless of who
+  // pulled the cord. The event_type below preserves the actual actor.
+  const upd = await admin
+    .from("orders")
+    // Cast — Database types haven't been regenerated for the new enum values
+    // yet (migration 0009a). Safe at runtime: the enum value exists in PG.
+    .update({ status: "cancelled_by_kitchen" as unknown as "rejected" })
+    .eq("id", orderId)
+    .eq("tenant_id", tenant.id)
+    .eq("status", "placed"); // optimistic guard against concurrent updates
+  if (upd.error) return { ok: false, error: upd.error.message };
+
+  await admin.from("order_status_logs").insert({
+    tenant_id: tenant.id,
+    order_id: orderId,
+    from_status: "placed",
+    // Same cast reason as above.
+    to_status: "cancelled_by_kitchen" as unknown as "rejected",
+    actor_user_id: user.id,
+    note: "Cancelled by student within 5-minute grace window",
+  });
+
+  // Append-only event row — Realtime listeners subscribe to this.
+  // order_events isn't in the regenerated Database types yet, so go untyped.
+  await (
+    admin as unknown as {
+      from: (t: string) => {
+        insert: (row: Record<string, unknown>) => Promise<{ error: { message: string } | null }>;
+      };
+    }
+  )
+    .from("order_events")
+    .insert({
+      tenant_id: tenant.id,
+      order_id: orderId,
+      event_type: "cancelled_by_student",
+      payload: {
+        actor_user_id: user.id,
+        elapsed_ms: elapsedMs,
+        total_paise: order.total_paise,
+      },
+    });
+
+  await admin.from("audit_logs").insert({
+    tenant_id: tenant.id,
+    actor_user_id: user.id,
+    action: "order.cancelled_by_student",
+    target_type: "order",
+    target_id: orderId,
+    meta: { elapsed_ms: elapsedMs },
+  });
+
+  revalidatePath(`/track/${orderId}`);
+  revalidatePath("/orders");
+  return { ok: true };
+}
+
 type PlaceArgs = { menuItemId: string; qty: number }[];
 
 type PlaceResult =
@@ -210,4 +314,104 @@ export async function getMyOrderOtp(orderId: string): Promise<{ otp: string | nu
     ) => Promise<{ data: unknown }>
   )("read_my_pickup_otp", { p_order: orderId });
   return { otp: typeof data === "string" ? data : null };
+}
+
+type VerifyResult = { status: "paid" | "pending" | "failed" };
+
+/**
+ * Manual verification fallback. The webhook is the source of truth, but India
+ * sees ~2-3% webhook drops; "I've paid" calls this to bridge the gap by
+ * polling Razorpay's REST API directly. Idempotent — repeated calls cannot
+ * double-place an order because the order update is gated on status =
+ * 'pending_payment' and the payments insert is gated on a unique
+ * raw_event_id ('manual_verify_<razorpay_order_id>').
+ */
+export async function verifyPaymentNow(orderId: string): Promise<VerifyResult> {
+  const h = await headers();
+  const slug = h.get("x-tenant-slug") ?? "aditya";
+  const tenant = await resolveTenant(slug);
+  if (!tenant) return { status: "pending" };
+
+  const user = await getCurrentUser();
+  if (!user) return { status: "pending" };
+
+  const admin = getAdminClient(tenant.id);
+  const { data: orderRow } = await admin
+    .from("orders")
+    .select("id, user_id, status")
+    .eq("id", orderId)
+    .eq("tenant_id", tenant.id)
+    .maybeSingle<{ id: string; user_id: string | null; status: string }>();
+  if (!orderRow || orderRow.user_id !== user.id) return { status: "pending" };
+
+  // Already past pending_payment — webhook (or this action) already moved it.
+  if (orderRow.status !== "pending_payment") return { status: "paid" };
+
+  const { data: paymentRow } = await admin
+    .from("payments")
+    .select("razorpay_order_id, amount_paise")
+    .eq("order_id", orderId)
+    .eq("tenant_id", tenant.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle<{ razorpay_order_id: string | null; amount_paise: number }>();
+  if (!paymentRow?.razorpay_order_id) return { status: "pending" };
+
+  const { fetchRazorpayOrderStatus } = await import("@/lib/payments/razorpay");
+  const remote = await fetchRazorpayOrderStatus(paymentRow.razorpay_order_id);
+  if (remote === "failed") return { status: "failed" };
+  if (remote !== "paid") return { status: "pending" };
+
+  // Idempotent payments insert — unique constraint on raw_event_id silently
+  // dedupes if a duplicate webhook or another verifyPaymentNow call beat us.
+  await admin.from("payments").upsert(
+    {
+      tenant_id: tenant.id,
+      order_id: orderId,
+      razorpay_order_id: paymentRow.razorpay_order_id,
+      amount_paise: paymentRow.amount_paise,
+      status: "captured",
+      raw_event_id: `manual_verify_${paymentRow.razorpay_order_id}`,
+    },
+    { onConflict: "raw_event_id", ignoreDuplicates: true }
+  );
+
+  // Gated update — if another path already flipped this to placed (webhook
+  // raced us), this no-ops and we never re-trigger order_events.
+  const { data: updated } = await admin
+    .from("orders")
+    .update({ status: "placed" })
+    .eq("id", orderId)
+    .eq("tenant_id", tenant.id)
+    .eq("status", "pending_payment")
+    .select("id");
+
+  if (updated && updated.length > 0) {
+    type OrderEventInsert = {
+      tenant_id: string;
+      order_id: string;
+      event_type: string;
+      payload: Record<string, unknown>;
+    };
+    await (
+      admin.from("order_events") as unknown as {
+        insert: (row: OrderEventInsert) => Promise<unknown>;
+      }
+    ).insert({
+      tenant_id: tenant.id,
+      order_id: orderId,
+      event_type: "status_changed",
+      payload: { from: "pending_payment", to: "placed", source: "manual_verify" },
+    });
+    await admin.from("order_status_logs").insert({
+      tenant_id: tenant.id,
+      order_id: orderId,
+      from_status: "pending_payment",
+      to_status: "placed",
+      actor_user_id: user.id,
+      note: "Manual verify (Razorpay fetch)",
+    });
+  }
+
+  return { status: "paid" };
 }

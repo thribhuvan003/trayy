@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=1440"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Tray — A canteen system for the whole campus.</title>
 <meta name="description" content="Tray replaces the printed-token queue with a phone-first ordering system. One platform, three portals: student, kitchen, admin."/>
 <link rel="icon" href="/icon.svg" type="image/svg+xml"/>
@@ -257,6 +257,117 @@ button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit
 /* reveal */
 .reveal{opacity:0;transform:translateY(20px);transition:opacity .8s cubic-bezier(.2,.7,.3,1),transform .8s cubic-bezier(.2,.7,.3,1)}
 .reveal.in{opacity:1;transform:none}
+
+/* =====================================================
+   HERO WORD-REVEAL ANIMATION
+   ===================================================== */
+.hero h1 .word{display:inline-block;clip-path:inset(0 100% 0 0);will-change:clip-path;transition:clip-path .7s cubic-bezier(0.76,0,0.24,1)}
+.hero h1.in .word{clip-path:inset(0 0% 0 0)}
+
+/* =====================================================
+   FOOD MARQUEE
+   ===================================================== */
+.marquee{
+  position:relative;overflow:hidden;width:100%;
+  padding:28px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  background:var(--bg-2);
+  -webkit-mask-image:linear-gradient(to right,transparent,black 20%,black 80%,transparent);
+          mask-image:linear-gradient(to right,transparent,black 20%,black 80%,transparent);
+}
+.marquee-track{display:flex;width:max-content;animation:marqueeScroll 40s linear infinite;gap:0}
+.marquee-item{
+  font-family:var(--serif);font-size:36px;letter-spacing:-0.02em;color:var(--ink-2);
+  padding:0 28px;white-space:nowrap;font-weight:400;line-height:1.2;
+  display:inline-flex;align-items:center;gap:28px;
+}
+.marquee-item .sep{color:var(--persimmon);font-style:italic}
+@keyframes marqueeScroll{
+  from{transform:translateX(0)}
+  to{transform:translateX(-50%)}
+}
+
+/* =====================================================
+   3D TILT for portal cards
+   ===================================================== */
+.portals{perspective:1200px}
+.portal{will-change:transform;transform-style:preserve-3d;transition:transform .4s cubic-bezier(.2,.7,.3,1),border-color .2s,box-shadow .25s}
+
+/* =====================================================
+   RESPONSIVE — mobile / tablet
+   ===================================================== */
+@media (max-width:1100px){
+  .wrap{padding:0 32px}
+  .nav-inner{padding:14px 32px}
+  .hero h1{font-size:110px}
+  .section-head h2,.sync-grid h2{font-size:64px}
+  .closing h2{font-size:120px}
+  .footer-mark{font-size:180px}
+  .hero-meta{grid-template-columns:1fr;gap:32px;align-items:flex-start}
+  .hero-cta{align-items:flex-start}
+  .hero-cta .note{text-align:left}
+  .section-head{grid-template-columns:1fr;gap:24px;align-items:flex-start}
+  .sync-grid{grid-template-columns:1fr;gap:40px}
+  .portals{grid-template-columns:1fr 1fr}
+  .flow{grid-template-columns:1fr 1fr}
+  .flow-step{border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .flow-step:nth-child(2n){border-right:0}
+  .stack-grid{grid-template-columns:1fr 1fr}
+  .hero-stats{grid-template-columns:1fr 1fr;gap:24px 0}
+  .hero-stat:nth-child(2){border-right:0}
+  .footer-row1{grid-template-columns:1fr 1fr;gap:32px}
+}
+@media (max-width:720px){
+  body{font-size:14px}
+  .wrap{padding:0 20px}
+  .nav-inner{padding:12px 20px;gap:12px;flex-wrap:wrap}
+  .nav-links{display:none}
+  .nav-cta .btn-ghost{display:none}
+  .brand{font-size:22px}
+  .hero{padding:56px 0 48px}
+  .hero h1{font-size:56px;line-height:0.95;margin-bottom:24px}
+  .section{padding:72px 0}
+  .section-head h2,.sync-grid h2{font-size:42px;line-height:1.02}
+  .pull{padding:80px 0}
+  .pull p{font-size:42px}
+  .closing{padding:96px 0}
+  .closing h2{font-size:64px}
+  .closing p{font-size:15px}
+  .hero-top-row{flex-direction:column;align-items:flex-start;gap:10px;font-size:10px}
+  .hero-stats{grid-template-columns:1fr 1fr}
+  .hero-stat{padding-right:12px}
+  .hero-stat:nth-child(2){padding-left:12px}
+  .hero-stat .v{font-size:32px}
+  .portals{grid-template-columns:1fr}
+  .portal-frame{height:340px}
+  .flow{grid-template-columns:1fr}
+  .flow-step{border-right:0;min-height:0;padding:24px}
+  .flow-step:last-child{border-bottom:0}
+  .stack-grid{grid-template-columns:1fr 1fr}
+  .footer-row1{grid-template-columns:1fr;gap:24px;margin-bottom:32px}
+  .footer{padding:48px 0 24px}
+  .footer-mark{font-size:96px;padding-top:24px}
+  .footer-bot{flex-direction:column;align-items:flex-start;gap:8px}
+  .diagram{padding:18px}
+  .marquee-item{font-size:22px;padding:0 16px;gap:16px}
+  .marquee{padding:18px 0}
+  .hero-cta .row{flex-wrap:wrap}
+  .btn-lg{padding:12px 18px;font-size:14px}
+}
+
+/* =====================================================
+   REDUCED MOTION
+   ===================================================== */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation:none !important;
+    transition:none !important;
+    scroll-behavior:auto !important;
+  }
+  .hero h1 .word{clip-path:inset(0 0% 0 0) !important}
+  .reveal{opacity:1 !important;transform:none !important}
+  .marquee-track{animation:none !important}
+  .portal{transform:none !important}
+}
 </style>
 </head>
 <body>
@@ -293,19 +404,19 @@ button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit
     </div>
   </div>
 
-  <h1>
-    A canteen system<br/>
-    for the <span class="it">whole campus.</span>
+  <h1 id="heroHeadline">
+    <span class="word">Students</span> <span class="word">order.</span> <span class="word">Kitchen</span> <span class="word">prepares.</span><br/>
+    <span class="word">You</span> <span class="word">get</span> <span class="word it">reports</span> <span class="word">—</span> <span class="word">not</span> <span class="word it">complaints.</span>
   </h1>
 
   <div class="hero-meta">
     <p class="hero-lede">
-      Tray replaces the printed-token queue with a phone-first ordering system. <span class="em">Students order and pay before they walk to the counter.</span> The kitchen sees a live queue. Pickup is verified with a four-digit code. One system, three portals, every metric in real time.
+      <span class="em">Tray runs every canteen, mess, and food court on your campus from one URL.</span> A phone-first ordering system that replaces printed-token queues. Students order and pay before they walk to the counter. The kitchen sees a live queue. Pickup is verified with a four-digit code.
     </p>
     <div class="hero-cta">
       <div class="row">
-        <a class="btn btn-pri btn-lg" href="student.html">Open the student app →</a>
-        <a class="btn btn-ghost btn-lg" href="#system">See the system</a>
+        <a class="btn btn-pri btn-lg" href="/get-started">Request a demo →</a>
+        <a class="btn btn-ghost btn-lg" href="/demo/student.html">I'm a student</a>
       </div>
       <div class="note">DEMO IS LIVE · NO SIGN-UP · 90-SECOND TOUR</div>
     </div>
@@ -318,6 +429,18 @@ button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit
     <div class="hero-stat"><div class="v">OTP</div><div class="l">Verified handover</div></div>
   </div>
 </section>
+
+<!-- FOOD MARQUEE -->
+<div class="marquee" aria-hidden="true">
+  <div class="marquee-track">
+    <div class="marquee-item">
+      <span>Biriyani</span><span class="sep">·</span><span>Cold Coffee</span><span class="sep">·</span><span>Veg Thali</span><span class="sep">·</span><span>Masala Dosa</span><span class="sep">·</span><span>Filter Coffee</span><span class="sep">·</span><span>Mutton Curry</span><span class="sep">·</span><span>Samosa</span><span class="sep">·</span><span>Vada Pav</span><span class="sep">·</span>
+    </div>
+    <div class="marquee-item">
+      <span>Biriyani</span><span class="sep">·</span><span>Cold Coffee</span><span class="sep">·</span><span>Veg Thali</span><span class="sep">·</span><span>Masala Dosa</span><span class="sep">·</span><span>Filter Coffee</span><span class="sep">·</span><span>Mutton Curry</span><span class="sep">·</span><span>Samosa</span><span class="sep">·</span><span>Vada Pav</span><span class="sep">·</span>
+    </div>
+  </div>
+</div>
 
 <!-- SYSTEM / PORTAL PREVIEWS -->
 <section class="section wrap" id="system">
@@ -575,12 +698,52 @@ button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit
 </footer>
 
 <script>
+const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 const io = new IntersectionObserver((entries) => {
   entries.forEach(en => {
     if (en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); }
   });
 }, {threshold:0.12});
 document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+/* Hero headline word reveal — staggered clip-path */
+(function heroReveal(){
+  const h1 = document.getElementById('heroHeadline');
+  if (!h1) return;
+  const words = h1.querySelectorAll('.word');
+  if (prefersReduced){ h1.classList.add('in'); return; }
+  words.forEach((w, i) => {
+    w.style.transitionDelay = (i * 80) + 'ms';
+  });
+  requestAnimationFrame(() => requestAnimationFrame(() => h1.classList.add('in')));
+})();
+
+/* 3D tilt on portal cards — mousemove driven, one card at a time */
+(function portalTilt(){
+  if (prefersReduced) return;
+  const cards = document.querySelectorAll('.portal');
+  const MAX_X = 4; // deg rotateX
+  const MAX_Y = 6; // deg rotateY
+  cards.forEach(card => {
+    let raf = 0;
+    card.addEventListener('mousemove', e => {
+      const r = card.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width;   // 0..1
+      const py = (e.clientY - r.top)  / r.height;  // 0..1
+      const rx = (0.5 - py) * 2 * MAX_X;           // top tilts back
+      const ry = (px - 0.5) * 2 * MAX_Y;           // right tilts away
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        card.style.transform = `perspective(800px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) translateY(-4px)`;
+      });
+    });
+    card.addEventListener('mouseleave', () => {
+      cancelAnimationFrame(raf);
+      card.style.transform = '';
+    });
+  });
+})();
 
 /* Portal iframes: fade in once they signal load — feels intentional even if CSP/network is slow */
 document.querySelectorAll('.portal-frame iframe').forEach(f => {

@@ -137,6 +137,24 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .kpi-card .delta.up{color:var(--mint);background:var(--mint-soft)}
 .kpi-card .delta.down{color:var(--rose);background:var(--rose-soft)}
 .kpi-card .val{font-size:38px;font-weight:500;letter-spacing:-0.03em;line-height:1;font-variant-numeric:tabular-nums;color:var(--ink)}
+.kpi-card .counter{display:inline-block}
+
+/* New-order row flash (lime fade) for live activity feed */
+@keyframes feedFlash{
+  0%   { background:rgba(205,250,80,0.18); }
+  100% { background:transparent; }
+}
+.feed-item.flash{animation:feedFlash .8s cubic-bezier(.2,.7,.3,1) both}
+
+/* Top-list bar stagger re-animation (triggered by range toggle) */
+.top-row .info .bar i.restagger{
+  animation:barRise .6s cubic-bezier(.2,.7,.3,1) both;
+  transform-origin:left center;
+}
+@keyframes barRise{
+  from{ transform:scaleX(0); }
+  to  { transform:scaleX(1); }
+}
 .kpi-card .val .unit{font-size:16px;color:var(--ink-3);font-weight:500;margin-left:3px;font-family:var(--mono)}
 .kpi-card .spark{width:100%;height:36px}
 .kpi-card .spark path{fill:none;stroke:var(--lime);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:300;stroke-dashoffset:300;animation:drawIn 1.6s cubic-bezier(.2,.7,.3,1) forwards}
@@ -201,8 +219,8 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .heat-shell{display:flex;flex-direction:column;gap:8px;flex:1}
 .heat{display:grid;grid-template-columns:auto repeat(12,1fr);gap:4px;font-family:var(--mono);font-size:10px;color:var(--ink-3);letter-spacing:0.04em}
 .heat .hr-label{font-family:var(--mono);font-size:10px;color:var(--ink-3);text-align:right;padding-right:6px;line-height:24px;text-transform:uppercase;letter-spacing:0.06em;font-weight:600}
-.heat .c{aspect-ratio:1;border-radius:3px;background:var(--bg-3);transition:transform .12s;opacity:0;animation:cellIn .45s cubic-bezier(.34,1.26,.64,1) forwards;cursor:pointer}
-@keyframes cellIn{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
+.heat .c{aspect-ratio:1;border-radius:3px;background:var(--bg-3);transition:transform .12s;opacity:0;transform-origin:bottom;animation:cellIn .45s cubic-bezier(.34,1.26,.64,1) forwards;cursor:pointer}
+@keyframes cellIn{from{opacity:0;transform:scaleY(0)}to{opacity:1;transform:scaleY(1)}}
 .heat .c:hover{transform:scale(1.5);z-index:3;box-shadow:0 4px 16px rgba(205,250,80,.3);outline:1px solid var(--lime)}
 .heat .c.l1{background:rgba(205,250,80,0.15)}
 .heat .c.l2{background:rgba(205,250,80,0.36)}
@@ -577,25 +595,47 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 const $ = (q) => document.querySelector(q);
 const $$ = (q) => document.querySelectorAll(q);
 
-/* Counters */
+/* KPI Counters · count-up on first IntersectionObserver entry */
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 function animateCounter(el){
+  if (el.dataset.animated === '1') return;
+  el.dataset.animated = '1';
   const to = +el.dataset.to;
-  const dur = 1400;
+  if (prefersReducedMotion){ el.textContent = to.toLocaleString(); return; }
+  const dur = 800;                 // 800ms per spec
   const t0 = performance.now();
+  const easeOutExpo = (p) => p === 1 ? 1 : 1 - Math.pow(2, -10 * p);
   const tick = (t) => {
     const p = Math.min(1,(t-t0)/dur);
-    const e = 1 - Math.pow(1-p,3);
-    el.textContent = Math.round(to*e).toLocaleString();
+    el.textContent = Math.round(to * easeOutExpo(p)).toLocaleString();
     if (p<1) requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);
 }
-$$('.counter').forEach(animateCounter);
 
-/* Top list bar animations */
-setTimeout(() => {
-  $$('.top-row .bar i').forEach(i => i.style.width = i.dataset.w);
-}, 300);
+const counterObserver = new IntersectionObserver((entries) => {
+  entries.forEach(en => {
+    if (en.isIntersecting){
+      animateCounter(en.target);
+      counterObserver.unobserve(en.target);
+    }
+  });
+}, { threshold: 0.4 });
+$$('.counter').forEach(el => counterObserver.observe(el));
+
+/* Top list bar animations · staggered re-animation */
+function staggerTopBars(){
+  $$('.top-row .info .bar i').forEach((bar, idx) => {
+    bar.classList.remove('restagger');
+    bar.style.width = bar.dataset.w;
+    bar.style.animationDelay = (idx * 40) + 'ms';
+    // force reflow so the animation re-triggers next frame
+    void bar.offsetWidth;
+    bar.classList.add('restagger');
+  });
+}
+setTimeout(staggerTopBars, 300);
 
 /* Heatmap (re-renders when range changes) */
 const heat = $('#heatGrid');
@@ -626,7 +666,8 @@ function renderHeat(range){
       const cls = v < 0.6 ? '' : v < 1.5 ? 'l1' : v < 2.5 ? 'l2' : v < 3.5 ? 'l3' : 'l4';
       const cell = document.createElement('div');
       cell.className = 'c ' + cls;
-      cell.style.animationDelay = ((r*12 + c) * 0.008 + 0.05) + 's';
+      // Stagger 40ms per column (bars rise together row-wise · transform-origin:bottom)
+      cell.style.animationDelay = (c * 40 + r * 8) + 'ms';
       cell.title = `${d} · ${c+8}:00 · ${Math.round(v*cfg.mul)} orders`;
       heat.appendChild(cell);
     }
@@ -703,11 +744,16 @@ function addFeed(forceType){
     : EVENTS[Math.floor(Math.random()*EVENTS.length)]();
   const row = document.createElement('div');
   row.className = 'feed-item' + (ev.type === 'menu' ? ' menu-add' : '');
+  // Flash lime → transparent over 800ms for genuinely new prepended rows (only after initial fill)
+  if (ev.type === 'order' && feed.dataset.initDone === '1' && !prefersReducedMotion){
+    row.classList.add('flash');
+  }
   row.innerHTML = `<span class="t">${fmtT(new Date())}</span><span class="ic ${ev.type}">${ICON_LABELS[ev.type]||'·'}</span><span class="msg">${ev.msg}</span><span class="amt">${ev.amt}</span>`;
   feed.prepend(row);
   while (feed.children.length > 12) feed.removeChild(feed.lastChild);
 }
 for (let i=0;i<8;i++) addFeed();
+feed.dataset.initDone = '1';
 setInterval(addFeed, 3000);
 
 /* Cross-tab sync — when kitchen pushes a special, refresh the strip + feed */
@@ -751,6 +797,7 @@ $$('#rangeToggle button').forEach(b => b.addEventListener('click', () => {
   b.classList.add('active');
   renderHeat(b.dataset.r);
   renderRev(b.dataset.r);
+  staggerTopBars();
   toast('Range: ' + b.textContent);
 }));
 

@@ -1,13 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { ArrowLeft, Check, ChefHat, BellRing, HandPlatter, XCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Check, ChefHat, BellRing, HandPlatter, XCircle, AlertTriangle } from "lucide-react";
 import { formatRupees, formatTimeIST, cn } from "@/lib/utils";
 import { getBrowserClient } from "@/lib/supabase/browser";
-import { getMyOrderOtp } from "@/app/(student)/_actions";
+import { getMyOrderOtp, cancelOrderByStudent } from "@/app/(student)/_actions";
 
-type Status = "pending_payment" | "placed" | "preparing" | "ready" | "collected" | "rejected" | "expired";
+type Status =
+  | "pending_payment"
+  | "placed"
+  | "preparing"
+  | "ready"
+  | "collected"
+  | "rejected"
+  | "expired"
+  | "cancelled_by_kitchen"
+  | "partially_ready"
+  | "refunded";
 type Order = {
   id: string;
   short_code: string;
@@ -33,32 +44,58 @@ const STEPS: { v: Status; label: string; icon: typeof Check; copy: string }[] = 
   { v: "collected", label: "Collected", icon: HandPlatter, copy: "Enjoy. ☕" },
 ];
 
+const FIVE_MIN_MS = 5 * 60 * 1000;
+
 export function TrackPanel({ tenantName, order: initial, lines }: { tenantName: string; order: Order; lines: Line[] }) {
   const [order, setOrder] = useState(initial);
   const [otp, setOtp] = useState<string | null>(null);
+  const [cancelPending, startCancel] = useTransition();
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const router = useRouter();
+
+  // Keep local state in sync if the server-fetched order changes
+  // (router.refresh() will re-run the page and pass a fresh `initial`).
+  useEffect(() => {
+    setOrder(initial);
+  }, [initial]);
 
   useEffect(() => {
     const sb = getBrowserClient();
     const ch = sb
-      .channel(`order:${order.id}`)
+      .channel(`order-${order.id}`)
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${order.id}` },
-        (payload) => {
-          setOrder((prev) => ({ ...prev, ...(payload.new as Partial<Order>) }));
+        { event: "INSERT", schema: "public", table: "order_events", filter: `order_id=eq.${order.id}` },
+        () => {
+          // order_events is the source of truth signal; refetch the order
+          // server-side via the existing page loader.
+          router.refresh();
         }
       )
       .subscribe();
     return () => {
       sb.removeChannel(ch);
     };
-  }, [order.id]);
+  }, [order.id, router]);
 
   useEffect(() => {
     if (order.status === "ready") {
       getMyOrderOtp(order.id).then((r) => setOtp(r.otp));
+    } else {
+      setOtp(null);
     }
   }, [order.status, order.id]);
+
+  // Student-initiated cancel: only available while still `placed` and within
+  // the 5-minute grace window (server re-checks this; UI is best-effort).
+  const placedAtMs = useMemo(() => new Date(order.placed_at).getTime(), [order.placed_at]);
+  const [now, setNow] = useState<number>(() => Date.now());
+  useEffect(() => {
+    if (order.status !== "placed") return;
+    const t = window.setInterval(() => setNow(Date.now()), 15_000);
+    return () => window.clearInterval(t);
+  }, [order.status]);
+  const cancelWindowOpen = order.status === "placed" && now - placedAtMs < FIVE_MIN_MS;
 
   if (order.status === "rejected" || order.status === "expired") {
     return (
@@ -82,6 +119,7 @@ export function TrackPanel({ tenantName, order: initial, lines }: { tenantName: 
     );
   }
 
+  const isCancelled = order.status === "cancelled_by_kitchen" || order.status === "refunded";
   const currentIdx = Math.max(0, STEPS.findIndex((s) => s.v === order.status));
   const isReady = order.status === "ready";
   const isCollected = order.status === "collected";
@@ -101,8 +139,17 @@ export function TrackPanel({ tenantName, order: initial, lines }: { tenantName: 
             {tenantName} · {order.short_code}
           </div>
           <h1 className="font-display text-[clamp(28px,5vw,40px)] font-medium tracking-tight leading-tight">
-            {STEPS[currentIdx]?.label}.{" "}
-            <span className="italic text-ocean-500">{STEPS[currentIdx]?.copy}</span>
+            {isCancelled ? (
+              <>
+                Cancelled.{" "}
+                <span className="italic text-rose-500">Refund on its way.</span>
+              </>
+            ) : (
+              <>
+                {STEPS[currentIdx]?.label}.{" "}
+                <span className="italic text-ocean-500">{STEPS[currentIdx]?.copy}</span>
+              </>
+            )}
           </h1>
         </div>
         <div className="text-[12px] font-mono tabular text-[color:var(--color-ink)]/55">
@@ -110,7 +157,23 @@ export function TrackPanel({ tenantName, order: initial, lines }: { tenantName: 
         </div>
       </div>
 
-      {isReady && otp && (
+      {isCancelled && (
+        <div className="mb-6 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-5 flex items-start gap-3">
+          <AlertTriangle size={20} className="text-amber-600 shrink-0 mt-0.5" />
+          <div>
+            <div className="font-display text-[18px] font-medium tracking-tight text-[color:var(--color-ink)]">
+              Your order was cancelled.
+            </div>
+            <p className="text-[13.5px] text-[color:var(--color-ink)]/70 mt-1">
+              {order.status === "refunded"
+                ? "Refund has been completed. It should reflect in your UPI app within 3–5 business days."
+                : "Refund has been initiated. It should reflect in your UPI app within 3–5 business days."}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {!isCancelled && isReady && otp && (
         <div className="mb-6 rounded-3xl bg-ocean-500 text-white p-6 sm:p-8 relative overflow-hidden">
           <div
             aria-hidden
@@ -129,49 +192,86 @@ export function TrackPanel({ tenantName, order: initial, lines }: { tenantName: 
           </div>
         </div>
       )}
-      {isReady && !otp && (
+      {!isCancelled && isReady && !otp && (
         <div className="mb-6 rounded-3xl border border-amber-500/30 bg-amber-500/5 p-5 text-[13px] text-[color:var(--color-ink)]/70">
           Your order is ready. Reload to fetch the pickup code.
         </div>
       )}
 
-      <ol className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-6">
-        {STEPS.map((s, i) => {
-          const done = i < currentIdx || isCollected;
-          const active = i === currentIdx && !isCollected;
-          const Icon = s.icon;
-          return (
-            <li
-              key={s.v}
-              className={cn(
-                "rounded-2xl border p-4 flex flex-col gap-1",
-                done
-                  ? "border-emerald-500/30 bg-emerald-500/5"
-                  : active
-                  ? "border-ocean-500 bg-ocean-50 dark:bg-ocean-500/10"
-                  : "border-[color:var(--color-line)]"
-              )}
-            >
-              <div
+      {!isCancelled && (
+        <ol className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-6">
+          {STEPS.map((s, i) => {
+            const done = i < currentIdx || isCollected;
+            const active = i === currentIdx && !isCollected;
+            const Icon = s.icon;
+            return (
+              <li
+                key={s.v}
                 className={cn(
-                  "inline-flex h-7 w-7 items-center justify-center rounded-full",
+                  "rounded-2xl border p-4 flex flex-col gap-1",
                   done
-                    ? "bg-emerald-500 text-white"
+                    ? "border-emerald-500/30 bg-emerald-500/5"
                     : active
-                    ? "bg-ocean-500 text-white animate-pulse"
-                    : "bg-[color:var(--color-paper-dim)] text-[color:var(--color-ink)]/35"
+                    ? "border-ocean-500 bg-ocean-50 dark:bg-ocean-500/10"
+                    : "border-[color:var(--color-line)]"
                 )}
               >
-                <Icon size={13} />
-              </div>
-              <div className="text-[11px] font-mono uppercase tracking-wider text-[color:var(--color-ink)]/55">
-                Step {i + 1}
-              </div>
-              <div className="text-[13.5px] font-medium">{s.label}</div>
-            </li>
-          );
-        })}
-      </ol>
+                <div
+                  className={cn(
+                    "inline-flex h-7 w-7 items-center justify-center rounded-full",
+                    done
+                      ? "bg-emerald-500 text-white"
+                      : active
+                      ? "bg-ocean-500 text-white animate-pulse"
+                      : "bg-[color:var(--color-paper-dim)] text-[color:var(--color-ink)]/35"
+                  )}
+                >
+                  <Icon size={13} />
+                </div>
+                <div className="text-[11px] font-mono uppercase tracking-wider text-[color:var(--color-ink)]/55">
+                  Step {i + 1}
+                </div>
+                <div className="text-[13.5px] font-medium">{s.label}</div>
+              </li>
+            );
+          })}
+        </ol>
+      )}
+
+      {cancelWindowOpen && (
+        <div className="mb-6 rounded-2xl border border-[color:var(--color-line)] p-4 flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <div className="text-[13.5px] font-medium">Changed your mind?</div>
+            <p className="text-[12px] text-[color:var(--color-ink)]/55">
+              You can cancel for a full refund within 5 minutes of placing.
+            </p>
+            {cancelError && (
+              <p className="text-[12px] text-rose-500 mt-1">{cancelError}</p>
+            )}
+          </div>
+          <button
+            type="button"
+            disabled={cancelPending}
+            onClick={() => {
+              setCancelError(null);
+              startCancel(async () => {
+                const res = await cancelOrderByStudent(order.id);
+                if (!res.ok) {
+                  setCancelError(res.error ?? "Could not cancel");
+                  return;
+                }
+                router.refresh();
+              });
+            }}
+            className={cn(
+              "inline-flex items-center gap-1.5 h-10 px-4 rounded-full border border-rose-500/40 text-rose-600 text-[13px] font-medium hover:bg-rose-500/10 transition-colors",
+              cancelPending && "opacity-60 cursor-not-allowed"
+            )}
+          >
+            {cancelPending ? "Cancelling…" : "Cancel order"}
+          </button>
+        </div>
+      )}
 
       <div className="rounded-2xl border border-[color:var(--color-line)] p-5">
         <div className="text-[11px] font-mono uppercase tracking-wider text-[color:var(--color-ink)]/55 mb-3">
@@ -211,7 +311,9 @@ export function TrackPanel({ tenantName, order: initial, lines }: { tenantName: 
           ))}
         </ul>
         <div className="mt-4 pt-4 border-t border-[color:var(--color-line)] flex justify-between items-baseline">
-          <span className="text-[12px] font-mono uppercase tracking-wider text-[color:var(--color-ink)]/55">Total paid</span>
+          <span className="text-[12px] font-mono uppercase tracking-wider text-[color:var(--color-ink)]/55">
+            {isCancelled ? "Refund amount" : "Total paid"}
+          </span>
           <span className="font-display text-[20px] font-medium tabular">{formatRupees(order.total_paise)}</span>
         </div>
       </div>

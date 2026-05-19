@@ -4,11 +4,11 @@ import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import QRCode from "react-qr-code";
 import Link from "next/link";
-import { ArrowLeft, Smartphone, Sparkles } from "lucide-react";
+import { ArrowLeft, Loader2, Smartphone, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { formatRupees, cn } from "@/lib/utils";
 import { upiQrPayload } from "@/lib/payments/upi";
-import { simulatePaymentCapture } from "@/app/(student)/_actions";
+import { simulatePaymentCapture, verifyPaymentNow } from "@/app/(student)/_actions";
 import { getBrowserClient } from "@/lib/supabase/browser";
 
 type Order = {
@@ -40,6 +40,8 @@ export function PayPanel({
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
+  const [verifying, startVerify] = useTransition();
+  const [stillWaiting, setStillWaiting] = useState(false);
   const [remaining, setRemaining] = useState(0);
 
   useEffect(() => {
@@ -104,6 +106,20 @@ export function PayPanel({
       else {
         toast.success("Payment captured");
         router.push(`/track/${order.id}`);
+      }
+    });
+
+  const onIvePaid = () =>
+    startVerify(async () => {
+      setStillWaiting(false);
+      const r = await verifyPaymentNow(order.id);
+      if (r.status === "paid") {
+        toast.success("Payment confirmed");
+        router.push(`/track/${order.id}`);
+      } else if (r.status === "failed") {
+        toast.error("Payment failed — try the QR again");
+      } else {
+        setStillWaiting(true);
       }
     });
 
@@ -213,6 +229,25 @@ export function PayPanel({
               </span>
             </div>
           </div>
+
+          <button
+            onClick={onIvePaid}
+            disabled={verifying || Boolean(expired)}
+            className="inline-flex items-center justify-center gap-2 h-12 rounded-xl bg-[color:var(--color-ink)] text-[color:var(--color-paper)] text-[14px] font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
+          >
+            {verifying ? (
+              <>
+                <Loader2 size={14} className="animate-spin" /> Checking with Razorpay…
+              </>
+            ) : (
+              <>I&rsquo;ve paid · verify now</>
+            )}
+          </button>
+          {stillWaiting && !verifying && (
+            <p className="text-[12.5px] text-amber-600 text-center -mt-2">
+              Still waiting on Razorpay. UPI confirmation can lag 30–60 seconds — leave this page open and we&rsquo;ll flip it the moment it lands.
+            </p>
+          )}
 
           {!process.env.NEXT_PUBLIC_RAZORPAY_LIVE && (
             <>

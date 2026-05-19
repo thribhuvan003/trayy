@@ -27,6 +27,17 @@ async function staffContext(): Promise<Ctx> {
   return { ok: true, tenant, user };
 }
 
+// Append-only Realtime log. Insert via the un-typed channel because the
+// generated Database type isn't aware of the order_events table yet.
+async function emitOrderEvent(
+  admin: ReturnType<typeof getAdminClient>,
+  row: { order_id: string; tenant_id: string; event_type: string; payload?: Record<string, unknown> }
+) {
+  await (admin.from("order_events") as unknown as {
+    insert: (r: typeof row) => Promise<unknown>;
+  }).insert(row);
+}
+
 export async function markPreparing(orderId: string): Promise<Outcome> {
   const ctx = await staffContext();
   if (!ctx.ok) return ctx;
@@ -55,6 +66,12 @@ export async function markPreparing(orderId: string): Promise<Outcome> {
     action: "order.preparing",
     target_type: "order",
     target_id: orderId,
+  });
+  await emitOrderEvent(admin, {
+    order_id: orderId,
+    tenant_id: ctx.tenant.id,
+    event_type: "preparing",
+    payload: { actor: "kitchen" },
   });
   revalidatePath("/kitchen");
   return { ok: true };
@@ -103,6 +120,12 @@ export async function markReady(orderId: string): Promise<Outcome> {
     action: "order.ready",
     target_type: "order",
     target_id: orderId,
+  });
+  await emitOrderEvent(admin, {
+    order_id: orderId,
+    tenant_id: ctx.tenant.id,
+    event_type: "ready",
+    payload: { actor: "kitchen" },
   });
   revalidatePath("/kitchen");
   return { ok: true };
@@ -157,6 +180,12 @@ export async function verifyAndCollect(
     target_type: "order",
     target_id: orderId,
   });
+  await emitOrderEvent(admin, {
+    order_id: orderId,
+    tenant_id: ctx.tenant.id,
+    event_type: "collected",
+    payload: { actor: "kitchen" },
+  });
   revalidatePath("/kitchen");
   return { ok: true };
 }
@@ -193,6 +222,12 @@ export async function rejectOrder(orderId: string, reason: string): Promise<Outc
     target_type: "order",
     target_id: orderId,
     meta: { reason: reason.slice(0, 200) },
+  });
+  await emitOrderEvent(admin, {
+    order_id: orderId,
+    tenant_id: ctx.tenant.id,
+    event_type: "rejected",
+    payload: { actor: "kitchen", reason: reason.slice(0, 200) },
   });
   revalidatePath("/kitchen");
   return { ok: true };

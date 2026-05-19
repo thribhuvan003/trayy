@@ -57,6 +57,8 @@ export async function POST(req: NextRequest) {
   if (!orderRow) return NextResponse.json({ ok: true, skipped: true });
 
   if (body.event === "payment.captured" || payment.status === "captured") {
+    // Idempotent — duplicate webhooks share the same eventId and get
+    // silently dropped by the raw_event_id unique constraint.
     const { error: dupe } = await admin.from("payments").upsert(
       {
         tenant_id: orderRow.tenant_id,
@@ -67,16 +69,37 @@ export async function POST(req: NextRequest) {
         status: "captured",
         raw_event_id: eventId,
       },
-      { onConflict: "raw_event_id" }
+      { onConflict: "raw_event_id", ignoreDuplicates: true }
     );
     if (dupe) return NextResponse.json({ ok: false, error: dupe.message }, { status: 500 });
 
-    if (orderRow.status === "pending_payment") {
-      await admin
-        .from("orders")
-        .update({ status: "placed" })
-        .eq("id", orderRow.id)
-        .eq("tenant_id", orderRow.tenant_id);
+    // Gated update — duplicate webhooks (or manual verify racing the webhook)
+    // can't re-transition a row past pending_payment.
+    const { data: updated } = await admin
+      .from("orders")
+      .update({ status: "placed" })
+      .eq("id", orderRow.id)
+      .eq("tenant_id", orderRow.tenant_id)
+      .eq("status", "pending_payment")
+      .select("id");
+
+    if (updated && updated.length > 0) {
+      type OrderEventInsert = {
+        tenant_id: string;
+        order_id: string;
+        event_type: string;
+        payload: Record<string, unknown>;
+      };
+      await (
+        admin.from("order_events") as unknown as {
+          insert: (row: OrderEventInsert) => Promise<unknown>;
+        }
+      ).insert({
+        tenant_id: orderRow.tenant_id,
+        order_id: orderRow.id,
+        event_type: "status_changed",
+        payload: { from: "pending_payment", to: "placed", source: "razorpay_webhook" },
+      });
       await admin.from("order_status_logs").insert({
         tenant_id: orderRow.tenant_id,
         order_id: orderRow.id,
