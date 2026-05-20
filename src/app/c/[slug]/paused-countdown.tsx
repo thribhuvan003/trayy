@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
 
 function formatDuration(ms: number): string {
   if (ms <= 0) return "0:00";
@@ -17,9 +18,13 @@ export function PausedCountdown({ pausedUntil }: { pausedUntil: string }) {
   useEffect(() => {
     if (remaining <= 0) return;
     const id = setInterval(() => {
-      const left = Math.max(0, target - Date.now());
-      setRemaining(left);
-      if (left === 0) clearInterval(id);
+      const newRemaining = Math.max(0, target - Date.now());
+      setRemaining(newRemaining);
+      if (newRemaining <= 0) {
+        clearInterval(id);
+        // Auto-reload after 2 seconds so the server re-evaluates open status
+        setTimeout(() => window.location.reload(), 2000);
+      }
     }, 1_000);
     return () => clearInterval(id);
   }, [target, remaining]);
@@ -31,7 +36,7 @@ export function PausedCountdown({ pausedUntil }: { pausedUntil: string }) {
         style={{ marginBottom: "24px" }}
         aria-live="polite"
       >
-        Should be open now — refresh the page!
+        Should be open now — reloading… <Loader2 className="animate-spin" style={{ display: "inline", verticalAlign: "middle", width: "1em", height: "1em" }} />
       </p>
     );
   }

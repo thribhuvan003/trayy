@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { CheckCircle2, ChefHat, Hand, KeyRound, ShoppingBag, UtensilsCrossed, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn, formatRupees, formatTimeIST, elapsedSeconds, fmtElapsed } from "@/lib/utils";
@@ -124,19 +124,9 @@ export function OrderColumn({
         }}
       >
         {orders.length === 0 ? (
-          <div
-            style={{
-              padding: "32px 16px",
-              textAlign: "center",
-              fontFamily: "var(--font-newsreader), ui-serif, Georgia",
-              fontStyle: "italic",
-              fontSize: "28px",
-              color: "var(--kt-ink-4)",
-              opacity: 0.4,
-              lineHeight: 1,
-            }}
-          >
-            ∅
+          <div style={{ textAlign: "center", color: "var(--kt-ink-4)", fontSize: "13px", padding: "32px 16px" }}>
+            <div style={{ fontSize: "28px", marginBottom: "8px" }}>—</div>
+            No orders
           </div>
         ) : (
           orders.map((o, idx) => (
@@ -173,18 +163,13 @@ function TicketCard({
 }) {
   const [elapsed, setElapsed] = useState(elapsedSeconds(order.placed_at));
   const [showReject, setShowReject] = useState(false);
-  const [reason, setReason] = useState("");
+  const [selectedReason, setSelectedReason] = useState("");
   const [rejecting, setRejecting] = useState(false);
-  const reasonRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const id = setInterval(() => setElapsed(elapsedSeconds(order.placed_at)), 1000);
     return () => clearInterval(id);
   }, [order.placed_at]);
-
-  useEffect(() => {
-    if (showReject) setTimeout(() => reasonRef.current?.focus(), 30);
-  }, [showReject]);
 
   const overtime = order.status !== "collected" && elapsed > 480;
   const isCollected = order.status === "collected";
@@ -195,19 +180,24 @@ function TicketCard({
     else if (order.status === "ready") onAction("verify");
   };
 
+  const REJECT_REASONS = [
+    "Item unavailable",
+    "Out of stock",
+    "Order too late",
+    "Counter closed",
+  ];
+
   const submitReject = async () => {
     if (!onReject) return;
-    const trimmed = reason.trim();
-    if (!trimmed) {
-      toast.error("Enter a reason before rejecting");
-      reasonRef.current?.focus();
+    if (!selectedReason) {
+      toast.error("Select a reason before rejecting");
       return;
     }
     setRejecting(true);
     try {
-      await onReject(trimmed);
+      await onReject(selectedReason);
       setShowReject(false);
-      setReason("");
+      setSelectedReason("");
     } finally {
       setRejecting(false);
     }
@@ -427,55 +417,35 @@ function TicketCard({
             borderTop: "1px dashed var(--kt-line)",
           }}
         >
-          <p
-            style={{
-              fontFamily: "var(--font-jetbrains), ui-monospace, Menlo, monospace",
-              fontSize: "11px",
-              textTransform: "uppercase",
-              letterSpacing: "0.1em",
-              color: "var(--kt-tomato)",
-              marginBottom: "6px",
-            }}
-          >
-            Reject reason (required)
-          </p>
-          <textarea
-            ref={reasonRef}
-            value={reason}
-            onChange={(e) => setReason(e.target.value.slice(0, 200))}
-            rows={2}
-            maxLength={200}
-            placeholder="e.g. Item unavailable, wrong order, etc."
-            style={{
-              width: "100%",
-              resize: "none",
-              border: "1px solid var(--kt-line-2)",
-              background: "var(--kt-cream-4)",
-              color: "var(--kt-ink)",
-              fontSize: "12px",
-              padding: "8px 10px",
-              borderRadius: "6px",
-              fontFamily: "inherit",
-              outline: "none",
-            }}
-            onFocus={(e) => { e.currentTarget.style.borderColor = "var(--kt-tomato)"; }}
-            onBlur={(e) => { e.currentTarget.style.borderColor = "var(--kt-line-2)"; }}
-          />
-          <div
-            style={{
-              textAlign: "right",
-              fontFamily: "var(--font-jetbrains), ui-monospace, Menlo, monospace",
-              fontSize: "10px",
-              color: "var(--kt-ink-4)",
-              marginBottom: "8px",
-            }}
-          >
-            {reason.length}/200
+          <div className="flex flex-col gap-1.5">
+            <div className="text-[11px] font-mono uppercase tracking-wider opacity-60 mb-1">
+              Reason (tap to select)
+            </div>
+            {REJECT_REASONS.map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setSelectedReason(r)}
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: "6px",
+                  fontSize: "13px",
+                  textAlign: "left",
+                  background: selectedReason === r ? "var(--kt-tomato)" : "var(--kt-cream-4)",
+                  color: selectedReason === r ? "var(--kt-cream)" : "var(--kt-ink-2)",
+                  border: `1px solid ${selectedReason === r ? "var(--kt-tomato)" : "var(--kt-line-2)"}`,
+                  transition: "all 0.12s",
+                  cursor: "pointer",
+                }}
+              >
+                {r}
+              </button>
+            ))}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2" style={{ marginTop: "8px" }}>
             <button
               type="button"
-              onClick={() => { setShowReject(false); setReason(""); }}
+              onClick={() => { setShowReject(false); setSelectedReason(""); }}
               disabled={rejecting}
               className="flex-1 transition-colors"
               style={{
@@ -495,7 +465,7 @@ function TicketCard({
             <button
               type="button"
               onClick={() => void submitReject()}
-              disabled={rejecting || !reason.trim()}
+              disabled={rejecting || !selectedReason}
               className="flex-1 transition-colors"
               style={{
                 height: "36px",
@@ -504,8 +474,8 @@ function TicketCard({
                 color: "var(--kt-cream)",
                 fontSize: "12px",
                 fontWeight: 700,
-                cursor: rejecting || !reason.trim() ? "not-allowed" : "pointer",
-                opacity: rejecting || !reason.trim() ? 0.5 : 1,
+                cursor: rejecting || !selectedReason ? "not-allowed" : "pointer",
+                opacity: rejecting || !selectedReason ? 0.5 : 1,
                 border: "none",
                 boxShadow: "0 2px 0 var(--kt-ink)",
               }}

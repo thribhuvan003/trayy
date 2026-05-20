@@ -197,7 +197,7 @@ export async function createMenuItem(form: {
       category_id: form.category_id,
       image_url: form.image_url,
       sort_order: form.sort_order,
-      status: "draft",
+      status: "live",
       in_stock: true,
     })
     .select("id")

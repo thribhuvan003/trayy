@@ -9,7 +9,7 @@ export default async function LoginPage({
   searchParams: Promise<{ next?: string; error?: string }>;
 }) {
   const sp = await searchParams;
-  const next = sp.next ?? "/menu";
+  const next = sp.next ?? "/";
   return (
     <div
       data-portal="student"

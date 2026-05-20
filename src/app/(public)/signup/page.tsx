@@ -34,11 +34,11 @@ export default async function SignupPage({
             {tenant?.allowed_domain ? ` (@${tenant.allowed_domain})` : ""}.
           </p>
           <div className="mt-7">
-            <SignupForm next={sp.next ?? "/menu"} tenantSlug={tenant?.slug ?? "aditya"} allowedDomain={tenant?.allowed_domain ?? null} />
+            <SignupForm next={sp.next ?? "/"} tenantSlug={tenant?.slug ?? "aditya"} allowedDomain={tenant?.allowed_domain ?? null} />
           </div>
           <p className="mt-8 text-[12.5px] text-[color:var(--color-ink)]/55">
             Already have an account?{" "}
-            <Link href={`/login?next=${encodeURIComponent(sp.next ?? "/menu")}`} className="text-ocean-500 hover:underline">
+            <Link href={`/login?next=${encodeURIComponent(sp.next ?? "/")}`} className="text-ocean-500 hover:underline">
               Sign in
             </Link>
           </p>

@@ -134,6 +134,7 @@ export default async function DashboardPage({
         <WelcomeBanner
           tenantSlug={tenant.slug}
           collegeSlug={collegeSlug}
+          appUrl={env.APP_URL}
         />
       )}
       <CanteenLinks

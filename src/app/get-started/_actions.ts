@@ -166,6 +166,8 @@ export async function createInstitution(
 
   // ── 7. Send welcome email ────────────────────────────────────────────────────
   const dashboardUrl = `${env.APP_URL}/c/${canteenSlug}/admin/dashboard`;
+  const studentUrl = `${env.APP_URL}/c/${canteenSlug}/menu`;
+  const kitchenUrl = `${env.APP_URL}/c/${canteenSlug}/kitchen`;
   await sendEmail({
     to: form.adminEmail,
     subject: `Welcome to Tray — ${form.institutionName} is ready`,
@@ -173,6 +175,27 @@ export async function createInstitution(
       <div style="font-family: system-ui, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #1a140e;">
         <h1 style="font-size: 24px; font-weight: 700; margin: 0 0 8px;">Welcome to Tray, ${form.adminName}!</h1>
         <p style="color: #555; margin: 0 0 24px;">Your canteen <strong>${form.canteenName}</strong> at <strong>${form.institutionName}</strong> is set up and ready to go.</p>
+        <h3 style="font-size:16px;font-weight:600;margin:24px 0 8px;">Your 3 links — save these now</h3>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
+          <tr><td style="padding:10px;background:#f4f6f8;border-radius:8px;margin-bottom:8px;">
+            <strong>🍽️ Student ordering link</strong><br>
+            <span style="font-size:12px;color:#666;">Share this on WhatsApp with your students</span><br>
+            <a href="${studentUrl}" style="color:#0066cc;font-size:13px;">${studentUrl}</a>
+          </td></tr>
+          <tr><td style="height:8px;"></td></tr>
+          <tr><td style="padding:10px;background:#f4f6f8;border-radius:8px;">
+            <strong>📺 Kitchen display link</strong><br>
+            <span style="font-size:12px;color:#666;">Open this on your kitchen tablet</span><br>
+            <a href="${kitchenUrl}" style="color:#0066cc;font-size:13px;">${kitchenUrl}</a>
+          </td></tr>
+        </table>
+        <h3 style="font-size:16px;font-weight:600;margin:24px 0 8px;">What to do next:</h3>
+        <ol style="padding-left:20px;color:#333;line-height:1.8;">
+          <li>Open your admin dashboard and <strong>add your menu items</strong></li>
+          <li>Set your UPI ID in Settings so students can pay you directly</li>
+          <li>Share the student ordering link with your students via WhatsApp</li>
+          <li>Open the kitchen display link on your kitchen tablet</li>
+        </ol>
         <a href="${dashboardUrl}" style="display: inline-block; background: #0066ff; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 10px; font-weight: 600; font-size: 15px;">Open Admin Dashboard →</a>
         <hr style="border: none; border-top: 1px solid #e8ecf2; margin: 32px 0;" />
         <p style="font-size: 13px; color: #999; margin: 0;">Tray · Campus canteen ordering for institutions</p>

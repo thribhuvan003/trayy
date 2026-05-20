@@ -164,18 +164,41 @@ export function PayPanel({
 
       <div className="grid md:grid-cols-[1.1fr_1fr] gap-5">
         <div className="rounded-2xl bg-[color:var(--color-paper)] border border-[color:var(--color-line)] p-6 flex flex-col items-center text-center">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-[color:var(--color-ink)]/55 mb-3">
+          {/* Mobile: "Open UPI app" is the hero CTA */}
+          <a
+            href={upiUri}
+            className="md:hidden w-full h-14 text-[15px] inline-flex items-center justify-center gap-2 rounded-full bg-ocean-500 text-white font-medium hover:bg-ocean-600 transition-colors mb-1"
+          >
+            <Smartphone size={16} /> Open UPI app
+          </a>
+          <p className="md:hidden text-[11px] text-center opacity-60 mt-1 mb-4">Opens GPay, PhonePe, or any UPI app</p>
+
+          {/* Desktop: QR is prominent */}
+          <div className="hidden md:block text-[11px] font-mono uppercase tracking-wider text-[color:var(--color-ink)]/55 mb-3">
             Scan with any UPI app
           </div>
-          <div className="p-4 bg-white rounded-2xl shadow-[inset_0_0_0_1px_rgba(10,22,40,0.06)]">
+          <div className="hidden md:block p-4 bg-white rounded-2xl shadow-[inset_0_0_0_1px_rgba(10,22,40,0.06)]">
             <QRCode value={upiUri} size={208} bgColor="#ffffff" fgColor="#0a1628" />
           </div>
           <a
             href={upiUri}
-            className="mt-5 inline-flex items-center gap-2 h-11 px-5 rounded-full bg-ocean-500 text-white text-[13px] font-medium hover:bg-ocean-600 transition-colors"
+            className="hidden md:inline-flex mt-5 items-center gap-2 h-11 px-5 rounded-full bg-ocean-500 text-white text-[13px] font-medium hover:bg-ocean-600 transition-colors"
           >
             <Smartphone size={14} /> Open UPI app
           </a>
+
+          {/* Mobile: QR in a collapsed details section */}
+          <details className="md:hidden w-full text-left mt-2">
+            <summary className="text-[12px] font-mono text-center cursor-pointer text-[color:var(--color-ink)]/55 hover:text-[color:var(--color-ink)] transition-colors">
+              On desktop? Scan this QR
+            </summary>
+            <div className="mt-3 flex flex-col items-center gap-2">
+              <div className="p-4 bg-white rounded-2xl shadow-[inset_0_0_0_1px_rgba(10,22,40,0.06)]">
+                <QRCode value={upiUri} size={180} bgColor="#ffffff" fgColor="#0a1628" />
+              </div>
+            </div>
+          </details>
+
           <div className="mt-4 text-[12px] text-[color:var(--color-ink)]/55">
             Paying <span className="font-semibold text-[color:var(--color-ink)]">{tenantName}</span> · {tenantUpi}
           </div>
@@ -202,7 +225,7 @@ export function PayPanel({
               </p>
             ) : (
               <p className="mt-2 text-[12.5px] text-[color:var(--color-ink)]/55">
-                We&rsquo;ll auto-cancel after the timer hits zero.
+                You have 15 min to pay — after that, we&rsquo;ll cancel and refund automatically.
               </p>
             )}
           </div>

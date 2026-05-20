@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowDown, ArrowRight, ArrowUp, Download, IndianRupee, ListOrdered, Receipt, Timer } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUp, Copy, Download, IndianRupee, ListOrdered, Receipt, Timer } from "lucide-react";
 import dayjs from "dayjs";
 import { formatRupees, formatTimeIST, fmtElapsed } from "@/lib/utils";
 import { getBrowserClient } from "@/lib/supabase/browser";
@@ -195,7 +195,7 @@ export function DashboardView({
                 text: "Share your ordering link with students",
                 href: null,
                 cta: null,
-                note: "Look for it in the sidebar — copy and WhatsApp it to your class groups.",
+                copyStudentLink: true,
               },
             ].map((step) => (
               <li key={step.n} className="flex items-start gap-3">
@@ -205,10 +205,18 @@ export function DashboardView({
                 >
                   {step.n}
                 </span>
-                <div className="flex-1 text-[13px]" style={{ color: "#aab3c5" }}>
-                  {step.text}
-                  {"note" in step && step.note && (
-                    <span className="ml-1" style={{ color: "#6d7689" }}>{step.note}</span>
+                <div className="flex flex-col gap-1.5 flex-1 text-[13px]" style={{ color: "#aab3c5" }}>
+                  <span>{step.text}</span>
+                  {"copyStudentLink" in step && step.copyStudentLink && (
+                    <button
+                      onClick={() => {
+                        const origin = typeof window !== "undefined" ? window.location.origin : "";
+                        navigator.clipboard.writeText(`${origin}/c/${tenantSlug}/menu`).catch(() => undefined);
+                      }}
+                      className="inline-flex items-center gap-1.5 text-[12px] font-mono bg-lime/10 border border-lime/20 text-lime px-3 py-1.5 rounded-lg hover:bg-lime/20 transition-colors w-fit"
+                    >
+                      <Copy size={11} /> Copy student link
+                    </button>
                   )}
                   {step.href && step.cta && (
                     <a

@@ -3,9 +3,6 @@
 import { useState } from "react";
 import { X as XIcon, CheckCircle2 } from "lucide-react";
 
-// Fallback for SSR; overridden on client mount via link href construction.
-const BASE_URL = "https://trayy.vercel.app";
-
 type Link = { label: string; url: string };
 
 function CopyButton({ url }: { url: string }) {
@@ -54,19 +51,21 @@ function LinkRow({ label, url }: Link) {
 export function WelcomeBanner({
   tenantSlug,
   collegeSlug,
+  appUrl,
 }: {
   tenantSlug: string;
   collegeSlug: string;
+  appUrl: string;
 }) {
   const [dismissed, setDismissed] = useState(false);
 
   if (dismissed) return null;
 
   const links: Link[] = [
-    { label: "Student ordering", url: `${BASE_URL}/c/${tenantSlug}/menu` },
-    { label: "Kitchen board", url: `${BASE_URL}/c/${tenantSlug}/kitchen` },
-    { label: "Admin dashboard", url: `${BASE_URL}/c/${tenantSlug}/admin/dashboard` },
-    { label: "College portal", url: `${BASE_URL}/college/${collegeSlug}` },
+    { label: "Student ordering", url: `${appUrl}/c/${tenantSlug}/menu` },
+    { label: "Kitchen board", url: `${appUrl}/c/${tenantSlug}/kitchen` },
+    { label: "Admin dashboard", url: `${appUrl}/c/${tenantSlug}/admin/dashboard` },
+    { label: "College portal", url: `${appUrl}/college/${collegeSlug}` },
   ];
 
   const nextSteps = [

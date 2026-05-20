@@ -1240,7 +1240,7 @@ export function LandingPage({ tenant, msg }: { tenant: ResolvedTenant | null; ms
               <a href="https://trayy.vercel.app/c/aditya/menu" className="tl-btn tl-btn-pri tl-btn-lg" data-magnetic>
                 Try the student app →
               </a>
-              <a href="https://trayy.vercel.app/c/aditya/admin/dashboard" className="tl-btn tl-btn-ghost tl-btn-lg">I run a canteen</a>
+              <Link href="/get-started" className="tl-btn tl-btn-pri tl-btn-lg">Set up my canteen — free</Link>
             </div>
             <div className="tl-note">DEMO IS LIVE · NO SIGN-UP · 90-SECOND TOUR</div>
             <div className="tl-trust">

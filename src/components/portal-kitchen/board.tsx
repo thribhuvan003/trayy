@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Bell, BellOff, ChefHat, History as HistoryIcon, Radio, UserRoundCog } from "lucide-react";
 import { toast } from "sonner";
 import { getBrowserClient } from "@/lib/supabase/browser";
-import { formatRupees, formatTimeIST } from "@/lib/utils";
+import { cn, formatRupees, formatTimeIST } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { OrderColumn } from "./order-column";
 import { OtpVerifyDialog } from "./otp-verify-dialog";
@@ -54,6 +54,7 @@ export function KitchenBoard({
   const [wsConnected, setWsConnected] = useState(false);
   const [bellOn, setBellOn] = useState(true);
   const [sessionExpired, setSessionExpired] = useState(false);
+  const [newOrderFlash, setNewOrderFlash] = useState(false);
   const bellOnRef = useRef(true);
   const seenOrderIdsRef = useRef<Set<string>>(new Set(initialOrders.map((o) => o.id)));
 
@@ -154,7 +155,11 @@ export function KitchenBoard({
         (payload) => {
           const eventType = (payload.new as { event_type?: string } | null)?.event_type;
           void refresh(() => {
-            if (eventType === "placed") playBell();
+            if (eventType === "placed") {
+              playBell();
+              setNewOrderFlash(true);
+              setTimeout(() => setNewOrderFlash(false), 10000);
+            }
           });
         }
       )
@@ -571,7 +576,7 @@ export function KitchenBoard({
                   fontWeight: 500,
                 }}
               >
-                {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })} · {tenantName} · Lunch Service
+                {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })} · {tenantName} · {(() => { const h = new Date().getHours(); if (h < 11) return "Breakfast Service"; if (h < 15) return "Lunch Service"; if (h < 18) return "Evening Snacks"; return "Dinner Service"; })()}
               </div>
               {/* H1 — matches .page-head h1 + .it italic tomato */}
               <h1
@@ -694,7 +699,7 @@ export function KitchenBoard({
           </div>
 
           {/* KPI strip */}
-          <KitchenKpiStrip orders={orders} />
+          <KitchenKpiStrip orders={orders} newOrderFlash={newOrderFlash} />
         </header>
 
         <KitchenMarquee items={marquee} />
@@ -713,7 +718,8 @@ export function KitchenBoard({
               boxShadow: "5px 5px 0 var(--kt-ink)",
             }}
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4" style={{ minHeight: "520px" }}>
+            <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+            <div className="grid grid-cols-4 min-w-[680px]" style={{ minHeight: "520px" }}>
               <OrderColumn
                 title="Incoming"
                 subtitle="Just paid · awaiting kitchen"
@@ -735,7 +741,7 @@ export function KitchenBoard({
               />
               <OrderColumn
                 title="Preparing"
-                subtitle="On the line"
+                subtitle="Currently cooking"
                 status="preparing"
                 orders={groups.preparing}
                 linesByOrder={linesByOrder}
@@ -748,7 +754,7 @@ export function KitchenBoard({
               />
               <OrderColumn
                 title="Ready"
-                subtitle="Awaiting OTP at counter"
+                subtitle="Student will show a code"
                 status="ready"
                 orders={groups.ready}
                 linesByOrder={linesByOrder}
@@ -763,6 +769,7 @@ export function KitchenBoard({
                 onAction={() => {}}
               />
             </div>
+            </div>
             {/* Queue footer — matches .queue-foot */}
             <div
               className="flex justify-between items-center"
@@ -771,12 +778,12 @@ export function KitchenBoard({
                 borderTop: "1px solid var(--kt-line)",
                 background: "var(--kt-cream-4)",
                 fontFamily: "var(--font-jetbrains), ui-monospace, Menlo, monospace",
-                fontSize: "11px",
+                fontSize: "13px",
                 color: "var(--kt-ink-3)",
                 letterSpacing: "0.04em",
               }}
             >
-              <span>CLICK A TICKET TO ADVANCE · TAP VERIFY OTP FOR COLLECTION</span>
+              <span>TAP any card to move it forward · TAP VERIFY CODE when student arrives</span>
               <span style={{ color: "var(--kt-tomato)", fontWeight: 600 }}>
                 {groups.placed.length + groups.preparing.length} active
               </span>
@@ -797,7 +804,7 @@ export function KitchenBoard({
   );
 }
 
-function KitchenKpiStrip({ orders }: { orders: OrderRow[] }) {
+function KitchenKpiStrip({ orders, newOrderFlash }: { orders: OrderRow[]; newOrderFlash: boolean }) {
   const counts = useMemo(() => {
     return {
       placed: orders.filter((o) => o.status === "placed").length,
@@ -829,6 +836,7 @@ function KitchenKpiStrip({ orders }: { orders: OrderRow[] }) {
       {cells.map((c) => (
         <div
           key={c.label}
+          className={cn(c.label === "Incoming" && newOrderFlash && "ring-2 ring-[#d52821] ring-offset-2 animate-pulse")}
           style={{
             background: "var(--kt-paper)",
             border: "1px solid var(--kt-ink)",
@@ -915,7 +923,7 @@ function PrepTotalsStrip({ orders, lines, onSessionExpired }: { orders: OrderRow
           toast.error(err);
         }
       } else if (!inStock) {
-        toast.success(`86 — ${name} marked sold out. Student menu updated.`);
+        toast.success(`${name} marked as sold out. Student menu updated.`);
         setRecentlySoldOut((prev) => new Map(prev).set(name, true));
       } else {
         toast.success(`${name} back in stock.`);
@@ -1000,12 +1008,12 @@ function PrepTotalsStrip({ orders, lines, onSessionExpired }: { orders: OrderRow
               >
                 {name}
               </span>
-              {/* 86 button — min 44px touch target */}
+              {/* SOLD OUT button — min 44px touch target */}
               <button
                 type="button"
                 disabled={isLoading}
                 onClick={() => void handle86(name, false)}
-                title={`86 — mark ${name} sold out`}
+                title={`Mark as sold out`}
                 aria-label={`Mark ${name} sold out`}
                 className="inline-flex items-center justify-center transition-colors"
                 style={{
@@ -1023,10 +1031,9 @@ function PrepTotalsStrip({ orders, lines, onSessionExpired }: { orders: OrderRow
                   color: "var(--kt-tomato)",
                   cursor: isLoading ? "wait" : "pointer",
                   opacity: isLoading ? 0.4 : 1,
-                  textDecoration: "line-through",
                 }}
               >
-                86
+                SOLD OUT
               </button>
             </div>
           );
@@ -1076,8 +1083,8 @@ function PrepTotalsStrip({ orders, lines, onSessionExpired }: { orders: OrderRow
                 type="button"
                 disabled={isLoading}
                 onClick={() => void handle86(name, true)}
-                title={`Undo 86 — restore ${name}`}
-                aria-label={`Undo 86 — mark ${name} back in stock`}
+                title={`Mark ${name} back in stock`}
+                aria-label={`Mark ${name} back in stock`}
                 className="inline-flex items-center justify-center transition-colors"
                 style={{
                   height: "44px",
@@ -1096,7 +1103,7 @@ function PrepTotalsStrip({ orders, lines, onSessionExpired }: { orders: OrderRow
                   opacity: isLoading ? 0.4 : 1,
                 }}
               >
-                Undo
+                BACK IN STOCK
               </button>
             </div>
           );

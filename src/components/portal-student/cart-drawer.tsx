@@ -73,8 +73,7 @@ export function CartDrawer({ tenantSlug, tenantName, tenantUpi }: { tenantSlug: 
       );
       if (!res.ok) {
         if (res.code === "AUTH_REQUIRED") {
-          // Don't show an error toast — just redirect to login silently.
-          // The cart persists in localStorage so items are safe.
+          toast.info("Sign in to place your order — your cart is saved");
           router.push(`/c/${tenantSlug}/login?next=/c/${tenantSlug}/menu`);
         } else {
           toast.error(res.error ?? "Could not place order");
