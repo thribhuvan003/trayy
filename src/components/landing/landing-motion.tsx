@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
+import { motionTokens } from "@/lib/motionTokens";
 
-const HERO_EASE = "expo.out";
+const HERO_EASE = motionTokens.ease.hero;
+const REVEAL_EASE = motionTokens.ease.reveal;
 const MAGNET_MAX_PX = 8;
 
 /**
@@ -275,7 +277,7 @@ export function LandingMotion() {
                   clipPath: "inset(0% 0% 0% 0%)",
                   duration: vars.duration ?? 0.85,
                   stagger: vars.stagger ?? 0.08,
-                  ease: vars.ease ?? HERO_EASE,
+                  ease: vars.ease ?? REVEAL_EASE,
                   overwrite: "auto",
                 });
               },
@@ -349,7 +351,17 @@ export function LandingMotion() {
               start: "top 85%",
               once: true,
               onEnter: () => {
-                gsap.to(diagram, { scale: 1, opacity: 1, duration: 0.75, ease: HERO_EASE });
+                gsap.fromTo(
+                  diagram,
+                  { boxShadow: "0 0 0 0 rgba(232, 168, 106, 0)" },
+                  {
+                    scale: 1,
+                    opacity: 1,
+                    boxShadow: "0 0 0 1px rgba(232, 168, 106, 0.22), 0 24px 48px rgba(0, 0, 0, 0.35)",
+                    duration: 0.75,
+                    ease: HERO_EASE,
+                  },
+                );
                 const seq = gsap.timeline({ defaults: { ease: HERO_EASE } });
                 nodes.forEach((node, i) => {
                   const offset = i * 0.14;
@@ -526,8 +538,12 @@ export function LandingMotion() {
                 }
               };
               const onMove = (e: MouseEvent) => {
-                if (!chrome) return;
                 const rect = portal.getBoundingClientRect();
+                const spotX = ((e.clientX - rect.left) / rect.width) * 100;
+                const spotY = ((e.clientY - rect.top) / rect.height) * 100;
+                portal.style.setProperty("--spot-x", `${spotX}%`);
+                portal.style.setProperty("--spot-y", `${spotY}%`);
+                if (!chrome) return;
                 const px = (e.clientX - rect.left) / rect.width - 0.5;
                 const py = (e.clientY - rect.top) / rect.height - 0.5;
                 gsap.to(chrome, {
@@ -578,33 +594,32 @@ export function LandingMotion() {
               });
             });
 
-            const magneticBtn = closing?.querySelector<HTMLElement>(".tl-btn-pri");
-            if (magneticBtn) {
-              gsap.set(magneticBtn, { x: 0, y: 0 });
+            const bindMagnetic = (btn: HTMLElement) => {
+              const qx = gsap.quickTo(btn, "x", { duration: 0.38, ease: motionTokens.ease.nav });
+              const qy = gsap.quickTo(btn, "y", { duration: 0.38, ease: motionTokens.ease.nav });
+              gsap.set(btn, { x: 0, y: 0 });
               const onMagMove = (e: MouseEvent) => {
-                const rect = magneticBtn.getBoundingClientRect();
+                const rect = btn.getBoundingClientRect();
                 const cx = rect.left + rect.width / 2;
                 const cy = rect.top + rect.height / 2;
                 const dx = ((e.clientX - cx) / rect.width) * MAGNET_MAX_PX * 2;
                 const dy = ((e.clientY - cy) / rect.height) * MAGNET_MAX_PX * 2;
-                gsap.to(magneticBtn, {
-                  x: Math.max(-MAGNET_MAX_PX, Math.min(MAGNET_MAX_PX, dx)),
-                  y: Math.max(-MAGNET_MAX_PX, Math.min(MAGNET_MAX_PX, dy)),
-                  duration: 0.35,
-                  ease: "power3.out",
-                  overwrite: "auto",
-                });
+                qx(Math.max(-MAGNET_MAX_PX, Math.min(MAGNET_MAX_PX, dx)));
+                qy(Math.max(-MAGNET_MAX_PX, Math.min(MAGNET_MAX_PX, dy)));
               };
               const onMagLeave = () => {
-                gsap.to(magneticBtn, { x: 0, y: 0, duration: 0.5, ease: "power3.out" });
+                qx(0);
+                qy(0);
               };
-              magneticBtn.addEventListener("mousemove", onMagMove);
-              magneticBtn.addEventListener("mouseleave", onMagLeave);
+              btn.addEventListener("mousemove", onMagMove);
+              btn.addEventListener("mouseleave", onMagLeave);
               magneticCleanups.push(() => {
-                magneticBtn.removeEventListener("mousemove", onMagMove);
-                magneticBtn.removeEventListener("mouseleave", onMagLeave);
+                btn.removeEventListener("mousemove", onMagMove);
+                btn.removeEventListener("mouseleave", onMagLeave);
+                gsap.set(btn, { clearProps: "x,y" });
               });
-            }
+            };
+            root.querySelectorAll<HTMLElement>(".tl-btn-pri[data-magnetic]").forEach(bindMagnetic);
           }
         }, root);
 
