@@ -14,6 +14,9 @@ const STATUS_LABEL: Record<string, { label: string; tone: string }> = {
   collected: { label: "Collected", tone: "emerald" },
   rejected: { label: "Rejected", tone: "rose" },
   expired: { label: "Expired", tone: "rose" },
+  cancelled_by_kitchen: { label: "Cancelled", tone: "rose" },
+  refunded: { label: "Refunded", tone: "rose" },
+  partially_ready: { label: "Partially ready", tone: "amber" },
 };
 
 export default async function OrdersPage() {
@@ -22,7 +25,7 @@ export default async function OrdersPage() {
   const tenant = await resolveTenant(slug);
   if (!tenant) return null;
   const user = await getCurrentUser();
-  if (!user) redirect(`/login?next=/orders`);
+  if (!user) redirect(`/c/${tenant.slug}/login?next=/c/${tenant.slug}/orders`);
 
   const supabase = await getServerClient(tenant.id);
   const { data: orders } = await supabase
@@ -47,7 +50,7 @@ export default async function OrdersPage() {
         <div className="mt-10 rounded-2xl border border-dashed border-[color:var(--color-line)] p-10 text-center">
           <p className="text-[15px] text-[color:var(--color-ink)]/60">No orders yet.</p>
           <Link
-            href="/menu"
+            href={`/c/${tenant.slug}/menu`}
             className="mt-4 inline-flex items-center gap-1.5 h-11 px-5 rounded-full bg-ocean-500 text-white text-[13px] font-medium hover:bg-ocean-600 transition-colors"
           >
             Open the menu →
@@ -62,7 +65,7 @@ export default async function OrdersPage() {
             return (
               <li key={o.id}>
                 <Link
-                  href={o.status === "pending_payment" ? `/pay/${o.id}` : `/track/${o.id}`}
+                  href={o.status === "pending_payment" ? `/c/${tenant.slug}/pay/${o.id}` : `/c/${tenant.slug}/track/${o.id}`}
                   className="flex items-center justify-between gap-3 rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-paper)] p-4 hover:border-ocean-500/40 transition-colors"
                 >
                   <div className="flex items-center gap-3">

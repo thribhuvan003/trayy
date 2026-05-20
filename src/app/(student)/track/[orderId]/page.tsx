@@ -12,13 +12,13 @@ export default async function TrackPage({ params }: { params: Promise<{ orderId:
   const tenant = await resolveTenant(slug);
   if (!tenant) notFound();
   const user = await getCurrentUser();
-  if (!user) redirect(`/login?next=/track/${orderId}`);
+  if (!user) redirect(`/c/${tenant.slug}/login?next=/c/${tenant.slug}/track/${orderId}`);
 
   const supabase = await getServerClient(tenant.id);
   type OrderRow = {
     id: string;
     short_code: string;
-    status: "pending_payment" | "placed" | "preparing" | "ready" | "collected" | "rejected" | "expired";
+    status: "pending_payment" | "placed" | "preparing" | "ready" | "collected" | "rejected" | "expired" | "cancelled_by_kitchen" | "partially_ready" | "refunded";
     total_paise: number;
     placed_at: string;
     ready_at: string | null;
@@ -44,5 +44,5 @@ export default async function TrackPage({ params }: { params: Promise<{ orderId:
       price_paise_snapshot: number;
     }[]>();
 
-  return <TrackPanel tenantName={tenant.name} order={order} lines={lines ?? []} />;
+  return <TrackPanel tenantSlug={tenant.slug} tenantName={tenant.name} order={order} lines={lines ?? []} />;
 }

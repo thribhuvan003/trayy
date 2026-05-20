@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import bcrypt from "bcryptjs";
 import { resolveTenant } from "@/lib/tenant";
 import { getAdminClient } from "@/lib/supabase/admin";
@@ -254,6 +254,88 @@ export async function markItemSoldOut(
   revalidatePath("/menu");
   revalidatePath("/kitchen");
   return { ok: true, itemId: item.id };
+}
+
+// ── Staff PIN login ───────────────────────────────────────────────────────────
+// Called from the PIN kiosk (staff-select page). Uses the RPC which is
+// SECURITY DEFINER — bcrypt compare + lockout happen in Postgres, not here.
+// On success a signed cookie is written; on failure the error is returned to
+// the client so it can show attempts remaining or the lockout countdown.
+export async function verifyStaffPinAction(
+  p_user_id: string,
+  p_pin: string
+): Promise<{ ok: boolean; error?: string; locked?: boolean; lockedUntil?: string }> {
+  const h = await headers();
+  const slug = h.get("x-tenant-slug") ?? "aditya";
+  const tenant = await resolveTenant(slug);
+  if (!tenant) return { ok: false, error: "Tenant not found" };
+
+  // requireRole is skipped here — staff-select is accessed before PIN auth.
+  // We use the admin client so the RPC call succeeds regardless of the calling
+  // user's session (shared-tablet scenario where the device has a service session).
+  const admin = getAdminClient(tenant.id);
+
+  // Fetch lockout state before calling RPC so we can return a lockedUntil
+  // timestamp for the countdown UI.
+  const { data: profile } = await admin
+    .from("staff_profiles")
+    .select("locked_until, is_active")
+    .eq("user_id", p_user_id)
+    .eq("tenant_id", tenant.id)
+    .eq("is_active", true)
+    .maybeSingle<{ locked_until: string | null; is_active: boolean }>();
+
+  if (!profile) return { ok: false, error: "Staff member not found" };
+
+  if (profile.locked_until && new Date(profile.locked_until) > new Date()) {
+    return { ok: false, locked: true, lockedUntil: profile.locked_until, error: "Account locked" };
+  }
+
+  const { data: verified, error: rpcError } = await admin.rpc("verify_staff_pin", {
+    p_tenant_id: tenant.id,
+    p_user_id,
+    p_pin,
+  });
+
+  if (rpcError) return { ok: false, error: rpcError.message };
+
+  if (!verified) {
+    // Re-fetch to get updated locked_until after the failed attempt.
+    const { data: refreshed } = await admin
+      .from("staff_profiles")
+      .select("locked_until, pin_attempt_count")
+      .eq("user_id", p_user_id)
+      .eq("tenant_id", tenant.id)
+      .maybeSingle<{ locked_until: string | null; pin_attempt_count: number }>();
+
+    if (refreshed?.locked_until && new Date(refreshed.locked_until) > new Date()) {
+      return {
+        ok: false,
+        locked: true,
+        lockedUntil: refreshed.locked_until,
+        error: "Too many wrong PINs — locked for 10 minutes",
+      };
+    }
+
+    const attemptsUsed = refreshed?.pin_attempt_count ?? 1;
+    const attemptsLeft = Math.max(0, 5 - attemptsUsed);
+    return {
+      ok: false,
+      error: attemptsLeft > 0 ? `Wrong PIN — ${attemptsLeft} attempt${attemptsLeft !== 1 ? "s" : ""} left` : "Wrong PIN",
+    };
+  }
+
+  // Success — write the 8-hour staff session cookie.
+  const cookieStore = await cookies();
+  cookieStore.set("kitchen_staff_id", p_user_id, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 8 * 60 * 60, // 8 hours in seconds
+    secure: process.env.NODE_ENV === "production",
+  });
+
+  return { ok: true };
 }
 
 export async function rejectOrder(orderId: string, reason: string): Promise<Outcome> {

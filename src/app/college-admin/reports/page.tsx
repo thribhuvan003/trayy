@@ -33,11 +33,13 @@ export default async function ReportsPage() {
 
   if (!membership) redirect("/login?next=/college-admin/reports");
 
-  // Fetch all tenants for this college
+  // Fetch all active tenants for this college
   const { data: tenants } = await admin
     .from("tenants")
     .select("id, name, slug")
-    .eq("college_id", membership.college_id);
+    .eq("college_id", membership.college_id)
+    .eq("is_active", true)
+    .order("name");
 
   const tenantIds = (tenants ?? []).map((t) => t.id);
 
@@ -57,13 +59,15 @@ export default async function ReportsPage() {
       .in("tenant_id", tenantIds)
       .gte("placed_at", todayIso);
 
+    const EXCLUDED_STATUSES = new Set(["rejected", "expired", "refunded", "pending_payment"]);
     for (const o of orders ?? []) {
-      // Count all orders placed today (excluding obviously failed ones)
-      if (o.status !== "rejected" && o.status !== "expired" && o.status !== "refunded") {
+      // Count and sum only confirmed/paid orders (exclude failed and unpaid)
+      if (!EXCLUDED_STATUSES.has(o.status)) {
         totalOrdersToday += 1;
-        totalRevenueToday += o.total_paise;
+        totalRevenueToday += o.total_paise ?? 0;
         orderCountByTenant[o.tenant_id] = (orderCountByTenant[o.tenant_id] ?? 0) + 1;
-        revenueByTenant[o.tenant_id] = (revenueByTenant[o.tenant_id] ?? 0) + o.total_paise;
+        revenueByTenant[o.tenant_id] =
+          (revenueByTenant[o.tenant_id] ?? 0) + (o.total_paise ?? 0);
       }
     }
   }

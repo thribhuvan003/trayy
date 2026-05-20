@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Bell, BellOff, ChefHat, History as HistoryIcon, Radio } from "lucide-react";
+import { Bell, BellOff, ChefHat, History as HistoryIcon, Radio, UserRoundCog } from "lucide-react";
 import { toast } from "sonner";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { formatRupees, formatTimeIST } from "@/lib/utils";
@@ -35,12 +35,14 @@ type LineRow = {
 export function KitchenBoard({
   tenantId,
   tenantName,
+  tenantSlug,
   orders: initialOrders,
   lines: initialLines,
   marquee,
 }: {
   tenantId: string;
   tenantName: string;
+  tenantSlug: string;
   orders: OrderRow[];
   lines: LineRow[];
   marquee: { id: string; name: string; price_paise: number; diet: "veg" | "nonveg" | "egg" }[];
@@ -219,10 +221,24 @@ export function KitchenBoard({
             </button>
             <ThemeToggle className="text-tomato-900 dark:text-cream-200" />
             <Link
-              href="/admin/dashboard"
+              href={`/c/${tenantSlug}/kitchen/history`}
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border-2 border-tomato-900 dark:border-cream-200 text-[12px] font-medium hover:bg-tomato-900 hover:text-cream-50 dark:hover:bg-cream-200 dark:hover:text-graphite-900 transition-colors"
+              title="Today's completed orders"
+            >
+              <HistoryIcon size={12} /> History
+            </Link>
+            <Link
+              href={`/c/${tenantSlug}/kitchen/staff-select`}
+              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border-2 border-tomato-900 dark:border-cream-200 text-[12px] font-medium hover:bg-tomato-900 hover:text-cream-50 dark:hover:bg-cream-200 dark:hover:text-graphite-900 transition-colors"
+              title="Switch logged-in staff member"
+            >
+              <UserRoundCog size={12} /> Switch Staff
+            </Link>
+            <Link
+              href={`/c/${tenantSlug}/admin/dashboard`}
               className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border-2 border-tomato-900 dark:border-cream-200 text-[12px] font-medium hover:bg-tomato-900 hover:text-cream-50 dark:hover:bg-cream-200 dark:hover:text-graphite-900 transition-colors"
             >
-              <HistoryIcon size={12} /> Admin
+              Admin
             </Link>
           </div>
         </div>

@@ -32,7 +32,7 @@ export function AdminShell({
     <div className="relative z-10 flex">
       <aside className="hidden lg:flex w-[220px] shrink-0 border-r border-graphite-200/10 sticky top-0 self-start h-screen flex-col">
         <div className="px-4 pt-5 pb-3">
-          <Link href="/" className="inline-flex items-center gap-2 font-display text-[17px] tracking-tight text-graphite-200">
+          <Link href={`/c/${tenantSlug}/admin/dashboard`} className="inline-flex items-center gap-2 font-display text-[17px] tracking-tight text-graphite-200">
             <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-lime text-graphite-900 font-mono text-[11px] font-bold">T</span>
             <span className="font-medium">Tray<span className="italic text-lime">.</span></span>
           </Link>
@@ -99,7 +99,7 @@ export function AdminShell({
             <div className="flex items-center gap-2">
               <ThemeToggle className="text-graphite-200" />
               <Link
-                href="/kitchen"
+                href={`/c/${tenantSlug}/kitchen`}
                 className="hidden md:inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-graphite-200/15 text-[11px] font-mono uppercase tracking-wider text-graphite-300 hover:border-lime hover:text-lime transition-colors"
               >
                 <Activity size={11} /> Kitchen
@@ -111,19 +111,19 @@ export function AdminShell({
         <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-graphite-200/10 bg-graphite-900/95 backdrop-blur-xl">
           <div className="grid grid-cols-6">
             {[
-              { href: "/admin/dashboard", icon: LayoutGrid, label: "Home" },
-              { href: "/admin/orders", icon: ListOrdered, label: "Orders" },
-              { href: "/admin/menu", icon: BookOpen, label: "Menu" },
-              { href: "/admin/staff", icon: Users, label: "Staff" },
-              { href: "/admin/analytics", icon: LineChart, label: "Insights" },
-              { href: "/admin/settings", icon: Settings, label: "Settings" },
+              { href: `/c/${tenantSlug}/admin/dashboard`, match: "/admin/dashboard", icon: LayoutGrid, label: "Home" },
+              { href: `/c/${tenantSlug}/admin/orders`, match: "/admin/orders", icon: ListOrdered, label: "Orders" },
+              { href: `/c/${tenantSlug}/admin/menu`, match: "/admin/menu", icon: BookOpen, label: "Menu" },
+              { href: `/c/${tenantSlug}/admin/staff`, match: "/admin/staff", icon: Users, label: "Staff" },
+              { href: `/c/${tenantSlug}/admin/analytics`, match: "/admin/analytics", icon: LineChart, label: "Insights" },
+              { href: `/c/${tenantSlug}/admin/settings`, match: "/admin/settings", icon: Settings, label: "Settings" },
             ].map((n) => (
               <Link
                 key={n.href}
                 href={n.href}
                 className={cn(
                   "flex flex-col items-center justify-center gap-0.5 py-2.5 text-[10px] font-mono uppercase tracking-wider",
-                  pathname?.startsWith(n.href) ? "text-lime" : "text-graphite-400"
+                  pathname?.startsWith(n.match) ? "text-lime" : "text-graphite-400"
                 )}
               >
                 <n.icon size={15} />

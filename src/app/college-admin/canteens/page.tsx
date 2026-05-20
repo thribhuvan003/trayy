@@ -31,6 +31,7 @@ export default async function CanteensPage() {
     .from("tenants")
     .select("id, slug, name, is_open, paused_until, building, zone, mess_type")
     .eq("college_id", membership.college_id)
+    .eq("is_active", true)
     .order("name");
 
   return (

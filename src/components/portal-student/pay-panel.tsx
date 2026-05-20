@@ -28,11 +28,13 @@ type Line = {
 };
 
 export function PayPanel({
+  tenantSlug,
   tenantName,
   tenantUpi,
   order,
   lines,
 }: {
+  tenantSlug: string;
   tenantName: string;
   tenantUpi: string;
   order: Order;
@@ -126,7 +128,7 @@ export function PayPanel({
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 pt-6 pb-12">
       <Link
-        href="/menu"
+        href={`/c/${tenantSlug}/menu`}
         className="inline-flex items-center gap-1.5 text-[13px] text-[color:var(--color-ink)]/60 hover:text-ocean-500 mb-4"
       >
         <ArrowLeft size={14} /> Back to menu
@@ -176,7 +178,7 @@ export function PayPanel({
             </div>
             {expired ? (
               <p className="mt-2 text-[12.5px] text-rose-500">
-                Payment window closed. <Link href="/menu" className="underline">Start a new order</Link>.
+                Payment window closed. <Link href={`/c/${tenantSlug}/menu`} className="underline">Start a new order</Link>.
               </p>
             ) : (
               <p className="mt-2 text-[12.5px] text-[color:var(--color-ink)]/55">

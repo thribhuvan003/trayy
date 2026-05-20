@@ -46,7 +46,7 @@ const STEPS: { v: Status; label: string; icon: typeof Check; copy: string }[] = 
 
 const FIVE_MIN_MS = 5 * 60 * 1000;
 
-export function TrackPanel({ tenantName, order: initial, lines }: { tenantName: string; order: Order; lines: Line[] }) {
+export function TrackPanel({ tenantSlug, tenantName, order: initial, lines }: { tenantSlug: string; tenantName: string; order: Order; lines: Line[] }) {
   const [order, setOrder] = useState(initial);
   const [otp, setOtp] = useState<string | null>(null);
   const [cancelPending, startCancel] = useTransition();
@@ -110,7 +110,7 @@ export function TrackPanel({ tenantName, order: initial, lines }: { tenantName: 
             : "The canteen couldn't accept this order. If you paid, a refund is on its way."}
         </p>
         <Link
-          href="/menu"
+          href={`/c/${tenantSlug}/menu`}
           className="mt-6 inline-flex items-center gap-1.5 h-11 px-5 rounded-full bg-ocean-500 text-white text-[13px] font-medium hover:bg-ocean-600 transition-colors"
         >
           Try another order
@@ -127,7 +127,7 @@ export function TrackPanel({ tenantName, order: initial, lines }: { tenantName: 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 pt-6 pb-12">
       <Link
-        href="/orders"
+        href={`/c/${tenantSlug}/orders`}
         className="inline-flex items-center gap-1.5 text-[13px] text-[color:var(--color-ink)]/60 hover:text-ocean-500 mb-4"
       >
         <ArrowLeft size={14} /> Orders

@@ -2,8 +2,9 @@ import { redirect, notFound } from "next/navigation";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { resolveTenant } from "@/lib/tenant";
-import { getServerClient } from "@/lib/supabase/server";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { updateMenuItem, deleteMenuItem } from "@/app/(admin)/admin/_actions";
+import { DeleteItemButton } from "@/components/portal-admin/delete-item-button";
 import type { MenuItem } from "@/lib/db/types";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +17,7 @@ export default async function EditMenuItemPage({ params }: Props) {
   const slug = h.get("x-tenant-slug") ?? "aditya";
   const tenant = await resolveTenant(slug);
   if (!tenant) return null;
-  const supabase = await getServerClient(tenant.id);
+  const supabase = getAdminClient(tenant.id);
 
   const [{ data: item }, { data: cats }] = await Promise.all([
     supabase
@@ -271,19 +272,7 @@ export default async function EditMenuItemPage({ params }: Props) {
         <p className="text-[13px] text-graphite-500 mb-3">
           Deleting archives this item. It will no longer appear on the menu.
         </p>
-        <form action={handleDelete}>
-          <button
-            type="submit"
-            className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-[13px] font-medium text-red-600 hover:bg-red-100 transition-colors"
-            onClick={(e) => {
-              if (!confirm("Archive this item? It will be hidden from the menu.")) {
-                e.preventDefault();
-              }
-            }}
-          >
-            Delete (archive) item
-          </button>
-        </form>
+        <DeleteItemButton deleteAction={handleDelete} />
       </div>
     </div>
   );

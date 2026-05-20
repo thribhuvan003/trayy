@@ -68,6 +68,7 @@ export default async function CollegeAdminDashboard() {
       .from("tenants")
       .select("id, slug, name, is_open, paused_until, building, zone, mess_type, hero_tagline")
       .eq("college_id", college_id)
+      .eq("is_active", true)
       .order("name"),
   ]);
 
@@ -78,26 +79,35 @@ export default async function CollegeAdminDashboard() {
 
   if (tenantIds.length > 0) {
     const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const { data: orders } = await admin
-      .from("orders")
-      .select("tenant_id, status, placed_at, total_paise")
-      .in("tenant_id", tenantIds);
 
-    for (const o of orders ?? []) {
+    // Fetch active orders (no time filter — "placed" and "preparing" regardless of age)
+    const { data: activeOrders } = await admin
+      .from("orders")
+      .select("tenant_id, status")
+      .in("tenant_id", tenantIds)
+      .in("status", ["placed", "preparing"]);
+
+    for (const o of activeOrders ?? []) {
       if (!orderStats[o.tenant_id]) {
         orderStats[o.tenant_id] = { active_orders: 0, revenue_24h: 0 };
       }
-      if (o.status === "placed" || o.status === "preparing") {
-        orderStats[o.tenant_id].active_orders += 1;
+      orderStats[o.tenant_id].active_orders += 1;
+    }
+
+    // Fetch revenue-eligible orders for the last 24 h only — push filter to DB.
+    // Exclude unpaid, cancelled, and failed statuses from revenue.
+    const { data: recentOrders } = await admin
+      .from("orders")
+      .select("tenant_id, status, total_paise")
+      .in("tenant_id", tenantIds)
+      .gte("placed_at", since24h)
+      .not("status", "in", '("pending_payment","rejected","expired","refunded")');
+
+    for (const o of recentOrders ?? []) {
+      if (!orderStats[o.tenant_id]) {
+        orderStats[o.tenant_id] = { active_orders: 0, revenue_24h: 0 };
       }
-      if (
-        o.placed_at >= since24h &&
-        o.status !== "rejected" &&
-        o.status !== "expired" &&
-        o.status !== "refunded"
-      ) {
-        orderStats[o.tenant_id].revenue_24h += o.total_paise;
-      }
+      orderStats[o.tenant_id].revenue_24h += o.total_paise;
     }
   }
 

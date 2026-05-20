@@ -13,7 +13,7 @@ export default async function PayPage({ params }: { params: Promise<{ orderId: s
   if (!tenant) notFound();
 
   const user = await getCurrentUser();
-  if (!user) redirect(`/login?next=/pay/${orderId}`);
+  if (!user) redirect(`/c/${tenant.slug}/login?next=/c/${tenant.slug}/pay/${orderId}`);
 
   const supabase = await getServerClient(tenant.id);
   const { data: order } = await supabase
@@ -31,7 +31,7 @@ export default async function PayPage({ params }: { params: Promise<{ orderId: s
     }>();
   if (!order) notFound();
   if (order.status !== "pending_payment") {
-    redirect(`/track/${orderId}`);
+    redirect(`/c/${tenant.slug}/track/${orderId}`);
   }
 
   const { data: lines } = await supabase
@@ -48,6 +48,7 @@ export default async function PayPage({ params }: { params: Promise<{ orderId: s
 
   return (
     <PayPanel
+      tenantSlug={tenant.slug}
       tenantName={tenant.name}
       tenantUpi={tenant.upi_vpa ?? "canteen@upi"}
       order={order}

@@ -370,16 +370,28 @@ function CanteenCard({
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
+/** Sort: OPEN first, then PAUSED, then CLOSED. Within each group preserve RPC order. */
+function sortCanteens(canteens: CollegeCanteen[]): CollegeCanteen[] {
+  const rank = (c: CollegeCanteen): number => {
+    if (!c.is_open) return 2;
+    if (c.paused_until) return 1;
+    return 0;
+  };
+  return [...canteens].sort((a, b) => rank(a) - rank(b));
+}
+
 export default async function CollegePortalPage({
   params,
 }: {
   params: Promise<Params>;
 }) {
   const { slug } = await params;
-  const canteens = await collegeCanteens(slug);
-  if (!canteens || canteens.length === 0) notFound();
+  const rawCanteens = await collegeCanteens(slug);
+  if (!rawCanteens || rawCanteens.length === 0) notFound();
 
+  const canteens = sortCanteens(rawCanteens);
   const openCount = canteens.filter((c) => c.is_open && !c.paused_until).length;
+  const allClosed = openCount === 0;
   const collegeName = slug.toUpperCase();
 
   return (
@@ -416,26 +428,69 @@ export default async function CollegePortalPage({
 
           <div className="tcp-hero-sub" aria-label="Live canteen stats">
             <span>
-              <span className="tcp-hero-count"
+              <span
+                className="tcp-hero-count"
                 style={{ fontFamily: "var(--font-geist-mono), ui-monospace, monospace" }}
               >
                 {canteens.length}
               </span>
-              &nbsp;total
+              &nbsp;canteen{canteens.length === 1 ? "" : "s"}
             </span>
             <span className="tcp-hero-sub-sep" aria-hidden="true" />
             <span>
-              <span className="tcp-hero-count"
+              <span
+                className="tcp-hero-count"
                 style={{ fontFamily: "var(--font-geist-mono), ui-monospace, monospace" }}
               >
                 {openCount}
               </span>
-              &nbsp;open now
+              &nbsp;open
             </span>
             <span className="tcp-hero-sub-sep" aria-hidden="true" />
             <span>live status · 30 s refresh</span>
           </div>
         </section>
+
+        {/* All-closed banner */}
+        {allClosed && (
+          <section className="tcp-wrap" aria-live="polite">
+            <div
+              style={{
+                background: "rgba(232,228,220,0.04)",
+                border: "1px solid rgba(232,228,220,0.10)",
+                borderRadius: "14px",
+                padding: "28px 32px",
+                marginBottom: "12px",
+                textAlign: "center",
+              }}
+            >
+              <div style={{ fontSize: "32px", marginBottom: "12px" }}>🌙</div>
+              <p
+                style={{
+                  fontFamily: "var(--font-instrument-serif), ui-serif, Georgia",
+                  fontSize: "22px",
+                  fontStyle: "italic",
+                  color: "var(--tl-ink-2)",
+                  margin: "0 0 6px",
+                }}
+              >
+                All canteens are closed right now.
+              </p>
+              <p
+                style={{
+                  fontFamily: "var(--font-geist-mono), ui-monospace, monospace",
+                  fontSize: "11px",
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  color: "var(--tl-ink-3)",
+                  margin: 0,
+                }}
+              >
+                Check back during service hours — this page refreshes every 30 s.
+              </p>
+            </div>
+          </section>
+        )}
 
         {/* Cards */}
         <section className="tcp-wrap" aria-label="Canteen list">

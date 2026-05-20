@@ -1,6 +1,7 @@
 "use client";
 
-import { useTransition } from "react";
+import { useTransition, useState } from "react";
+import { toast } from "sonner";
 import { setCanteenOpen } from "../_actions";
 
 export function OpenToggle({
@@ -11,22 +12,31 @@ export function OpenToggle({
   initialIsOpen: boolean;
 }) {
   const [isPending, startTransition] = useTransition();
+  // Controlled state so the toggle reflects the real DB value after mutations
+  const [isOpen, setIsOpen] = useState(initialIsOpen);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const next = e.target.checked;
+    // Optimistic update
+    setIsOpen(next);
     startTransition(async () => {
-      await setCanteenOpen(tenantId, next);
+      const result = await setCanteenOpen(tenantId, next);
+      if (!result.ok) {
+        // Revert on failure
+        setIsOpen(!next);
+        toast.error(result.error ?? "Failed to update canteen status");
+      }
     });
   };
 
   return (
     <label
       className="relative inline-flex items-center cursor-pointer"
-      aria-label={initialIsOpen ? "Close canteen" : "Open canteen"}
+      aria-label={isOpen ? "Close canteen" : "Open canteen"}
     >
       <input
         type="checkbox"
-        defaultChecked={initialIsOpen}
+        checked={isOpen}
         onChange={handleChange}
         disabled={isPending}
         className="sr-only peer"

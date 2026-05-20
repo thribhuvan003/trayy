@@ -25,7 +25,7 @@ export function StudentTopBar({ tenant }: { tenant: ResolvedTenant }) {
   return (
     <header className="sticky top-0 z-40 bg-[color:var(--color-paper)]/85 backdrop-blur-xl border-b border-[color:var(--color-line)]">
       <div className="mx-auto max-w-5xl px-4 sm:px-6 h-14 flex items-center justify-between gap-3">
-        <Link href="/" className="inline-flex items-center gap-2 font-display text-[17px] tracking-tight">
+        <Link href={`/c/${tenant.slug}/menu`} className="inline-flex items-center gap-2 font-display text-[17px] tracking-tight">
           <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-ocean-500 text-white font-mono text-[11px] font-bold">T</span>
           <span className="font-medium">Tray<span className="italic text-ocean-500">.</span></span>
         </Link>
@@ -41,14 +41,14 @@ export function StudentTopBar({ tenant }: { tenant: ResolvedTenant }) {
         <div className="flex items-center gap-1.5">
           <ThemeToggle />
           <Link
-            href="/orders"
+            href={`/c/${tenant.slug}/orders`}
             aria-label="My orders"
             className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--color-line)] hover:border-ocean-500 hover:text-ocean-500 transition-colors"
           >
             <History size={15} />
           </Link>
           <Link
-            href="/login"
+            href={`/c/${tenant.slug}/login`}
             aria-label="Account"
             className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--color-line)] hover:border-ocean-500 hover:text-ocean-500 transition-colors"
           >

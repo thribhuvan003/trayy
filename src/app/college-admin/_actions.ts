@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { getServerClient } from "@/lib/supabase/server";
 import { getAdminClient } from "@/lib/supabase/admin";
 
@@ -62,6 +63,9 @@ export async function setCanteenOpen(
   if (updateError) {
     return { ok: false, error: updateError.message };
   }
+
+  revalidatePath("/college-admin");
+  revalidatePath("/college-admin/canteens");
 
   return { ok: true };
 }

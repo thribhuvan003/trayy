@@ -2,26 +2,76 @@ import Link from "next/link";
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-[color:var(--color-paper)] text-[color:var(--color-ink)]">
-      <div className="max-w-md text-center">
-        <div className="text-[11px] font-mono uppercase tracking-wider text-[color:var(--color-ink)]/55 mb-3">
-          404 · Not found
+    <div
+      style={{
+        minHeight: "100dvh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "24px",
+        background: "#0a0f1e",
+        color: "#e8e4dc",
+        fontFamily: "ui-sans-serif, system-ui, sans-serif",
+        WebkitFontSmoothing: "antialiased",
+        textAlign: "center",
+      }}
+    >
+      <div style={{ maxWidth: "400px", width: "100%" }}>
+        <div
+          style={{
+            fontFamily: "ui-monospace, monospace",
+            fontSize: "11px",
+            letterSpacing: "0.16em",
+            textTransform: "uppercase",
+            color: "rgba(232,228,220,0.38)",
+            marginBottom: "16px",
+          }}
+        >
+          404
         </div>
-        <h1 className="font-display text-[56px] leading-[1.02] tracking-tight font-medium">
-          That page <span className="italic text-ocean-500">isn't on the menu.</span>
+        <h1
+          style={{
+            fontSize: "clamp(32px,6vw,52px)",
+            fontWeight: 500,
+            lineHeight: 1.06,
+            letterSpacing: "-0.03em",
+            margin: "0 0 12px",
+          }}
+        >
+          That page{" "}
+          <span style={{ fontStyle: "italic", color: "#7eb8ff" }}>
+            doesn&rsquo;t exist.
+          </span>
         </h1>
-        <div className="mt-6 flex gap-2 justify-center">
+        <p
+          style={{
+            fontSize: "14px",
+            color: "rgba(232,228,220,0.55)",
+            margin: "0 0 32px",
+          }}
+        >
+          The link may be broken, or the page may have moved.
+        </p>
+        <div
+          style={{ display: "flex", gap: "10px", justifyContent: "center", flexWrap: "wrap" }}
+        >
           <Link
             href="/"
-            className="h-11 px-5 inline-flex items-center rounded-full bg-ocean-500 text-white text-[13px] font-medium hover:bg-ocean-600 transition-colors"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              height: "44px",
+              padding: "0 22px",
+              borderRadius: "999px",
+              background: "#3b82f6",
+              color: "#fff",
+              fontSize: "13px",
+              fontWeight: 500,
+              textDecoration: "none",
+              transition: "background .15s",
+            }}
           >
-            Back to landing
-          </Link>
-          <Link
-            href="/menu"
-            className="h-11 px-5 inline-flex items-center rounded-full border border-[color:var(--color-ink)]/15 text-[13px] font-medium hover:border-ocean-500 hover:text-ocean-500 transition-colors"
-          >
-            Open the menu
+            Back to home
           </Link>
         </div>
       </div>

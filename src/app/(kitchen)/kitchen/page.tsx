@@ -80,6 +80,7 @@ export default async function KitchenPage() {
     <KitchenBoard
       tenantId={tenant.id}
       tenantName={tenant.name}
+      tenantSlug={tenant.slug}
       orders={orders ?? []}
       lines={filteredLines}
       marquee={marquee ?? []}

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Building2, LayoutGrid, LogOut, PieChart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +19,12 @@ export function CollegeAdminShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function handleSignOut() {
+    await fetch("/auth/signout", { method: "POST" });
+    router.push("/");
+  }
 
   return (
     <div className="relative z-10 flex">
@@ -73,13 +79,14 @@ export function CollegeAdminShell({
             <div className="text-graphite-300 truncate">{userEmail ?? "admin"}</div>
             <div className="text-graphite-400">college_admin</div>
           </div>
-          <Link
-            href="/auth/signout"
+          <button
+            type="button"
+            onClick={handleSignOut}
             aria-label="Sign out"
             className="h-8 w-8 inline-flex items-center justify-center rounded-md text-graphite-400 hover:text-graphite-200 hover:bg-graphite-200/[0.06]"
           >
             <LogOut size={13} />
-          </Link>
+          </button>
         </div>
       </aside>
 
