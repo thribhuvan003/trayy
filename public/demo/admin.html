@@ -355,9 +355,6 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
       <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 5l3 3 3-3"/></svg>
     </div>
     <div class="sb-tenant-menu" id="tenantMenu" role="listbox">
-      <div class="sb-tenant-opt active" data-tenant="hostel-b" data-name="Hostel B Mess" data-av="H">Hostel B Mess</div>
-      <div class="sb-tenant-opt" data-tenant="aditya" data-name="Aditya Eng. Canteen" data-av="A">Aditya Eng. Canteen</div>
-      <div class="sb-tenant-opt" data-tenant="north-block" data-name="North Block Canteen" data-av="N">North Block Canteen</div>
 </div>
 
     <div class="sb-group">Operations</div>
@@ -1097,20 +1094,6 @@ if (tenantToggle && tenantMenu) {
     tenantToggle.classList.toggle('open');
     tenantToggle.setAttribute('aria-expanded', tenantMenu.classList.contains('show') ? 'true' : 'false');
   });
-  tenantMenu.querySelectorAll('.sb-tenant-opt').forEach((opt) => {
-    opt.addEventListener('click', (e) => {
-      e.stopPropagation();
-      tenantMenu.querySelectorAll('.sb-tenant-opt').forEach((o) => o.classList.remove('active'));
-      opt.classList.add('active');
-      $('#tenantName').textContent = opt.dataset.name;
-      $('#tenantSlug').textContent = opt.dataset.tenant + ' · admin';
-      $('#tenantAv').textContent = opt.dataset.av;
-      tenantMenu.classList.remove('show');
-      tenantToggle.classList.remove('open');
-      applyTenantData(opt.dataset.tenant);
-      toast('Switched to ' + opt.dataset.name);
-    });
-  });
   document.addEventListener('click', (e) => {
     if (!tenantToggle.contains(e.target) && !tenantMenu.contains(e.target)) {
       tenantMenu.classList.remove('show');
@@ -1118,6 +1101,22 @@ if (tenantToggle && tenantMenu) {
     }
   });
 }
+
+function initAdminCanteenSelect() {
+  const menu = document.getElementById('tenantMenu');
+  if (!menu) return;
+  menu.innerHTML = TD.listCanteens().map(function (c) {
+    return '<div class="sb-tenant-opt' + (c.id === TD.getSelectedCanteenId() ? ' active' : '') + '" data-cid="' + c.id + '">' + c.name + '<br><span style="font-size:10px;opacity:0.6">' + (c.block || '') + '</span></div>';
+  }).join('');
+  menu.querySelectorAll('.sb-tenant-opt').forEach(function (opt) {
+    opt.addEventListener('click', function (e) {
+      e.stopPropagation();
+      TD.setSelectedCanteenId(opt.dataset.cid);
+      window.location.reload();
+    });
+  });
+}
+initAdminCanteenSelect();
 
 function renderTopItems(items) {
   const host = $('#topList');

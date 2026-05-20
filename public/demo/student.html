@@ -1794,6 +1794,7 @@
         <span class="brand__sub" id="topbarContext">Campus canteen · Takeaway</span>
       </a>
       <div class="topbar__actions">
+        <select id="studentCanteen" aria-label="Switch canteen" style="font-family:var(--font-ui);font-size:12px;padding:5px 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;"></select>
         <span class="pill-status is-live" id="openBadge">Open now</span>
         <button type="button" class="btn-icon" id="btnReset" title="Start over" aria-label="Start over">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
@@ -2889,6 +2890,20 @@
     }
   });
 
+  function initStudentCanteenSelect() {
+    var sel = document.getElementById('studentCanteen');
+    if (!sel) return;
+    sel.innerHTML = TD.listCanteens().map(function (c) {
+      return '<option value="' + c.id + '"' + (c.id === TD.getSelectedCanteenId() ? ' selected' : '') + '>' + c.name + '</option>';
+    }).join('');
+    sel.addEventListener('change', function () {
+      TD.setSelectedCanteenId(sel.value);
+      // Reload to re-initialize with new canteen data
+      window.location.reload();
+    });
+  }
+
+  initStudentCanteenSelect();
   initCanteenSelect();
   loadCanteenData(currentCanteenId);
   renderCategories();

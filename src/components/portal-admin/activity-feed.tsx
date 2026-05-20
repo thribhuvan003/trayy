@@ -56,9 +56,9 @@ export function ActivityFeed({ logs }: { logs: Log[] }) {
                 </span>
                 <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${TONE[l.to_status] ?? "bg-graphite-400"}`} />
                 <span className="flex-1 text-graphite-300">
-                  <span className="text-graphite-200 font-semibold">{l.order_id.slice(0, 6)}</span>{" "}
-                  · {l.from_status ?? "—"} → <span className="text-graphite-200">{l.to_status}</span>
-                  {l.note && <span className="text-graphite-400"> · {l.note}</span>}
+                  <span className="text-graphite-200 font-semibold">{(l.order_id ?? "").slice(0, 6)}</span>{" "}
+                  · {l.from_status ?? "—"} → <span className="text-graphite-200">{l.to_status ?? "—"}</span>
+                  {(l.note ?? null) && <span className="text-graphite-400"> · {l.note}</span>}
                 </span>
               </motion.li>
             ))}

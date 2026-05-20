@@ -1070,11 +1070,6 @@ function PortalPreview({ src, title, phaseLabel }: { src: string; title: string;
   return (
     <div className="tl-browser-chrome">
       <div className="tl-browser-bar" aria-hidden>
-        <div className="tl-browser-dots">
-          <span />
-          <span />
-          <span />
-        </div>
         {phaseLabel ? <span className="tl-browser-phase">{phaseLabel}</span> : null}
       </div>
       <div className="tl-browser-viewport">
@@ -1313,7 +1308,7 @@ export function LandingPage({ tenant, msg }: { tenant: ResolvedTenant | null; ms
                 <span className="tl-feat-tag">Pickup window</span>
                 <span className="tl-feat-tag">Veg lane</span>
               </div>
-              <a href="https://trayy.vercel.app/c/aditya/menu" className="tl-portal-open">
+              <a href="/demo/student.html" target="_blank" rel="noreferrer" className="tl-portal-open">
                 <span>Open the student app</span>
                 <span className="tl-arrow">→</span>
               </a>
@@ -1339,7 +1334,7 @@ export function LandingPage({ tenant, msg }: { tenant: ResolvedTenant | null; ms
                 <span className="tl-feat-tag">Add specials</span>
                 <span className="tl-feat-tag">OTP verify</span>
               </div>
-              <a href="https://trayy.vercel.app/c/aditya/kitchen" className="tl-portal-open">
+              <a href="/demo/kitchen.html" target="_blank" rel="noreferrer" className="tl-portal-open">
                 <span>Open the kitchen view</span>
                 <span className="tl-arrow">→</span>
               </a>
@@ -1366,7 +1361,7 @@ export function LandingPage({ tenant, msg }: { tenant: ResolvedTenant | null; ms
                 <span className="tl-feat-tag">Audit log</span>
                 <span className="tl-feat-tag">⌘K search</span>
               </div>
-              <a href="https://trayy.vercel.app/c/aditya/admin/dashboard" className="tl-portal-open">
+              <a href="/demo/admin.html" target="_blank" rel="noreferrer" className="tl-portal-open">
                 <span>Open the admin console</span>
                 <span className="tl-arrow">→</span>
               </a>
