@@ -201,159 +201,598 @@ export function KitchenBoard({
 
   const verifyOrder = verifyId ? orders.find((o) => o.id === verifyId) ?? null : null;
 
+  const placedCount = groups.placed.length;
+
   return (
-    <div className="min-h-screen">
+    <div
+      className="min-h-screen lg:grid"
+      style={{ gridTemplateColumns: "228px 1fr" }}
+    >
       {/* Session-expired overlay — blocks all interaction until staff re-login */}
       {sessionExpired && (
         <div
           role="alertdialog"
           aria-modal
           aria-label="Session expired — please log in again"
-          className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-6 bg-graphite-900/95 backdrop-blur-sm text-cream-50 px-6 text-center"
+          className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-6 px-6 text-center"
+          style={{ background: "rgba(42,22,10,0.95)", backdropFilter: "blur(4px)", color: "var(--kt-cream)" }}
         >
-          <div className="text-[48px] sm:text-[64px] font-display font-bold text-tomato-500">!</div>
-          <p className="font-display text-[24px] sm:text-[32px] font-medium">Session timeout</p>
-          <p className="text-[15px] text-cream-200/80 max-w-xs">
+          <div
+            className="font-display font-bold"
+            style={{ fontSize: "64px", color: "var(--kt-tomato)", fontFamily: "var(--font-newsreader), ui-serif, Georgia", fontStyle: "italic" }}
+          >
+            !
+          </div>
+          <p
+            className="font-display font-medium"
+            style={{ fontSize: "32px", fontFamily: "var(--font-newsreader), ui-serif, Georgia", color: "var(--kt-cream)" }}
+          >
+            Session timeout
+          </p>
+          <p style={{ fontSize: "15px", color: "var(--kt-ink-3)", maxWidth: "280px" }}>
             Your login has expired. Tap below to sign in again — orders are safe.
           </p>
           <a
             href={`/c/${tenantSlug}/kitchen/staff-select`}
-            className="inline-flex items-center justify-center h-14 px-8 rounded-xl bg-tomato-500 text-white text-[16px] font-bold hover:bg-tomato-600 transition-colors"
+            className="inline-flex items-center justify-center"
+            style={{
+              height: "56px",
+              padding: "0 32px",
+              borderRadius: "7px",
+              background: "var(--kt-tomato)",
+              color: "var(--kt-cream)",
+              fontSize: "16px",
+              fontWeight: 700,
+              boxShadow: "0 3px 0 var(--kt-ink)",
+              textDecoration: "none",
+            }}
           >
             Log in again
           </a>
         </div>
       )}
 
-      {/* Wi-Fi disconnection banner — big and visible from across the kitchen */}
-      {!wsConnected && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="sticky top-0 z-40 flex items-center justify-center gap-3 bg-amber-500 text-graphite-900 px-4 py-3 text-[14px] font-semibold"
+      {/* ── SIDEBAR — matches kitchen.html .sb spec exactly ── */}
+      <aside
+        className="hidden lg:flex flex-col sticky top-0 h-screen px-4 gap-1"
+        style={{
+          background: "var(--kt-paper)",
+          borderRight: "1px solid var(--kt-line)",
+          paddingTop: "18px",
+          paddingBottom: "16px",
+        }}
+      >
+        {/* Brand mark — italic T in tomato circle, matches .brand-mark */}
+        <Link
+          href={`/c/${tenantSlug}/kitchen`}
+          className="flex items-center"
+          style={{
+            gap: "9px",
+            padding: "6px 8px 18px",
+            marginBottom: "14px",
+            borderBottom: "1px solid var(--kt-line)",
+            fontFamily: "var(--font-newsreader), ui-serif, Georgia",
+            fontWeight: 500,
+            fontSize: "22px",
+            letterSpacing: "-0.02em",
+            color: "var(--kt-ink)",
+            textDecoration: "none",
+          }}
         >
-          <Radio size={16} className="shrink-0 animate-pulse" />
-          <span>Wi-Fi disconnected — orders may be delayed. Reconnecting…</span>
-        </div>
-      )}
+          <span
+            className="inline-flex items-center justify-center shrink-0"
+            style={{
+              width: "30px",
+              height: "30px",
+              borderRadius: "8px",
+              background: "var(--kt-tomato)",
+              color: "var(--kt-cream)",
+              fontFamily: "var(--font-newsreader), ui-serif, Georgia",
+              fontStyle: "italic",
+              fontWeight: 500,
+              fontSize: "18px",
+              boxShadow: "inset 0 -3px 0 rgba(0,0,0,0.14)",
+            }}
+          >
+            T
+          </span>
+          Tray
+          <span style={{ fontStyle: "italic", color: "var(--kt-tomato)", marginLeft: "-3px" }}>.</span>
+        </Link>
 
-      <header className="sticky top-0 z-30 border-b-2 border-tomato-900 bg-cream-50 dark:bg-graphite-900">
-        <div className="px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center gap-4 justify-between">
-          <div>
-            <div className="text-[10px] font-mono uppercase tracking-[0.16em] text-tomato-900/70 dark:text-cream-200/60">
-              {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })} · {tenantName} · Lunch Service
-            </div>
-            <h1 className="font-display font-medium tracking-[-0.025em] text-[24px] sm:text-[28px] leading-none mt-1">
-              The kitchen <span className="italic text-tomato-500">queue.</span>
-            </h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-tomato-900/5 dark:bg-cream-200/5 text-[10px] font-mono uppercase tracking-wider">
-              <Radio size={11} className={wsConnected ? "text-emerald-500" : "text-amber-500"} />
-              {wsConnected ? "Live · WS" : "Reconnecting"}
+        {/* Kitchen nav group label */}
+        <div
+          style={{
+            fontFamily: "var(--font-jetbrains), ui-monospace, Menlo, monospace",
+            fontSize: "10px",
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            color: "var(--kt-ink-3)",
+            padding: "12px 8px 6px",
+            fontWeight: 600,
+          }}
+        >
+          Kitchen
+        </div>
+
+        {/* Live queue — active nav link */}
+        <Link
+          href={`/c/${tenantSlug}/kitchen`}
+          className="flex items-center"
+          style={{
+            gap: "10px",
+            padding: "8px 10px",
+            borderRadius: "7px",
+            background: "var(--kt-ink)",
+            color: "var(--kt-cream)",
+            fontSize: "13.5px",
+            fontWeight: 600,
+            textDecoration: "none",
+          }}
+        >
+          <svg className="shrink-0" style={{ width: 16, height: 16, opacity: 1 }} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6">
+            <path d="M2 4h12M2 8h12M2 12h8" />
+          </svg>
+          Live queue
+          {placedCount > 0 && (
+            <span
+              className="ml-auto tabular"
+              style={{
+                background: "var(--kt-cream)",
+                color: "var(--kt-ink)",
+                fontFamily: "var(--font-jetbrains), ui-monospace, Menlo, monospace",
+                fontSize: "10px",
+                fontWeight: 700,
+                padding: "1px 6px",
+                borderRadius: "4px",
+                letterSpacing: "0.04em",
+              }}
+            >
+              {placedCount}
             </span>
-            <span className="font-mono tabular text-[18px] font-semibold text-tomato-900 dark:text-cream-200">
-              {clock}
+          )}
+        </Link>
+
+        {/* History link */}
+        <Link
+          href={`/c/${tenantSlug}/kitchen/history`}
+          className="flex items-center transition-colors"
+          style={{
+            gap: "10px",
+            padding: "8px 10px",
+            borderRadius: "7px",
+            color: "var(--kt-ink-2)",
+            fontSize: "13.5px",
+            fontWeight: 500,
+            textDecoration: "none",
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLAnchorElement).style.background = "var(--kt-cream-3)";
+            (e.currentTarget as HTMLAnchorElement).style.color = "var(--kt-ink)";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
+            (e.currentTarget as HTMLAnchorElement).style.color = "var(--kt-ink-2)";
+          }}
+        >
+          <svg className="shrink-0" style={{ width: 16, height: 16, opacity: 0.7 }} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6">
+            <circle cx="8" cy="8" r="6" /><path d="M8 4v4l3 2" />
+          </svg>
+          History
+        </Link>
+
+        {/* Staff select link */}
+        <Link
+          href={`/c/${tenantSlug}/kitchen/staff-select`}
+          className="flex items-center transition-colors"
+          style={{
+            gap: "10px",
+            padding: "8px 10px",
+            borderRadius: "7px",
+            color: "var(--kt-ink-2)",
+            fontSize: "13.5px",
+            fontWeight: 500,
+            textDecoration: "none",
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLAnchorElement).style.background = "var(--kt-cream-3)";
+            (e.currentTarget as HTMLAnchorElement).style.color = "var(--kt-ink)";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
+            (e.currentTarget as HTMLAnchorElement).style.color = "var(--kt-ink-2)";
+          }}
+        >
+          <svg className="shrink-0" style={{ width: 16, height: 16, opacity: 0.7 }} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6">
+            <circle cx="8" cy="6" r="3" /><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6" />
+          </svg>
+          Staff select
+        </Link>
+
+        {/* Sidebar bottom — portals + live status + bell */}
+        <div
+          className="mt-auto flex flex-col"
+          style={{
+            gap: "12px",
+            paddingTop: "18px",
+            borderTop: "1px solid var(--kt-line)",
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "var(--font-jetbrains), ui-monospace, Menlo, monospace",
+              fontSize: "10px",
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: "var(--kt-ink-3)",
+              padding: "0 8px",
+              fontWeight: 600,
+            }}
+          >
+            Other portals
+          </div>
+          <div className="flex flex-col" style={{ gap: "4px" }}>
+            <Link
+              href={`/c/${tenantSlug}/menu`}
+              className="flex items-center justify-between transition-colors"
+              style={{
+                padding: "6px 8px",
+                fontFamily: "var(--font-jetbrains), ui-monospace, Menlo, monospace",
+                fontSize: "11px",
+                color: "var(--kt-ink-3)",
+                letterSpacing: "0.04em",
+                borderRadius: "5px",
+                textDecoration: "none",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLAnchorElement).style.background = "var(--kt-cream-3)";
+                (e.currentTarget as HTMLAnchorElement).style.color = "var(--kt-ink)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
+                (e.currentTarget as HTMLAnchorElement).style.color = "var(--kt-ink-3)";
+              }}
+            >
+              Student ordering <span>→</span>
+            </Link>
+            <Link
+              href={`/c/${tenantSlug}/admin/dashboard`}
+              className="flex items-center justify-between transition-colors"
+              style={{
+                padding: "6px 8px",
+                fontFamily: "var(--font-jetbrains), ui-monospace, Menlo, monospace",
+                fontSize: "11px",
+                color: "var(--kt-ink-3)",
+                letterSpacing: "0.04em",
+                borderRadius: "5px",
+                textDecoration: "none",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLAnchorElement).style.background = "var(--kt-cream-3)";
+                (e.currentTarget as HTMLAnchorElement).style.color = "var(--kt-ink)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
+                (e.currentTarget as HTMLAnchorElement).style.color = "var(--kt-ink-3)";
+              }}
+            >
+              Admin dashboard <span>→</span>
+            </Link>
+          </div>
+
+          {/* Live status dot + bell toggle */}
+          <div className="flex items-center justify-between" style={{ padding: "6px 8px" }}>
+            <span
+              className="inline-flex items-center tabular"
+              style={{
+                gap: "6px",
+                fontFamily: "var(--font-jetbrains), ui-monospace, Menlo, monospace",
+                fontSize: "11px",
+                fontWeight: 600,
+                color: wsConnected ? "var(--kt-olive)" : "var(--kt-mustard)",
+              }}
+            >
+              <span
+                className={wsConnected ? "animate-[blinkLive_1.6s_infinite]" : "animate-pulse"}
+                style={{
+                  width: "7px",
+                  height: "7px",
+                  borderRadius: "50%",
+                  background: wsConnected ? "var(--kt-olive)" : "var(--kt-mustard)",
+                  display: "inline-block",
+                }}
+              />
+              {wsConnected ? "Connected" : "Reconnecting"}
             </span>
             <button
               type="button"
               onClick={() => setBellOn((v) => !v)}
-              aria-label={bellOn ? "Mute new-order chime" : "Unmute new-order chime"}
+              aria-label={bellOn ? "Mute chime" : "Unmute chime"}
               title={bellOn ? "New-order chime: on" : "New-order chime: off"}
-              className="inline-flex items-center justify-center h-11 w-11 rounded-full border-2 border-tomato-900 dark:border-cream-200 text-tomato-900 dark:text-cream-200 hover:bg-tomato-900 hover:text-cream-50 dark:hover:bg-cream-200 dark:hover:text-graphite-900 active:scale-95 transition-colors"
+              className="inline-flex items-center justify-center transition-colors"
+              style={{
+                height: "28px",
+                width: "28px",
+                borderRadius: "6px",
+                color: "var(--kt-ink-3)",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+              }}
             >
-              {bellOn ? <Bell size={16} /> : <BellOff size={16} />}
+              {bellOn ? <Bell size={13} /> : <BellOff size={13} />}
             </button>
-            <ThemeToggle className="text-tomato-900 dark:text-cream-200" />
-            <Link
-              href={`/c/${tenantSlug}/kitchen/history`}
-              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border-2 border-tomato-900 dark:border-cream-200 text-[12px] font-medium hover:bg-tomato-900 hover:text-cream-50 dark:hover:bg-cream-200 dark:hover:text-graphite-900 transition-colors"
-              title="Today's completed orders"
-            >
-              <HistoryIcon size={12} /> History
-            </Link>
-            <Link
-              href={`/c/${tenantSlug}/kitchen/staff-select`}
-              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border-2 border-tomato-900 dark:border-cream-200 text-[12px] font-medium hover:bg-tomato-900 hover:text-cream-50 dark:hover:bg-cream-200 dark:hover:text-graphite-900 transition-colors"
-              title="Switch logged-in staff member"
-            >
-              <UserRoundCog size={12} /> Switch Staff
-            </Link>
-            <Link
-              href={`/c/${tenantSlug}/admin/dashboard`}
-              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border-2 border-tomato-900 dark:border-cream-200 text-[12px] font-medium hover:bg-tomato-900 hover:text-cream-50 dark:hover:bg-cream-200 dark:hover:text-graphite-900 transition-colors"
-            >
-              Admin
-            </Link>
           </div>
         </div>
-        <KitchenKpiStrip orders={orders} />
-      </header>
+      </aside>
 
-      <KitchenMarquee items={marquee} />
+      {/* ── MAIN CONTENT ── */}
+      <div className="flex flex-col min-w-0">
+        {/* Wi-Fi disconnection banner — big and visible from across the kitchen */}
+        {!wsConnected && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="sticky top-0 z-40 flex items-center justify-center gap-3"
+            style={{
+              background: "var(--kt-mustard)",
+              color: "var(--kt-ink)",
+              padding: "12px 16px",
+              fontSize: "14px",
+              fontWeight: 600,
+            }}
+          >
+            <Radio size={16} className="shrink-0 animate-pulse" />
+            <span>Wi-Fi disconnected — orders may be delayed. Reconnecting…</span>
+          </div>
+        )}
 
-      <main className="px-4 sm:px-6 lg:px-8 py-6">
-        <PrepTotalsStrip orders={orders} lines={lines} onSessionExpired={() => setSessionExpired(true)} />
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-          <OrderColumn
-            title="Incoming"
-            subtitle="Just paid · awaiting kitchen"
-            status="placed"
-            orders={groups.placed}
-            linesByOrder={linesByOrder}
-            onAction={async (id, action) => {
-              const { markPreparing } = await import("@/app/(kitchen)/_actions");
-              const r = await markPreparing(id);
-              if (!r.ok) handleActionError(r.error);
-              if (action === "start" && r.ok) toast.success(`Started ${id.slice(0, 6)}`);
-            }}
-            onReject={async (id, reason) => {
-              const { rejectOrder } = await import("@/app/(kitchen)/_actions");
-              const r = await rejectOrder(id, reason);
-              if (!r.ok) handleActionError(r.error ?? "Failed to reject order");
-              else toast.success("Order rejected — refund queued");
-            }}
-          />
-          <OrderColumn
-            title="Preparing"
-            subtitle="On the line"
-            status="preparing"
-            orders={groups.preparing}
-            linesByOrder={linesByOrder}
-            onAction={async (id) => {
-              const { markReady } = await import("@/app/(kitchen)/_actions");
-              const r = await markReady(id);
-              if (!r.ok) handleActionError(r.error);
-              else toast.success("Ready — pickup code issued");
-            }}
-          />
-          <OrderColumn
-            title="Ready"
-            subtitle="Awaiting OTP at counter"
-            status="ready"
-            orders={groups.ready}
-            linesByOrder={linesByOrder}
-            onAction={(id) => setVerifyId(id)}
-          />
-          <OrderColumn
-            title="Collected"
-            subtitle="Today · last 10"
-            status="collected"
-            orders={groups.collected}
-            linesByOrder={linesByOrder}
-            onAction={() => {}}
-          />
-        </div>
-      </main>
+        {/* Page header — matches .page-head spec */}
+        <header
+          className="sticky top-0 z-30"
+          style={{
+            background: "var(--kt-paper)",
+            borderBottom: "1px solid var(--kt-line-2)",
+          }}
+        >
+          <div
+            className="flex flex-wrap items-center gap-4 justify-between"
+            style={{ padding: "16px 24px 12px" }}
+          >
+            <div>
+              {/* Eyebrow — .eyebrow style from spec */}
+              <div
+                style={{
+                  fontFamily: "var(--font-jetbrains), ui-monospace, Menlo, monospace",
+                  fontSize: "11px",
+                  letterSpacing: "0.16em",
+                  textTransform: "uppercase",
+                  color: "var(--kt-ink-3)",
+                  fontWeight: 500,
+                }}
+              >
+                {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })} · {tenantName} · Lunch Service
+              </div>
+              {/* H1 — matches .page-head h1 + .it italic tomato */}
+              <h1
+                style={{
+                  fontFamily: "var(--font-newsreader), ui-serif, Georgia",
+                  fontWeight: 500,
+                  fontSize: "clamp(28px, 4vw, 48px)",
+                  letterSpacing: "-0.03em",
+                  margin: "6px 0 4px",
+                  lineHeight: 1,
+                  color: "var(--kt-ink)",
+                }}
+              >
+                Kitchen <span style={{ fontStyle: "italic", color: "var(--kt-tomato)", fontWeight: 500 }}>queue.</span>
+              </h1>
+              {/* Sub row — clock + live dot */}
+              <div
+                className="flex items-center"
+                style={{
+                  gap: "14px",
+                  fontFamily: "var(--font-jetbrains), ui-monospace, Menlo, monospace",
+                  fontSize: "11px",
+                  color: "var(--kt-ink-3)",
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  fontWeight: 500,
+                }}
+              >
+                <span className="tabular" style={{ color: "var(--kt-ink)" }}>{clock}</span>
+                <span
+                  className="inline-flex items-center"
+                  style={{
+                    gap: "6px",
+                    color: "var(--kt-olive)",
+                    textTransform: "none",
+                    letterSpacing: 0,
+                    fontFamily: "var(--font-manrope), ui-sans-serif, system-ui",
+                    fontWeight: 600,
+                    fontSize: "12px",
+                  }}
+                >
+                  <span
+                    style={{
+                      width: "7px",
+                      height: "7px",
+                      borderRadius: "50%",
+                      background: wsConnected ? "var(--kt-olive)" : "var(--kt-mustard)",
+                      display: "inline-block",
+                      animation: "blinkLive 1.6s infinite",
+                    }}
+                  />
+                  {wsConnected ? "Connected · WS" : "Reconnecting"}
+                </span>
+              </div>
+            </div>
 
-      <OtpVerifyDialog
-        open={Boolean(verifyId)}
-        order={verifyOrder}
-        onClose={() => setVerifyId(null)}
-        onResult={(ok) => {
-          if (ok) setVerifyId(null);
-        }}
-      />
+            {/* Right controls */}
+            <div className="flex items-center gap-2">
+              {/* Bell toggle — always visible */}
+              <button
+                type="button"
+                onClick={() => setBellOn((v) => !v)}
+                aria-label={bellOn ? "Mute new-order chime" : "Unmute new-order chime"}
+                title={bellOn ? "New-order chime: on" : "New-order chime: off"}
+                className="inline-flex items-center gap-2 transition-all"
+                style={{
+                  height: "34px",
+                  padding: "0 12px",
+                  borderRadius: "7px",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  border: "1px solid var(--kt-line-2)",
+                  background: "var(--kt-cream-4)",
+                  color: bellOn ? "var(--kt-ink)" : "var(--kt-ink-3)",
+                  cursor: "pointer",
+                }}
+              >
+                {bellOn ? <Bell size={12} /> : <BellOff size={12} />}
+                {bellOn ? "Sounds" : "Muted"}
+              </button>
+              <ThemeToggle className="text-[var(--kt-ink-3)]" />
+              {/* Mobile-only quick links */}
+              <Link
+                href={`/c/${tenantSlug}/kitchen/history`}
+                className="lg:hidden inline-flex items-center gap-1.5 transition-colors"
+                style={{
+                  height: "34px",
+                  padding: "0 12px",
+                  borderRadius: "7px",
+                  border: "1px solid var(--kt-line-2)",
+                  background: "var(--kt-cream-4)",
+                  color: "var(--kt-ink)",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                }}
+                title="Today's completed orders"
+              >
+                <HistoryIcon size={12} /> History
+              </Link>
+              <Link
+                href={`/c/${tenantSlug}/kitchen/staff-select`}
+                className="lg:hidden inline-flex items-center gap-1.5 transition-colors"
+                style={{
+                  height: "34px",
+                  padding: "0 12px",
+                  borderRadius: "7px",
+                  border: "1px solid var(--kt-line-2)",
+                  background: "var(--kt-cream-4)",
+                  color: "var(--kt-ink)",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                }}
+                title="Switch logged-in staff member"
+              >
+                <UserRoundCog size={12} /> Staff
+              </Link>
+            </div>
+          </div>
+
+          {/* KPI strip */}
+          <KitchenKpiStrip orders={orders} />
+        </header>
+
+        <KitchenMarquee items={marquee} />
+
+        {/* Main board area */}
+        <main style={{ padding: "24px 24px 64px" }}>
+          <PrepTotalsStrip orders={orders} lines={lines} onSessionExpired={() => setSessionExpired(true)} />
+
+          {/* 4-column queue board — matches .queue-board + .queue-cols */}
+          <div
+            style={{
+              background: "var(--kt-paper)",
+              border: "1px solid var(--kt-ink)",
+              borderRadius: "14px",
+              overflow: "hidden",
+              boxShadow: "5px 5px 0 var(--kt-ink)",
+            }}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4" style={{ minHeight: "520px" }}>
+              <OrderColumn
+                title="Incoming"
+                subtitle="Just paid · awaiting kitchen"
+                status="placed"
+                orders={groups.placed}
+                linesByOrder={linesByOrder}
+                onAction={async (id, action) => {
+                  const { markPreparing } = await import("@/app/(kitchen)/_actions");
+                  const r = await markPreparing(id);
+                  if (!r.ok) handleActionError(r.error);
+                  if (action === "start" && r.ok) toast.success(`Started ${id.slice(0, 6)}`);
+                }}
+                onReject={async (id, reason) => {
+                  const { rejectOrder } = await import("@/app/(kitchen)/_actions");
+                  const r = await rejectOrder(id, reason);
+                  if (!r.ok) handleActionError(r.error ?? "Failed to reject order");
+                  else toast.success("Order rejected — refund queued");
+                }}
+              />
+              <OrderColumn
+                title="Preparing"
+                subtitle="On the line"
+                status="preparing"
+                orders={groups.preparing}
+                linesByOrder={linesByOrder}
+                onAction={async (id) => {
+                  const { markReady } = await import("@/app/(kitchen)/_actions");
+                  const r = await markReady(id);
+                  if (!r.ok) handleActionError(r.error);
+                  else toast.success("Ready — pickup code issued");
+                }}
+              />
+              <OrderColumn
+                title="Ready"
+                subtitle="Awaiting OTP at counter"
+                status="ready"
+                orders={groups.ready}
+                linesByOrder={linesByOrder}
+                onAction={(id) => setVerifyId(id)}
+              />
+              <OrderColumn
+                title="Collected"
+                subtitle="Today · last 10"
+                status="collected"
+                orders={groups.collected}
+                linesByOrder={linesByOrder}
+                onAction={() => {}}
+              />
+            </div>
+            {/* Queue footer — matches .queue-foot */}
+            <div
+              className="flex justify-between items-center"
+              style={{
+                padding: "10px 16px",
+                borderTop: "1px solid var(--kt-line)",
+                background: "var(--kt-cream-4)",
+                fontFamily: "var(--font-jetbrains), ui-monospace, Menlo, monospace",
+                fontSize: "11px",
+                color: "var(--kt-ink-3)",
+                letterSpacing: "0.04em",
+              }}
+            >
+              <span>CLICK A TICKET TO ADVANCE · TAP VERIFY OTP FOR COLLECTION</span>
+              <span style={{ color: "var(--kt-tomato)", fontWeight: 600 }}>
+                {groups.placed.length + groups.preparing.length} active
+              </span>
+            </div>
+          </div>
+        </main>
+
+        <OtpVerifyDialog
+          open={Boolean(verifyId)}
+          order={verifyOrder}
+          onClose={() => setVerifyId(null)}
+          onResult={(ok) => {
+            if (ok) setVerifyId(null);
+          }}
+        />
+      </div>
     </div>
   );
 }
@@ -368,24 +807,65 @@ function KitchenKpiStrip({ orders }: { orders: OrderRow[] }) {
       revenue: orders.reduce((acc, o) => (o.status !== "rejected" && o.status !== "expired" ? acc + o.total_paise : acc), 0),
     };
   }, [orders]);
-  const cells: { label: string; value: string; tone?: string; icon?: React.ReactNode }[] = [
-    { label: "Incoming", value: String(counts.placed) },
-    { label: "Preparing", value: String(counts.preparing) },
-    { label: "Ready", value: String(counts.ready), tone: "text-tomato-500" },
-    { label: "Collected today", value: String(counts.collected) },
-    { label: "Revenue today", value: formatRupees(counts.revenue), icon: <ChefHat size={11} /> },
+
+  const cells: { label: string; value: string; accent?: boolean; icon?: React.ReactNode }[] = [
+    { label: "Incoming",       value: String(counts.placed).padStart(2, "0") },
+    { label: "Preparing",      value: String(counts.preparing).padStart(2, "0"), accent: true },
+    { label: "Ready",          value: String(counts.ready).padStart(2, "0") },
+    { label: "Collected today",value: String(counts.collected) },
+    { label: "Revenue today",  value: formatRupees(counts.revenue), icon: <ChefHat size={11} /> },
   ];
+
   return (
-    <div className="border-t-2 border-tomato-900 px-4 sm:px-6 lg:px-8 py-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+    /* .kpi-bar — matches spec: paper bg, ink border, 3px ink shadow */
+    <div
+      className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
+      style={{
+        borderTop: "1px solid var(--kt-line)",
+        padding: "12px 24px",
+        gap: "12px",
+      }}
+    >
       {cells.map((c) => (
         <div
           key={c.label}
-          className="bg-cream-50 dark:bg-graphite-800 border-2 border-tomato-900 dark:border-cream-200/30 p-2.5 shadow-[4px_4px_0_0_var(--color-tomato-900)] dark:shadow-[4px_4px_0_0_rgba(247,200,194,0.3)]"
+          style={{
+            background: "var(--kt-paper)",
+            border: "1px solid var(--kt-ink)",
+            borderRadius: "10px",
+            padding: "16px 18px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "4px",
+            boxShadow: "3px 3px 0 var(--kt-ink)",
+            position: "relative",
+            overflow: "hidden",
+          }}
         >
-          <div className="text-[10px] font-mono uppercase tracking-[0.14em] text-tomato-900/65 dark:text-cream-200/60 flex items-center gap-1.5">
+          <div
+            className="flex items-center gap-1.5"
+            style={{
+              fontFamily: "var(--font-jetbrains), ui-monospace, Menlo, monospace",
+              fontSize: "10px",
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: "var(--kt-ink-3)",
+              fontWeight: 600,
+            }}
+          >
             {c.icon} {c.label}
           </div>
-          <div className={`font-display text-[24px] sm:text-[28px] font-medium tabular leading-none mt-1 ${c.tone ?? ""}`}>
+          <div
+            className="tabular leading-none"
+            style={{
+              fontFamily: "var(--font-newsreader), ui-serif, Georgia",
+              fontSize: "clamp(24px, 3.5vw, 44px)",
+              letterSpacing: "-0.03em",
+              fontWeight: 500,
+              fontStyle: c.accent ? "italic" : "normal",
+              color: c.accent ? "var(--kt-tomato)" : "var(--kt-ink)",
+            }}
+          >
             {c.value}
           </div>
         </div>
@@ -461,52 +941,135 @@ function PrepTotalsStrip({ orders, lines, onSessionExpired }: { orders: OrderRow
   return (
     <section
       aria-label="Prep totals — active orders"
-      className="mb-4 border-2 border-tomato-900 dark:border-cream-200/30 bg-cream-50 dark:bg-graphite-800 p-3 shadow-[5px_5px_0_0_var(--color-tomato-900)] dark:shadow-[5px_5px_0_0_rgba(247,200,194,0.3)]"
+      style={{
+        marginBottom: "16px",
+        border: "1px solid var(--kt-line-2)",
+        borderRadius: "10px",
+        background: "var(--kt-paper)",
+        padding: "12px 16px",
+        boxShadow: "3px 3px 0 var(--kt-ink)",
+      }}
     >
-      <div className="text-[10px] font-mono uppercase tracking-[0.14em] text-tomato-900/65 dark:text-cream-200/60 mb-2">
+      <div
+        style={{
+          fontFamily: "var(--font-jetbrains), ui-monospace, Menlo, monospace",
+          fontSize: "10px",
+          letterSpacing: "0.14em",
+          textTransform: "uppercase",
+          color: "var(--kt-ink-3)",
+          fontWeight: 600,
+          marginBottom: "10px",
+        }}
+      >
         Prep totals · placed + preparing
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap" style={{ gap: "8px" }}>
         {totals.map(([name, qty]) => {
           const isLoading = loading.has(name);
           return (
             <div
               key={name}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border-2 border-tomato-900 dark:border-cream-200/30 bg-cream-100 dark:bg-graphite-900"
+              className="inline-flex items-center"
+              style={{
+                gap: "8px",
+                padding: "6px 12px",
+                borderRadius: "6px",
+                border: "1px solid var(--kt-line-2)",
+                background: "var(--kt-cream-4)",
+              }}
             >
-              <span className="font-display text-[20px] sm:text-[22px] font-medium tabular leading-none text-tomato-500">
+              <span
+                className="tabular leading-none"
+                style={{
+                  fontFamily: "var(--font-newsreader), ui-serif, Georgia",
+                  fontSize: "22px",
+                  fontWeight: 500,
+                  color: "var(--kt-tomato)",
+                  fontStyle: "italic",
+                }}
+              >
                 {qty}
               </span>
-              <span className="text-[12px] sm:text-[14px] font-medium max-w-[220px] break-words leading-tight">
+              <span
+                style={{
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  color: "var(--kt-ink-2)",
+                  maxWidth: "200px",
+                }}
+              >
                 {name}
               </span>
-              {/* 86 button — min 44px touch target for tablet use */}
+              {/* 86 button — min 44px touch target */}
               <button
                 type="button"
                 disabled={isLoading}
                 onClick={() => void handle86(name, false)}
                 title={`86 — mark ${name} sold out`}
                 aria-label={`Mark ${name} sold out`}
-                className="ml-1 inline-flex items-center justify-center gap-1 px-3 h-11 min-w-[44px] rounded border-2 border-tomato-900/40 dark:border-cream-200/25 text-[11px] font-mono font-semibold uppercase tracking-wider text-tomato-700 dark:text-cream-300 hover:bg-tomato-900 hover:text-cream-50 dark:hover:bg-cream-200 dark:hover:text-graphite-900 active:scale-95 disabled:opacity-40 disabled:cursor-wait transition-colors"
+                className="inline-flex items-center justify-center transition-colors"
+                style={{
+                  height: "44px",
+                  minWidth: "44px",
+                  padding: "0 10px",
+                  borderRadius: "5px",
+                  border: "1px solid var(--kt-line-2)",
+                  background: "transparent",
+                  fontFamily: "var(--font-jetbrains), ui-monospace, Menlo, monospace",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  color: "var(--kt-tomato)",
+                  cursor: isLoading ? "wait" : "pointer",
+                  opacity: isLoading ? 0.4 : 1,
+                  textDecoration: "line-through",
+                }}
               >
-                <span className="line-through leading-none">86</span>
+                86
               </button>
             </div>
           );
         })}
 
-        {/* Ghost "undo 86" pills for items recently sold out that now have 0 active qty */}
+        {/* Ghost "undo 86" pills for items recently sold out with 0 active qty */}
         {zeroedOut86Names.map((name) => {
           const isLoading = loading.has(name);
           return (
             <div
               key={`undo-${name}`}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border-2 border-tomato-900/30 dark:border-cream-200/15 bg-cream-100/50 dark:bg-graphite-900/50 opacity-60"
+              className="inline-flex items-center"
+              style={{
+                gap: "8px",
+                padding: "6px 12px",
+                borderRadius: "6px",
+                border: "1px solid var(--kt-line)",
+                background: "var(--kt-cream-4)",
+                opacity: 0.55,
+              }}
             >
-              <span className="font-display text-[20px] sm:text-[22px] font-medium tabular leading-none text-tomato-500/40 line-through">
+              <span
+                className="tabular leading-none"
+                style={{
+                  fontFamily: "var(--font-newsreader), ui-serif, Georgia",
+                  fontSize: "22px",
+                  fontWeight: 500,
+                  color: "var(--kt-tomato)",
+                  fontStyle: "italic",
+                  textDecoration: "line-through",
+                }}
+              >
                 0
               </span>
-              <span className="text-[12px] sm:text-[13px] font-medium truncate max-w-[180px] line-through text-tomato-900/40 dark:text-cream-200/40">
+              <span
+                style={{
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  color: "var(--kt-ink-3)",
+                  maxWidth: "180px",
+                  textDecoration: "line-through",
+                }}
+              >
                 {name}
               </span>
               <button
@@ -515,7 +1078,23 @@ function PrepTotalsStrip({ orders, lines, onSessionExpired }: { orders: OrderRow
                 onClick={() => void handle86(name, true)}
                 title={`Undo 86 — restore ${name}`}
                 aria-label={`Undo 86 — mark ${name} back in stock`}
-                className="ml-1 inline-flex items-center justify-center gap-1 px-3 h-11 min-w-[44px] rounded border-2 border-tomato-900/30 dark:border-cream-200/20 text-[11px] font-mono font-semibold uppercase tracking-wider text-tomato-900/60 dark:text-cream-200/60 hover:bg-tomato-900 hover:text-cream-50 dark:hover:bg-cream-200 dark:hover:text-graphite-900 hover:opacity-100 active:scale-95 disabled:opacity-40 disabled:cursor-wait transition-colors"
+                className="inline-flex items-center justify-center transition-colors"
+                style={{
+                  height: "44px",
+                  minWidth: "44px",
+                  padding: "0 10px",
+                  borderRadius: "5px",
+                  border: "1px solid var(--kt-line-2)",
+                  background: "transparent",
+                  fontFamily: "var(--font-jetbrains), ui-monospace, Menlo, monospace",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  color: "var(--kt-ink-2)",
+                  cursor: isLoading ? "wait" : "pointer",
+                  opacity: isLoading ? 0.4 : 1,
+                }}
               >
                 Undo
               </button>

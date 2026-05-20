@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Fraunces, Manrope, JetBrains_Mono, Instrument_Serif, Newsreader, Geist, Geist_Mono } from "next/font/google";
+import { Inter, Fraunces, Manrope, JetBrains_Mono, Instrument_Serif, Newsreader, Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
 import { headers } from "next/headers";
 import { Toaster } from "sonner";
 import { resolveTenant } from "@/lib/tenant";
@@ -39,6 +39,11 @@ const newsreader = Newsreader({
   weight: ["400", "500", "600"],
   style: ["normal", "italic"],
   variable: "--font-newsreader",
+  display: "swap",
+});
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-space-grotesk",
   display: "swap",
 });
 const geist = Geist({
@@ -89,7 +94,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       lang="en"
       data-tenant-id={tenant?.id ?? ""}
       data-tenant-slug={tenant?.slug ?? ""}
-      className={`${inter.variable} ${fraunces.variable} ${manrope.variable} ${jetbrains.variable} ${instrumentSerif.variable} ${newsreader.variable} ${geist.variable} ${geistMono.variable}`}
+      className={`${inter.variable} ${fraunces.variable} ${manrope.variable} ${jetbrains.variable} ${instrumentSerif.variable} ${newsreader.variable} ${spaceGrotesk.variable} ${geist.variable} ${geistMono.variable}`}
       suppressHydrationWarning
     >
       <head>

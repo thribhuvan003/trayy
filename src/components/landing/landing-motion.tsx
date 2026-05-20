@@ -593,6 +593,7 @@ export function LandingMotion() {
               "-=0.48",
             )
             .from(".tray-landing .tl-note", { opacity: 0, duration: 0.45 }, "-=0.38")
+            .from(".tray-landing .tl-trust", { opacity: 0, y: 6, duration: 0.42 }, "-=0.28")
             .from(
               ".tray-landing .tl-hero-stat",
               { y: 24, opacity: 0, stagger: 0.07, duration: 0.68 },

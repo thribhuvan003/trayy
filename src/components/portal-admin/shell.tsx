@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Activity, BookOpen, ClipboardList, Copy, ExternalLink, LayoutGrid, LineChart, ListOrdered, LogOut, Settings, Users } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const NAV_ITEMS = [
@@ -31,8 +30,8 @@ function OrderingLinkBanner({ tenantSlug }: { tenantSlug: string }) {
   }
 
   return (
-    <div className="mx-2 mb-2 rounded-lg border border-lime/20 bg-lime/[0.06] px-3 py-2.5">
-      <div className="text-[10px] font-mono uppercase tracking-[0.12em] text-lime/70 mb-1.5">
+    <div className="mx-2 mb-2 rounded-lg border border-[#cdfa50]/20 bg-[#cdfa50]/[0.06] px-3 py-2.5">
+      <div className="text-[10px] font-mono uppercase tracking-[0.12em] text-[#cdfa50]/70 mb-1.5">
         Student ordering link
       </div>
       <div className="flex items-center gap-1.5">
@@ -40,7 +39,7 @@ function OrderingLinkBanner({ tenantSlug }: { tenantSlug: string }) {
           href={`/c/${tenantSlug}/menu`}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex-1 min-w-0 text-[11px] font-mono text-graphite-300 hover:text-lime truncate transition-colors"
+          className="flex-1 min-w-0 text-[11px] font-mono text-[#aab3c5] hover:text-[#cdfa50] truncate transition-colors"
         >
           /c/{tenantSlug}/menu
         </a>
@@ -48,7 +47,7 @@ function OrderingLinkBanner({ tenantSlug }: { tenantSlug: string }) {
           type="button"
           onClick={copyLink}
           title="Copy link"
-          className="shrink-0 h-6 w-6 inline-flex items-center justify-center rounded text-graphite-400 hover:text-lime hover:bg-lime/10 transition-colors"
+          className="shrink-0 h-6 w-6 inline-flex items-center justify-center rounded text-[#6d7689] hover:text-[#cdfa50] hover:bg-[#cdfa50]/10 transition-colors"
         >
           <Copy size={11} />
         </button>
@@ -57,7 +56,7 @@ function OrderingLinkBanner({ tenantSlug }: { tenantSlug: string }) {
           target="_blank"
           rel="noopener noreferrer"
           title="Open in new tab"
-          className="shrink-0 h-6 w-6 inline-flex items-center justify-center rounded text-graphite-400 hover:text-lime hover:bg-lime/10 transition-colors"
+          className="shrink-0 h-6 w-6 inline-flex items-center justify-center rounded text-[#6d7689] hover:text-[#cdfa50] hover:bg-[#cdfa50]/10 transition-colors"
         >
           <ExternalLink size={11} />
         </a>
@@ -90,38 +89,93 @@ export function AdminShell({
   }
 
   return (
-    <div className="relative z-10 flex">
-      <aside className="hidden lg:flex w-[220px] shrink-0 border-r border-graphite-200/10 sticky top-0 self-start h-screen flex-col">
-        <div className="px-4 pt-5 pb-3">
-          <Link href={`/c/${tenantSlug}/admin/dashboard`} className="inline-flex items-center gap-2 font-display text-[17px] tracking-tight text-graphite-200">
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-lime text-graphite-900 font-mono text-[11px] font-bold">T</span>
-            <span className="font-medium">Tray<span className="italic text-lime">.</span></span>
+    <div className="relative z-10 flex" style={{ background: "#0b0e14", minHeight: "100vh" }}>
+      {/* ── Sidebar ─────────────────────────────────────────── */}
+      <aside
+        className="hidden lg:flex w-[248px] shrink-0 sticky top-0 self-start h-screen flex-col"
+        style={{
+          background: "#11151d",
+          borderRight: "1px solid rgba(255,255,255,0.07)",
+        }}
+      >
+        {/* Brand */}
+        <div style={{ padding: "18px 14px 14px", borderBottom: "1px solid rgba(255,255,255,0.07)", marginBottom: "14px" }}>
+          <Link
+            href={`/c/${tenantSlug}/admin/dashboard`}
+            className="inline-flex items-center gap-2.5 font-semibold text-[18px] tracking-tight"
+            style={{ color: "#eef1f7", letterSpacing: "-0.025em" }}
+          >
+            {/* 28px lime square brand mark with glow */}
+            <span
+              className="inline-flex items-center justify-center font-mono font-bold text-[13px] shrink-0"
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 7,
+                background: "#cdfa50",
+                color: "#0b0e14",
+                boxShadow: "0 0 20px rgba(205,250,80,0.32)",
+              }}
+            >
+              T
+            </span>
+            Tray<span className="italic font-medium" style={{ color: "#cdfa50", marginLeft: -2 }}>.</span>
           </Link>
-          <div className="mt-2 text-[10px] font-mono uppercase tracking-[0.14em] text-graphite-400">
+          <div
+            className="mt-2 font-mono uppercase font-semibold"
+            style={{ fontSize: 10, letterSpacing: "0.14em", color: "#6d7689" }}
+          >
             {tenantName}
           </div>
         </div>
-        <nav className="flex-1 px-2 flex flex-col gap-0.5 text-[13px]">
+
+        {/* Nav */}
+        <nav className="flex-1 px-[14px] flex flex-col gap-0.5 text-[13.5px]">
           {NAV_ITEMS.map((n, i) =>
             "group" in n ? (
-              <div key={i} className="px-2 pt-4 pb-1 text-[10px] font-mono uppercase tracking-[0.14em] text-graphite-400 font-semibold">
+              <div
+                key={i}
+                className="font-mono font-semibold"
+                style={{
+                  padding: "14px 10px 6px",
+                  fontSize: 10,
+                  letterSpacing: "0.16em",
+                  textTransform: "uppercase",
+                  color: "#6d7689",
+                }}
+              >
                 {n.group}
               </div>
             ) : (
               <Link
                 key={n.key}
                 href={navHref(n.key)}
-                className={cn(
-                  "group flex items-center gap-2.5 px-2 h-8 rounded-md transition-colors",
-                  isActive(n.key)
-                    ? "bg-lime/10 text-lime"
-                    : "text-graphite-300 hover:bg-graphite-200/[0.06] hover:text-graphite-200"
-                )}
+                className="group flex items-center gap-[11px] rounded-[7px] font-medium transition-colors"
+                style={{
+                  padding: "8px 11px",
+                  background: isActive(n.key) ? "rgba(205,250,80,0.12)" : "transparent",
+                  color: isActive(n.key) ? "#cdfa50" : "#aab3c5",
+                  fontWeight: isActive(n.key) ? 600 : 500,
+                }}
               >
-                <n.icon size={14} strokeWidth={1.6} className="opacity-80" />
-                <span className="font-medium">{n.label}</span>
+                <n.icon
+                  size={15}
+                  strokeWidth={1.6}
+                  style={{ opacity: isActive(n.key) ? 1 : 0.65, color: isActive(n.key) ? "#cdfa50" : undefined, flexShrink: 0 }}
+                />
+                <span>{n.label}</span>
                 {"kbd" in n && n.kbd && (
-                  <span className="ml-auto px-1 py-0.5 text-[9px] font-mono rounded border border-graphite-200/15 text-graphite-400">
+                  <span
+                    className="ml-auto font-mono font-medium"
+                    style={{
+                      fontSize: 10,
+                      padding: "1px 5px",
+                      background: isActive(n.key) ? "rgba(205,250,80,0.06)" : "#171c26",
+                      border: `1px solid ${isActive(n.key) ? "rgba(205,250,80,0.18)" : "rgba(255,255,255,0.13)"}`,
+                      borderRadius: 4,
+                      color: isActive(n.key) ? "#cdfa50" : "#6d7689",
+                    }}
+                  >
                     {n.kbd}
                   </span>
                 )}
@@ -129,48 +183,140 @@ export function AdminShell({
             )
           )}
         </nav>
-        <OrderingLinkBanner tenantSlug={tenantSlug} />
-        <div className="p-3 border-t border-graphite-200/10 flex items-center gap-2">
-          <div className="h-8 w-8 rounded-full bg-lime/15 text-lime inline-flex items-center justify-center text-[12px] font-mono font-semibold">
-            {(userEmail ?? "A").slice(0, 1).toUpperCase()}
+
+        {/* Bottom: ordering link + portal links + user */}
+        <div style={{ marginTop: "auto" }}>
+          <OrderingLinkBanner tenantSlug={tenantSlug} />
+
+          {/* Portal quick-links in mono */}
+          <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", padding: "14px 14px 0" }}>
+            {[
+              { label: "Kitchen", href: `/c/${tenantSlug}/kitchen` },
+              { label: "Student menu", href: `/c/${tenantSlug}/menu` },
+            ].map((pl) => (
+              <Link
+                key={pl.href}
+                href={pl.href}
+                className="flex items-center justify-between rounded-md transition-colors"
+                style={{
+                  padding: "7px 11px",
+                  fontFamily: "var(--font-geist-mono), ui-monospace, monospace",
+                  fontSize: 11,
+                  color: "#6d7689",
+                  letterSpacing: "0.04em",
+                  textTransform: "uppercase",
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#171c26"; (e.currentTarget as HTMLElement).style.color = "#eef1f7"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ""; (e.currentTarget as HTMLElement).style.color = "#6d7689"; }}
+              >
+                <span>{pl.label}</span>
+                <ExternalLink size={10} />
+              </Link>
+            ))}
           </div>
-          <div className="text-[11px] flex-1 min-w-0">
-            <div className="text-graphite-300 truncate">{userEmail ?? "admin"}</div>
-            <div className="text-graphite-400">canteen_admin</div>
-          </div>
-          <Link
-            href="/auth/signout"
-            aria-label="Sign out"
-            className="h-8 w-8 inline-flex items-center justify-center rounded-md text-graphite-400 hover:text-graphite-200 hover:bg-graphite-200/[0.06]"
+
+          {/* User row */}
+          <div
+            className="flex items-center gap-2.5 mx-[14px] mb-[14px] mt-2 rounded-lg"
+            style={{
+              padding: "8px 10px",
+              background: "#171c26",
+              border: "1px solid rgba(255,255,255,0.07)",
+            }}
           >
-            <LogOut size={13} />
-          </Link>
+            {/* Avatar: lime→mint gradient */}
+            <div
+              className="shrink-0 inline-flex items-center justify-center rounded-full font-mono font-bold text-[12px]"
+              style={{
+                width: 30,
+                height: 30,
+                background: "linear-gradient(135deg, #cdfa50, #3fe6a3)",
+                color: "#0b0e14",
+              }}
+            >
+              {(userEmail ?? "A").slice(0, 1).toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0" style={{ lineHeight: 1.2 }}>
+              <div className="truncate font-semibold" style={{ fontSize: 12.5, color: "#eef1f7" }}>
+                {userEmail ?? "admin"}
+              </div>
+              <div
+                className="font-mono"
+                style={{ fontSize: 10, color: "#6d7689", letterSpacing: "0.04em" }}
+              >
+                canteen_admin
+              </div>
+            </div>
+            <Link
+              href="/auth/signout"
+              aria-label="Sign out"
+              className="inline-flex items-center justify-center rounded-md transition-colors"
+              style={{ height: 28, width: 28, color: "#6d7689" }}
+            >
+              <LogOut size={13} />
+            </Link>
+          </div>
         </div>
       </aside>
+
+      {/* ── Main area ───────────────────────────────────────── */}
       <div className="flex-1 min-w-0">
-        <header className="sticky top-0 z-20 bg-graphite-900/80 backdrop-blur-xl border-b border-graphite-200/10">
-          <div className="px-5 sm:px-6 h-12 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-[11px] font-mono text-graphite-400">
-              <div className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              WS connected
-              <span className="hidden sm:inline">·</span>
-              <span className="hidden sm:inline">
-                <span className="text-lime">{tenantSlug}</span>.tray.app/admin
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <ThemeToggle className="text-graphite-200" />
-              <Link
-                href={`/c/${tenantSlug}/kitchen`}
-                className="hidden md:inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-graphite-200/15 text-[11px] font-mono uppercase tracking-wider text-graphite-300 hover:border-lime hover:text-lime transition-colors"
-              >
-                <Activity size={11} /> Kitchen
-              </Link>
-            </div>
+        {/* Topbar: sticky, blur backdrop, border-bottom */}
+        <header
+          className="sticky top-0 z-20 flex items-center justify-between gap-3"
+          style={{
+            height: 52,
+            padding: "0 32px",
+            background: "rgba(11,14,20,0.85)",
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
+            borderBottom: "1px solid rgba(255,255,255,0.07)",
+          }}
+        >
+          {/* Left: live indicator */}
+          <div
+            className="flex items-center gap-2 font-mono"
+            style={{ fontSize: 11, color: "#6d7689" }}
+          >
+            <div className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            WS connected
+            <span className="hidden sm:inline">·</span>
+            <span className="hidden sm:inline">
+              <span style={{ color: "#cdfa50" }}>{tenantSlug}</span>.tray.app/admin
+            </span>
+          </div>
+          {/* Right: theme toggle + kitchen link */}
+          <div className="flex items-center gap-2">
+            <ThemeToggle className="text-[#aab3c5]" />
+            <Link
+              href={`/c/${tenantSlug}/kitchen`}
+              className="hidden md:inline-flex items-center gap-1.5 font-mono uppercase tracking-wider transition-colors"
+              style={{
+                height: 32,
+                padding: "0 12px",
+                borderRadius: 7,
+                border: "1px solid rgba(255,255,255,0.13)",
+                fontSize: 11,
+                color: "#aab3c5",
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#cdfa50"; (e.currentTarget as HTMLElement).style.color = "#cdfa50"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.13)"; (e.currentTarget as HTMLElement).style.color = "#aab3c5"; }}
+            >
+              <Activity size={11} /> Kitchen
+            </Link>
           </div>
         </header>
-        <main className="px-5 sm:px-6 py-6">{children}</main>
-        <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t border-graphite-200/10 bg-graphite-900/95 backdrop-blur-xl">
+
+        <main className="px-5 sm:px-8 py-6">{children}</main>
+
+        {/* Mobile bottom nav */}
+        <nav
+          className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t backdrop-blur-xl"
+          style={{
+            borderColor: "rgba(255,255,255,0.07)",
+            background: "rgba(11,14,20,0.95)",
+          }}
+        >
           <div className="grid grid-cols-6">
             {[
               { href: `/c/${tenantSlug}/admin/dashboard`, match: "/admin/dashboard", icon: LayoutGrid, label: "Home" },
@@ -183,10 +329,11 @@ export function AdminShell({
               <Link
                 key={n.href}
                 href={n.href}
-                className={cn(
-                  "flex flex-col items-center justify-center gap-0.5 py-2.5 text-[10px] font-mono uppercase tracking-wider",
-                  pathname?.startsWith(n.match) ? "text-lime" : "text-graphite-400"
-                )}
+                className="flex flex-col items-center justify-center gap-0.5 py-2.5 font-mono uppercase tracking-wider"
+                style={{
+                  fontSize: 10,
+                  color: pathname?.startsWith(n.match) ? "#cdfa50" : "#6d7689",
+                }}
               >
                 <n.icon size={15} />
                 {n.label}

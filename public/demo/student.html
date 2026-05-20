@@ -1594,6 +1594,168 @@
       pointer-events: none;
     }
 
+    /* ─── QR breathing glow ─── */
+    @keyframes qrBreathe {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0), 0 0 18px rgba(245, 158, 11, 0.18); }
+      50%       { box-shadow: 0 0 0 6px rgba(251, 191, 36, 0.12), 0 0 32px rgba(245, 158, 11, 0.34); }
+    }
+    .qr-box { animation: qrBreathe 2.8s ease-in-out infinite; }
+
+    /* ─── Timer color states ─── */
+    .timer-val { transition: color 0.6s ease; }
+    .timer-val.t-amber { color: #f59e0b !important; }
+    .timer-val.t-red   { color: #ef4444 !important; }
+
+    /* ─── Demo banner dismiss animation ─── */
+    .demo-banner {
+      overflow: hidden;
+      max-height: 64px;
+      transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                  opacity    0.28s cubic-bezier(0.4, 0, 0.2, 1),
+                  padding    0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .demo-banner.is-collapsing {
+      max-height: 0;
+      opacity: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+    .demo-banner.is-dismissed { display: none; }
+
+    /* ─── Category pill sliding indicator ─── */
+    .cat-pills { position: relative; }
+    .pill-highlight {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      border-radius: 999px;
+      background: var(--accent);
+      pointer-events: none;
+      z-index: 0;
+      transition: left 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                  width 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                  top 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .cat-pills .pill-cat {
+      position: relative;
+      z-index: 1;
+    }
+    .cat-pills .pill-cat.is-active {
+      color: var(--bg);
+      background: transparent;
+      border-color: transparent;
+    }
+
+    /* ─── Menu card hover lift (pointer devices) ─── */
+    @media (hover: hover) {
+      .menu-card {
+        transition: border-color 0.2s, transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+                    box-shadow 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+      .menu-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 24px rgba(26, 20, 14, 0.13);
+        border-color: var(--dark-edge);
+      }
+      .menu-card:hover .menu-card__visual {
+        animation: emojiPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+      @keyframes emojiPop {
+        0%   { transform: scale(1); }
+        45%  { transform: scale(1.08); }
+        70%  { transform: scale(0.96); }
+        100% { transform: scale(1); }
+      }
+      .menu-card .btn-add-initial {
+        opacity: 0;
+        transition: opacity 0.18s 0.06s ease, background 0.2s, transform 0.15s;
+      }
+      .menu-card:hover .btn-add-initial { opacity: 1; }
+    }
+
+    /* ─── Search: dim non-matching ─── */
+    .menu-card.search-dim {
+      opacity: 0.3;
+      transform: scale(0.97);
+      transition: opacity 0.22s ease, transform 0.22s ease;
+    }
+    .menu-card.search-match {
+      box-shadow: 0 0 0 2px rgba(92, 177, 255, 0.22);
+    }
+    .search-empty-state {
+      text-align: center;
+      padding: 40px 0 24px;
+      color: var(--muted);
+      animation: fadeSlideIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── OTP digit flip ─── */
+    .otp-digits-wrap {
+      display: flex;
+      justify-content: center;
+      gap: 0.2em;
+      perspective: 400px;
+    }
+    .otp-digit {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: clamp(3rem, 12vw, 4.5rem);
+      font-weight: 700;
+      color: var(--accent);
+      text-shadow: 0 0 40px var(--accent-glow);
+      transform-origin: center;
+      backface-visibility: hidden;
+    }
+    .otp-digit.flip-in {
+      animation: otpFlip 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+    @keyframes otpFlip {
+      from { transform: rotateX(90deg) scale(0.8); opacity: 0; }
+      to   { transform: rotateX(0deg)  scale(1);   opacity: 1; }
+    }
+    .otp-display.all-revealed {
+      box-shadow: 0 0 80px rgba(92, 177, 255, 0.22), inset 0 0 60px rgba(92, 177, 255, 0.08) !important;
+      transition: box-shadow 0.6s ease;
+    }
+
+    /* ─── Track step bounce ─── */
+    .track-step.bounce-in .track-dot {
+      animation: trackBounce 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes trackBounce {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.28); }
+      70%  { transform: scale(0.9); }
+      100% { transform: scale(1); }
+    }
+
+    /* ─── Toast ─── */
+    .toast {
+      position: fixed;
+      bottom: calc(88px + env(safe-area-inset-bottom, 0));
+      left: 50%;
+      transform: translateX(-50%) translateY(24px);
+      padding: 12px 18px;
+      border-radius: var(--radius-sm);
+      background: var(--dark-base);
+      color: var(--on-dark);
+      font-family: var(--font-ui);
+      font-size: 14px;
+      font-weight: 500;
+      pointer-events: none;
+      z-index: 9000;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.22s, transform 0.22s;
+      border: 1px solid var(--dark-edge);
+      box-shadow: 0 8px 24px rgba(10,8,6,0.4);
+    }
+    .toast.show { opacity: 1; }
+
     /* ─── OTP screen dramatic ─── */
     .otp-display {
       background: linear-gradient(180deg, rgba(12, 18, 32, 0.9) 0%, rgba(8, 12, 24, 0.96) 100%) !important;
@@ -1780,7 +1942,11 @@
           <p class="view-sub">Show this code at the counter. Staff will verify before handing over your order.</p>
           <div class="otp-display" id="otpDisplay" title="Tap to copy" role="button" tabindex="0" aria-label="Pickup code — tap to copy">
             <p class="otp-label">Pickup code · tap to copy</p>
-            <p class="otp-code" id="otpCode" aria-live="polite">----</p>
+            <div class="otp-digits-wrap" id="otpDigitsWrap" aria-live="polite" aria-label="Pickup code">
+              <span class="otp-digit" id="otpD0">-</span><span class="otp-digit" id="otpD1">-</span><span class="otp-digit" id="otpD2">-</span><span class="otp-digit" id="otpD3">-</span>
+            </div>
+            <!-- Keep hidden for copy compatibility -->
+            <p class="otp-code" id="otpCode" aria-hidden="true" style="display:none">----</p>
             <p class="order-mode-tag" id="orderModeTag">Takeaway</p>
             <p class="otp-hint">Show this code at the counter. Staff will verify before handing over your order.</p>
             <p class="otp-copied-tip" id="otpCopiedTip">Copied to clipboard ✓</p>
@@ -1804,6 +1970,153 @@
   <script>
 (function () {
   "use strict";
+
+  // ─── Reduced-motion guard ───────────────────────────────────────────────────
+  var REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ─── 1. Fly-to-cart animation ────────────────────────────────────────────────
+  function flyToCart(cardEl) {
+    if (REDUCED || !cardEl) return;
+    var cartBar = document.querySelector(".cart-bar.is-visible") || document.querySelector(".cart-sidebar");
+    if (!cartBar) return;
+    var cardRect = cardEl.getBoundingClientRect();
+    var cartRect = cartBar.getBoundingClientRect();
+    var ghost = document.createElement("div");
+    ghost.style.cssText =
+      "position:fixed;" +
+      "left:" + (cardRect.left + cardRect.width / 2 - 16) + "px;" +
+      "top:" + (cardRect.top + cardRect.height / 2 - 16) + "px;" +
+      "width:32px;height:32px;" +
+      "border-radius:50%;" +
+      "background:var(--accent);" +
+      "opacity:1;" +
+      "pointer-events:none;" +
+      "z-index:9999;" +
+      "transition:left 0.5s cubic-bezier(0.34,1.56,0.64,1)," +
+        "top 0.5s cubic-bezier(0.34,1.56,0.64,1)," +
+        "transform 0.5s cubic-bezier(0.34,1.56,0.64,1)," +
+        "opacity 0.5s cubic-bezier(0.34,1.56,0.64,1);";
+    document.body.appendChild(ghost);
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        ghost.style.left = (cartRect.left + cartRect.width / 2 - 16) + "px";
+        ghost.style.top  = (cartRect.top  + cartRect.height / 2 - 16) + "px";
+        ghost.style.transform = "scale(0.2)";
+        ghost.style.opacity = "0";
+      });
+    });
+    setTimeout(function () { ghost.remove(); }, 560);
+  }
+
+  // ─── 2. Cart badge spring bounce ─────────────────────────────────────────────
+  function pulseBadge() {
+    if (REDUCED) return;
+    var badge = document.querySelector("#cartBarCount");
+    if (!badge) return;
+    badge.animate([
+      { transform: "scale(1)" },
+      { transform: "scale(1.5)" },
+      { transform: "scale(0.9)" },
+      { transform: "scale(1)" }
+    ], { duration: 350, easing: "cubic-bezier(0.34,1.56,0.64,1)" });
+  }
+
+  // ─── 7. Toast with spring entrance ──────────────────────────────────────────
+  var _toastEl = null;
+  var _toastTimer = null;
+  function createToastEl() {
+    var t = document.createElement("div");
+    t.className = "toast";
+    document.body.appendChild(t);
+    return t;
+  }
+  function showToast(msg, type) {
+    if (!_toastEl) _toastEl = createToastEl();
+    if (_toastTimer) clearTimeout(_toastTimer);
+    _toastEl.textContent = msg;
+    _toastEl.className = "toast toast-" + (type || "info");
+    if (!REDUCED) {
+      _toastEl.animate([
+        { transform: "translateX(-50%) translateY(24px)", opacity: 0 },
+        { transform: "translateX(-50%) translateY(0)",    opacity: 1 }
+      ], { duration: 300, easing: "cubic-bezier(0.34,1.56,0.64,1)", fill: "forwards" });
+    }
+    _toastEl.classList.add("show");
+    _toastTimer = setTimeout(function () { _toastEl.classList.remove("show"); }, 2500);
+  }
+
+  // ─── 3. Category pill sliding background ─────────────────────────────────────
+  var _pillHighlight = null;
+
+  function getOrCreatePillHighlight(pillsEl) {
+    if (!_pillHighlight || !pillsEl.contains(_pillHighlight)) {
+      _pillHighlight = document.createElement("div");
+      _pillHighlight.className = "pill-highlight";
+      pillsEl.insertBefore(_pillHighlight, pillsEl.firstChild);
+    }
+    return _pillHighlight;
+  }
+
+  function movePillHighlight(activePill) {
+    if (REDUCED || !activePill) return;
+    var pillsEl = activePill.closest(".cat-pills");
+    if (!pillsEl) return;
+    var hl = getOrCreatePillHighlight(pillsEl);
+    var pillsRect = pillsEl.getBoundingClientRect();
+    var pillRect  = activePill.getBoundingClientRect();
+    var scrollLeft = pillsEl.scrollLeft;
+    hl.style.left   = (pillRect.left - pillsRect.left + scrollLeft) + "px";
+    hl.style.top    = (pillRect.top  - pillsRect.top) + "px";
+    hl.style.width  = pillRect.width + "px";
+    hl.style.height = pillRect.height + "px";
+  }
+
+  // ─── 4. OTP digit-by-digit reveal ────────────────────────────────────────────
+  function revealOtp(code) {
+    var digits = code.split("");
+    // Keep hidden element in sync for copy
+    var hidden = document.getElementById("otpCode");
+    if (hidden) hidden.textContent = code;
+    digits.forEach(function (d, i) {
+      var el = document.getElementById("otpD" + i);
+      if (!el) return;
+      if (REDUCED) {
+        el.textContent = d;
+        return;
+      }
+      setTimeout(function () {
+        el.textContent = d;
+        el.classList.remove("flip-in");
+        void el.offsetWidth; // reflow
+        el.classList.add("flip-in");
+        // After last digit
+        if (i === digits.length - 1) {
+          setTimeout(function () {
+            var display = document.getElementById("otpDisplay");
+            if (display) display.classList.add("all-revealed");
+          }, 350);
+        }
+      }, i * 150);
+    });
+  }
+
+  // ─── 5. Tracking step bounce ──────────────────────────────────────────────────
+  function bounceTrackStep(el) {
+    if (REDUCED || !el) return;
+    el.classList.remove("bounce-in");
+    void el.offsetWidth;
+    el.classList.add("bounce-in");
+    setTimeout(function () { el.classList.remove("bounce-in"); }, 500);
+  }
+
+  // ─── 6. Timer color transitions ──────────────────────────────────────────────
+  function updateTimerColor(seconds) {
+    var el = document.getElementById("payTimer");
+    if (!el) return;
+    el.classList.remove("t-amber", "t-red");
+    if (seconds < 30) el.classList.add("t-red");
+    else if (seconds < 60) el.classList.add("t-amber");
+  }
 
   if (!window.TRAY_DEMO) {
     var g = document.getElementById("menuGrid");
@@ -2265,10 +2578,12 @@
 
     var seconds = 60;
     $("#payTimer").textContent = seconds;
+    updateTimerColor(seconds);
     if (payInterval) clearInterval(payInterval);
     payInterval = setInterval(function () {
       seconds -= 1;
       $("#payTimer").textContent = Math.max(0, seconds);
+      updateTimerColor(seconds);
       if (seconds <= 0) {
         clearInterval(payInterval);
         payInterval = null;
@@ -2315,8 +2630,15 @@
         updateFlowCopy();
         $("#trackingSub").textContent = serviceMode === "dine" ? "Your order is on the way to your table." : "Your order is ready at the counter.";
         setTimeout(function () {
-          $("#otpCode").textContent = pickupOtp;
+          var display = document.getElementById("otpDisplay");
+          if (display) display.classList.remove("all-revealed");
+          // Reset digits to dashes
+          for (var di = 0; di < 4; di++) {
+            var dEl = document.getElementById("otpD" + di);
+            if (dEl) { dEl.textContent = "-"; dEl.classList.remove("flip-in"); }
+          }
           setView("otp");
+          setTimeout(function () { revealOtp(pickupOtp); }, 150);
         }, 1500);
         return;
       }
@@ -2328,9 +2650,13 @@
   function updateTrackUI(currentIndex) {
     var stepEls = $$(".track-step");
     stepEls.forEach(function (el, i) {
+      var wasNotCurrent = !el.classList.contains("is-current");
       el.classList.remove("is-done", "is-current", "is-pending");
       if (i < currentIndex) el.classList.add("is-done");
-      else if (i === currentIndex) el.classList.add("is-current");
+      else if (i === currentIndex) {
+        el.classList.add("is-current");
+        if (wasNotCurrent) bounceTrackStep(el);
+      }
       else el.classList.add("is-pending");
     });
   }
@@ -2352,11 +2678,92 @@
     pickupOtp = "";
     orderId = "";
     $("#payTimer").textContent = "60";
+    updateTimerColor(60);
     $("#progressFill").style.width = "0%";
+    // Reset OTP digits
+    for (var di = 0; di < 4; di++) {
+      var dEl = document.getElementById("otpD" + di);
+      if (dEl) { dEl.textContent = "-"; dEl.classList.remove("flip-in"); }
+    }
+    var otpDisplay2 = document.getElementById("otpDisplay");
+    if (otpDisplay2) otpDisplay2.classList.remove("all-revealed");
     updateTrackUI(0);
     renderCategories();
     renderMenu();
     setView("menu");
+  }
+
+  // ─── 9. Search with dim/highlight instead of hide ────────────────────────────
+  function renderMenuWithSearch() {
+    var q = searchQuery.trim().toLowerCase();
+    if (!q) {
+      // If query cleared, do a normal renderMenu to restore hidden state
+      renderMenu();
+      return;
+    }
+    // First render all items (full menu for current category)
+    var allItems = allMenuItems().filter(function (item) {
+      var catOk = activeCat === "all" || item.cat === activeCat;
+      var vegOk = !vegOnly || item.diet === "veg";
+      return catOk && vegOk;
+    });
+
+    if (!allItems.length) { renderMenu(); return; }
+
+    var html = "";
+    allItems.forEach(function (item) {
+      var qty = getQty(item.id);
+      var hasQty = qty > 0;
+      var dietClass = item.diet === "veg" ? "diet-dot--veg" : "diet-dot--nv";
+      html +=
+        '<article class="menu-card' + (hasQty ? " has-qty" : "") + '" data-id="' + item.id + '" data-cat="' + item.cat + '">' +
+        '<div class="menu-card__visual" aria-hidden="true">' + item.emoji + "</div>" +
+        '<div class="menu-card__body">' +
+        '<div class="menu-card__top">' +
+        "<h3 class=\"menu-card__title\">" + item.name + (item.isLiveSpecial ? ' <span style="font-family:var(--font-ui);font-size:10px;letter-spacing:.08em;color:var(--accent);vertical-align:middle">★ LIVE</span>' : "") + "</h3>" +
+        '<span class="diet-dot ' + dietClass + '" title="' + (item.diet === "veg" ? "Vegetarian" : "Non-vegetarian") + '"></span>' +
+        "</div>" +
+        '<p class="menu-card__desc">' + item.desc + "</p>" +
+        '<div class="menu-card__foot">' +
+        '<span class="price">' + formatMoney(item.price) + "</span>" +
+        '<button type="button" class="btn-add-initial" data-action="add" data-id="' + item.id + '">Add</button>' +
+        '<div class="qty-control' + (hasQty ? "" : " is-empty") + '">' +
+        '<button type="button" class="qty-btn qty-minus" data-action="minus" data-id="' + item.id + '" aria-label="Decrease">−</button>' +
+        '<span class="qty-val">' + qty + "</span>" +
+        '<button type="button" class="qty-btn" data-action="plus" data-id="' + item.id + '" aria-label="Increase">+</button>' +
+        "</div>" +
+        "</div></div></article>";
+    });
+
+    var grid = document.getElementById("menuGrid");
+    grid.innerHTML = html;
+
+    // Apply dim/highlight classes
+    var matchCount = 0;
+    grid.querySelectorAll(".menu-card").forEach(function (card) {
+      var id = card.getAttribute("data-id");
+      var item = allItems.find(function (m) { return m.id === id; });
+      if (!item) return;
+      var matches = item.name.toLowerCase().indexOf(q) !== -1 || item.desc.toLowerCase().indexOf(q) !== -1;
+      if (matches) {
+        card.classList.add("search-match");
+        card.classList.remove("search-dim");
+        matchCount++;
+      } else {
+        card.classList.add("search-dim");
+        card.classList.remove("search-match");
+      }
+    });
+
+    document.getElementById("itemCount").textContent = matchCount + (matchCount === 1 ? " dish" : " dishes");
+
+    if (matchCount === 0) {
+      grid.innerHTML =
+        '<div class="search-empty-state">' +
+        '<div style="font-size:2.2rem;margin-bottom:10px;">🔍</div>' +
+        '<p style="color:var(--muted);margin:0">No items match <em>"' + searchQuery.trim() + '"</em></p>' +
+        '</div>';
+    }
   }
 
   function bindEvents() {
@@ -2384,6 +2791,13 @@
         activeCat = catBtn.getAttribute("data-cat");
         renderCategories();
         renderMenu();
+        // Slide pill highlight after DOM update
+        if (catBtn.classList.contains("pill-cat")) {
+          requestAnimationFrame(function () {
+            var activeP = document.querySelector(".cat-pills .pill-cat.is-active");
+            movePillHighlight(activeP);
+          });
+        }
         return;
       }
 
@@ -2391,10 +2805,11 @@
       if (actionBtn) {
         var id = actionBtn.getAttribute("data-id");
         var action = actionBtn.getAttribute("data-action");
-        if (action === "add") changeQty(id, 1);
+        var cardEl = actionBtn.closest(".menu-card");
+        if (action === "add") { flyToCart(cardEl); changeQty(id, 1); }
         if (action === "plus") changeQty(id, 1);
         if (action === "minus") changeQty(id, -1);
-        if (getCartCount() > 0) bumpCartCount();
+        if (getCartCount() > 0) { bumpCartCount(); pulseBadge(); }
         return;
       }
 
@@ -2412,15 +2827,21 @@
 
     $("#searchInput").addEventListener("input", function (e) {
       searchQuery = e.target.value;
-      renderMenu();
+      renderMenuWithSearch();
     });
 
-    // Demo banner dismiss
+    // Demo banner dismiss with slide-up collapse
     var bannerDismiss = $("#demoBannerDismiss");
     if (bannerDismiss) {
       bannerDismiss.addEventListener("click", function () {
         var banner = $("#demoBanner");
-        if (banner) banner.classList.add("is-dismissed");
+        if (!banner) return;
+        if (REDUCED) {
+          banner.classList.add("is-dismissed");
+          return;
+        }
+        banner.classList.add("is-collapsing");
+        setTimeout(function () { banner.classList.add("is-dismissed"); }, 380);
       });
     }
 
@@ -2475,6 +2896,28 @@
   renderCart();
   bindEvents();
   setView("menu");
+
+  // Initialise pill highlight position after first render
+  requestAnimationFrame(function () {
+    var activeP = document.querySelector(".cat-pills .pill-cat.is-active");
+    if (activeP) {
+      // No transition on first paint — set directly
+      var pillsEl = activeP.closest(".cat-pills");
+      if (pillsEl && !REDUCED) {
+        var hl = getOrCreatePillHighlight(pillsEl);
+        hl.style.transition = "none";
+        var pillsRect = pillsEl.getBoundingClientRect();
+        var pillRect  = activeP.getBoundingClientRect();
+        hl.style.left   = (pillRect.left - pillsRect.left + pillsEl.scrollLeft) + "px";
+        hl.style.top    = (pillRect.top  - pillsRect.top) + "px";
+        hl.style.width  = pillRect.width + "px";
+        hl.style.height = pillRect.height + "px";
+        requestAnimationFrame(function () {
+          hl.style.transition = "";
+        });
+      }
+    }
+  });
 })();
   </script>
 </body>

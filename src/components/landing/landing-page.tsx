@@ -2,6 +2,8 @@ import Link from "next/link";
 import type { ResolvedTenant } from "@/lib/tenant";
 import { LandingLineLeave } from "@/components/landing/landing-line-leave";
 import { LandingMotion } from "@/components/landing/landing-motion";
+import { LandingHamburger } from "@/components/landing/landing-hamburger";
+import { LandingAnimations } from "@/components/landing/landing-animations";
 
 // Slate Ember (Palette C) — warm stone dusk, ember + sky accents. Newsreader headlines.
 // Council + brand-research-landing: food-adjacent dark editorial, distinct from Monsoon Paper / flat light SaaS.
@@ -122,7 +124,7 @@ const SCOPED_CSS = `
 }
 .tray-landing .tl-nav-inner {
   max-width: var(--tl-max); margin: 0 auto; padding: 12px var(--tl-gutter);
-  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px 16px;
+  display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 12px 8px;
   min-height: 56px;
 }
 @media (min-width: 900px) {
@@ -152,6 +154,60 @@ const SCOPED_CSS = `
 .tray-landing .tl-brand:hover { color: var(--tl-accent); }
 .tray-landing .tl-nav-links { display: none; gap: 28px; font-size: var(--tl-size-sm); font-weight: 500; color: var(--tl-ink-2); align-items: center; justify-self: center; position: relative; }
 @media (min-width: 900px) { .tray-landing .tl-nav-links { display: flex; } }
+
+/* Mobile hamburger button */
+.tray-landing .tl-hamburger {
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  gap: 5px; width: 44px; height: 44px; background: none; border: none; cursor: pointer;
+  color: var(--tl-ink-2); padding: 8px; border-radius: 8px; flex-shrink: 0;
+  transition: color .15s, background .15s; touch-action: manipulation;
+}
+.tray-landing .tl-hamburger:hover { color: var(--tl-ink); background: rgba(255,255,255,.06); }
+.tray-landing .tl-hamburger:focus-visible { outline: 2px solid var(--tl-accent); outline-offset: 3px; }
+.tray-landing .tl-hamburger .tl-bar-a,
+.tray-landing .tl-hamburger .tl-bar-b,
+.tray-landing .tl-hamburger .tl-bar-c {
+  width: 20px; height: 1.5px; background: currentColor; border-radius: 999px;
+  transition: transform .22s ease, opacity .18s ease;
+}
+.tray-landing .tl-hamburger[aria-expanded="true"] .tl-bar-a { transform: translateY(6.5px) rotate(45deg); }
+.tray-landing .tl-hamburger[aria-expanded="true"] .tl-bar-b { opacity: 0; }
+.tray-landing .tl-hamburger[aria-expanded="true"] .tl-bar-c { transform: translateY(-6.5px) rotate(-45deg); }
+@media (min-width: 900px) { .tray-landing .tl-hamburger { display: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .tray-landing .tl-hamburger .tl-bar-a,
+  .tray-landing .tl-hamburger .tl-bar-b,
+  .tray-landing .tl-hamburger .tl-bar-c { transition: none; }
+}
+
+/* Mobile nav overlay */
+.tray-landing .tl-mobile-overlay {
+  position: fixed; inset: 0; z-index: 49;
+  background: color-mix(in srgb, var(--tl-bg) 96%, transparent);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px;
+  opacity: 0; pointer-events: none;
+  transition: opacity .25s ease;
+}
+.tray-landing .tl-mobile-overlay.is-open { opacity: 1; pointer-events: auto; }
+@media (prefers-reduced-motion: reduce) {
+  .tray-landing .tl-mobile-overlay { transition: none; }
+}
+.tray-landing .tl-mobile-overlay a {
+  font-family: var(--tl-display); font-size: clamp(2rem, 8vw, 3.5rem); font-weight: 400;
+  letter-spacing: -0.03em; color: var(--tl-ink-2); padding: 8px 20px; border-radius: 8px;
+  transition: color .15s; text-align: center; line-height: 1.1;
+}
+.tray-landing .tl-mobile-overlay a:hover { color: var(--tl-ink); }
+.tray-landing .tl-mobile-overlay .tl-mobile-divider {
+  width: 40px; height: 1px; background: var(--tl-line-2); margin: 8px 0;
+}
+.tray-landing .tl-mobile-overlay .tl-mobile-cta-row {
+  display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 12px;
+}
+@media (min-width: 900px) { .tray-landing .tl-mobile-overlay { display: none; } }
 .tray-landing .tl-nav-pill {
   position: absolute; bottom: -7px; left: 0; height: 2px; width: 0; border-radius: 999px;
   background: linear-gradient(90deg, var(--tl-student), var(--tl-accent));
@@ -171,6 +227,9 @@ const SCOPED_CSS = `
 @media (min-width: 480px) { .tray-landing .tl-nav-cta { gap: 10px; } }
 .tray-landing .tl-nav-cta .tl-btn { padding: 9px 16px; font-size: var(--tl-size-xs); }
 @media (min-width: 480px) { .tray-landing .tl-nav-cta .tl-btn { padding: 11px 20px; font-size: var(--tl-size-sm); } }
+/* Hide sign-in on mobile — it lives in the overlay */
+.tray-landing .tl-nav-signin { display: none; }
+@media (min-width: 900px) { .tray-landing .tl-nav-signin { display: inline-flex; } }
 
 .tray-landing .tl-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 11px 20px; border-radius: 999px; font-size: var(--tl-size-sm); font-weight: 600; border: 1px solid transparent; transition: background .15s, color .15s, border-color .15s, box-shadow .2s; line-height: 1.2; font-family: inherit; cursor: pointer; touch-action: manipulation; will-change: transform; }
 .tray-landing .tl-btn-pri {
@@ -178,6 +237,7 @@ const SCOPED_CSS = `
   color: #0d0c0a;
   border-color: rgba(242, 235, 227, 0.35);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 0 0 0 rgba(232, 168, 106, 0);
+  position: relative;
 }
 .tray-landing .tl-btn-pri:hover {
   background: #faf6ef;
@@ -316,6 +376,7 @@ const SCOPED_CSS = `
 .tray-landing.tl-anim-init .tl-hero-lede,
 .tray-landing.tl-anim-init .tl-hero-cta .tl-row,
 .tray-landing.tl-anim-init .tl-note,
+.tray-landing.tl-anim-init .tl-trust,
 .tray-landing.tl-anim-init .tl-hero-stat { opacity: 0; }
 @media (prefers-reduced-motion: reduce) {
   .tray-landing.tl-anim-init .tl-hero-top,
@@ -323,6 +384,7 @@ const SCOPED_CSS = `
   .tray-landing.tl-anim-init .tl-hero-lede,
   .tray-landing.tl-anim-init .tl-hero-cta .tl-row,
   .tray-landing.tl-anim-init .tl-note,
+  .tray-landing.tl-anim-init .tl-trust,
   .tray-landing.tl-anim-init .tl-hero-stat { opacity: 1; }
 }
 .tray-landing .tl-ticker { overflow: hidden; border-block: 1px solid var(--tl-line); background: color-mix(in srgb, var(--tl-bg-2) 78%, var(--tl-bg)); position: relative; z-index: 2; mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
@@ -382,6 +444,20 @@ const SCOPED_CSS = `
 .tray-landing .tl-hero-cta .tl-row { display: flex; gap: 12px; flex-wrap: wrap; }
 .tray-landing .tl-hero-cta .tl-note { font-family: var(--tl-mono); font-size: var(--tl-size-2xs); color: var(--tl-ink-3); letter-spacing: 0.1em; text-align: left; font-weight: 600; }
 @media (min-width: 960px) { .tray-landing .tl-hero-cta .tl-note { text-align: right; } }
+
+/* Social proof trust strip — inline with CTA column */
+.tray-landing .tl-trust {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-family: var(--tl-mono); font-size: var(--tl-size-2xs); color: var(--tl-ink-3);
+  letter-spacing: 0.08em; font-weight: 600; margin-top: 2px;
+}
+.tray-landing .tl-trust .tl-trust-dot {
+  width: 5px; height: 5px; border-radius: 50%; background: var(--tl-good);
+  box-shadow: 0 0 8px var(--tl-good); flex-shrink: 0;
+}
+.tray-landing .tl-trust .tl-trust-places {
+  color: var(--tl-ink-2); letter-spacing: 0.04em;
+}
 
 .tray-landing .tl-hero-stats {
   display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; padding: 22px 0 0; margin-top: 4px;
@@ -836,8 +912,8 @@ const SCOPED_CSS = `
 }
 .tray-landing .tl-footer-mark-c:first-child { margin-inline-end: -0.06em; }
 .tray-landing .tl-footer-mark-c + .tl-footer-mark-c { margin-inline-start: -0.1em; }
-.tray-landing .tl-footer-mark .tl-footer-mark-t { color: color-mix(in srgb, var(--tl-accent) 32%, transparent); }
-.tray-landing .tl-footer-mark .tl-footer-mark-ray { font-style: italic; color: color-mix(in srgb, var(--tl-ink) 7%, transparent); }
+.tray-landing .tl-footer-mark .tl-footer-mark-t { color: color-mix(in srgb, var(--tl-accent) 48%, transparent); }
+.tray-landing .tl-footer-mark .tl-footer-mark-ray { font-style: italic; color: color-mix(in srgb, var(--tl-ink) 11%, transparent); }
 
 .tray-landing .tl-line-leave { padding: 80px 0; position: relative; z-index: 2; }
 @media (min-width: 768px) { .tray-landing .tl-line-leave { padding: 120px 0; } }
@@ -867,6 +943,119 @@ const SCOPED_CSS = `
 .tray-landing .tl-hero-stat .tl-stat-num { font-variant-numeric: tabular-nums; }
 @media (min-width: 768px) { .tray-landing .tl-line-hint { font-size: var(--tl-size-base); } }
 .tray-landing .tl-footer-bot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 14px 20px; align-items: center; padding: 20px 0 0; max-width: 100%; font-family: var(--tl-mono); font-size: var(--tl-size-2xs); color: var(--tl-ink-4); letter-spacing: 0.08em; font-weight: 600; }
+
+/* ─── Ambient orb drift — pure CSS, GPU-composited, no JS ─────────────────
+   Three orbs drift at different speeds and directions. GSAP parallax in
+   landing-motion.tsx adds scroll-linked translation on top of these.       */
+@keyframes tlDriftA {
+  0%, 100% { transform: translate(0px, 0px); }
+  33%       { transform: translate(30px, -20px); }
+  66%       { transform: translate(-15px, 18px); }
+}
+@keyframes tlDriftB {
+  0%, 100% { transform: translate(0px, 0px); }
+  30%       { transform: translate(-24px, 16px); }
+  65%       { transform: translate(18px, -14px); }
+}
+@keyframes tlDriftC {
+  0%, 100% { transform: translate(0px, 0px); }
+  40%       { transform: translate(20px, 10px); }
+  70%       { transform: translate(-12px, -18px); }
+}
+.tray-landing .tl-orb-a { animation: tlDriftA 18s ease-in-out infinite; }
+.tray-landing .tl-orb-b { animation: tlDriftB 24s ease-in-out infinite; }
+.tray-landing .tl-orb-c { animation: tlDriftC 20s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .tray-landing .tl-orb-a,
+  .tray-landing .tl-orb-b,
+  .tray-landing .tl-orb-c { animation: none; }
+}
+
+/* ─── Portal dot continuous pulse ────────────────────────────────────────── */
+@keyframes tlDotPulse {
+  0%, 100% { transform: scale(1);    opacity: 1; }
+  50%       { transform: scale(1.45); opacity: 0.75; }
+}
+.tray-landing .tl-portal-dot--pulse {
+  animation: tlDotPulse 2.2s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tray-landing .tl-portal-dot--pulse { animation: none; }
+}
+
+/* ─── CTA shimmer sweep ────────────────────────────────────────────────────
+   Semi-transparent highlight sweeps left to right on primary button hover. */
+@keyframes tlShimmer {
+  0%   { transform: translateX(-130%); }
+  100% { transform: translateX(130%); }
+}
+.tray-landing .tl-btn-pri { overflow: hidden; }
+.tray-landing .tl-btn-pri::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.22) 50%,
+    transparent 70%
+  );
+  transform: translateX(-130%);
+  pointer-events: none;
+  z-index: 2;
+}
+.tray-landing .tl-btn-pri.tl-btn-shimmer::before {
+  animation: tlShimmer 0.62s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tray-landing .tl-btn-pri::before { display: none; }
+}
+
+/* ─── Flow step sequential highlight ──────────────────────────────────────
+   Steps gain .tl-flow-step--active from FlowStepHighlighter client component.
+   The italic step number transition (0.8 → 1.0 scale) is applied inline.  */
+.tray-landing .tl-flow-step {
+  transition: background 0.35s ease, border-color 0.35s ease;
+}
+.tray-landing .tl-flow-step--active {
+  background: color-mix(in srgb, var(--tl-bg-3) 60%, var(--tl-bg-2));
+  border-color: rgba(242, 235, 227, 0.18);
+}
+@media (min-width: 720px) {
+  .tray-landing .tl-flow-step--active {
+    border-right-color: rgba(232, 168, 106, 0.28);
+  }
+}
+.tray-landing .tl-flow-step--active .tl-ix { color: var(--tl-persimmon); transition: color 0.3s ease; }
+@media (prefers-reduced-motion: reduce) {
+  .tray-landing .tl-flow-step { transition: none; }
+  .tray-landing .tl-flow-step--active .tl-ix { transition: none; }
+}
+
+/* ─── Closing headline skew spring ────────────────────────────────────────
+   Applied by ClosingSkew client component once GSAP's reveal completes.
+   Uses a ::after pseudo on the closing wrapper so we don't fight GSAP's
+   transform matrix on the h2 directly.
+   We rotate the h2 via outline-offset trick — actually we use a CSS
+   skewX on an inner wrapper via the parent class.                          */
+.tray-landing .tl-closing--skew-enter h2 {
+  --tl-h2-skew: -3deg;
+  transform: skewX(var(--tl-h2-skew));
+  transition: transform 0.72s cubic-bezier(0.34, 1.56, 0.64, 1);
+  will-change: transform;
+}
+.tray-landing .tl-closing--skew-settle h2 {
+  --tl-h2-skew: 0deg;
+  transform: skewX(var(--tl-h2-skew));
+}
+@media (prefers-reduced-motion: reduce) {
+  .tray-landing .tl-closing--skew-enter h2,
+  .tray-landing .tl-closing--skew-settle h2 {
+    transform: none;
+    transition: none;
+  }
+}
 `;
 
 function BrandMark() {
@@ -1000,6 +1189,7 @@ export function LandingPage({ tenant, msg }: { tenant: ResolvedTenant | null; ms
       </div>
       <div className="tl-scroll-progress" aria-hidden />
       <LandingMotion />
+      <LandingAnimations />
       <a href="#main" className="tl-skip">
         Skip to content
       </a>
@@ -1015,8 +1205,9 @@ export function LandingPage({ tenant, msg }: { tenant: ResolvedTenant | null; ms
             <a href="#stack">Stack</a>
           </div>
           <div className="tl-nav-cta">
-            <Link href="/login" className="tl-btn tl-btn-ghost">Sign in</Link>
+            <Link href="/login" className="tl-btn tl-btn-ghost tl-nav-signin">Sign in</Link>
             <a href="https://trayy.vercel.app/demo/index.html" className="tl-btn tl-btn-pri">Live demo</a>
+            <LandingHamburger />
           </div>
         </div>
       </nav>
@@ -1036,13 +1227,13 @@ export function LandingPage({ tenant, msg }: { tenant: ResolvedTenant | null; ms
           </div>
         </div>
         <h1 className="tl-h1">
-          <HeroLine words={["Order", "before", "you"]} />
-          <HeroLine words={["reach", "the", "counter."]} italicFrom={2} lineClassName="tl-h1-line--secondary" />
+          <HeroLine words={["Students", "order."]} />
+          <HeroLine words={["Kitchen", "prepares."]} italicFrom={1} lineClassName="tl-h1-line--secondary" />
         </h1>
         <div className="tl-hero-meta">
           <p className="tl-hero-lede tl-measure">
-            Three portals (student, kitchen, admin) on one queue per college. Students browse, pay by UPI, and unlock pickup with a four-digit handover code.{" "}
-            <span className="tl-em">Kitchen runs the live ticket board; admin tracks sales, rush windows, and menu, each scoped to their college.</span>
+            Students browse, pay by UPI, and walk straight to the counter with a four-digit code.{" "}
+            <span className="tl-em">Kitchen runs a live queue. Admin tracks every rupee — scoped to their canteen.</span>
           </p>
           <div className="tl-hero-cta">
             <div className="tl-row">
@@ -1052,6 +1243,11 @@ export function LandingPage({ tenant, msg }: { tenant: ResolvedTenant | null; ms
               <a href="https://trayy.vercel.app/c/aditya/admin/dashboard" className="tl-btn tl-btn-ghost tl-btn-lg">I run a canteen</a>
             </div>
             <div className="tl-note">DEMO IS LIVE · NO SIGN-UP · 90-SECOND TOUR</div>
+            <div className="tl-trust">
+              <span className="tl-trust-dot" aria-hidden />
+              <span>Live at</span>
+              <span className="tl-trust-places">Aditya Engineering College · Main Canteen · Hostel 1 Mess · Night Canteen</span>
+            </div>
           </div>
         </div>
         <div className="tl-hero-stats">

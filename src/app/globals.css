@@ -115,11 +115,99 @@
 }
 [data-portal="kitchen"] {
   --portal-font-sans:    var(--font-manrope), ui-sans-serif, system-ui;
-  --portal-font-display: var(--font-fraunces), ui-serif, Georgia;
+  --portal-font-display: var(--font-newsreader), ui-serif, Georgia;
+
+  /* Cursor kitchen design-spec variables — matches kitchen.html exactly */
+  --kt-cream:        #f4e6c1;
+  --kt-cream-2:      #efdba4;
+  --kt-cream-3:      #faecc3;
+  --kt-cream-4:      #fdf5dc;
+  --kt-paper:        #fffaf0;
+  --kt-ink:          #2a160a;
+  --kt-ink-2:        #5c3e26;
+  --kt-ink-3:        #8c6f4c;
+  --kt-ink-4:        #b59873;
+  --kt-line:         rgba(42,22,10,0.10);
+  --kt-line-2:       rgba(42,22,10,0.20);
+  --kt-tomato:       #d52821;
+  --kt-tomato-2:     #a31810;
+  --kt-tomato-3:     #ef5749;
+  --kt-tomato-soft:  #fbe2dd;
+  --kt-mustard:      #e3a02a;
+  --kt-mustard-soft: #fbecc9;
+  --kt-olive:        #5e7a38;
+  --kt-olive-soft:   #e1ecd3;
+}
+
+/* ─── Kitchen portal animations ─── */
+@keyframes ticketIn {
+  from { transform: translateY(-20px); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+@keyframes stampIn {
+  from { transform: translate(-50%,-50%) rotate(-30deg) scale(2); opacity: 0; }
+  to   { transform: translate(-50%,-50%) rotate(-10deg) scale(1); opacity: 0.5; }
+}
+@keyframes blinkLive {
+  50% { opacity: 0.3; }
+}
+@keyframes urgent {
+  50% { opacity: 0.45; }
+}
+
+/* ─── Ticket animation utility ─── */
+.ticket-in {
+  animation: ticketIn 0.35s cubic-bezier(0.34, 1.26, 0.64, 1) backwards;
+}
+
+/* ─── Collected stamp overlay ─── */
+.ticket-stamp::after {
+  content: "COLLECTED";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-10deg);
+  font-family: var(--font-newsreader), ui-serif, Georgia;
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: 0.1em;
+  color: var(--kt-olive);
+  border: 3px solid var(--kt-olive);
+  padding: 3px 11px;
+  border-radius: 6px;
+  opacity: 0.5;
+  pointer-events: none;
+  text-transform: uppercase;
+  animation: stampIn 0.35s cubic-bezier(0.5, 1.5, 0.5, 1);
 }
 [data-portal="admin"] {
-  --portal-font-sans:    var(--font-inter), ui-sans-serif, system-ui;
-  --portal-font-display: var(--font-inter), ui-sans-serif, system-ui;
+  --portal-font-sans:    var(--font-space-grotesk), ui-sans-serif, system-ui;
+  --portal-font-display: var(--font-space-grotesk), ui-sans-serif, system-ui;
+  --portal-font-mono:    var(--font-geist-mono), ui-monospace, Menlo, monospace;
+
+  /* Admin graphite+lime palette — mirrors admin.html design spec */
+  --admin-bg:          #0b0e14;
+  --admin-bg-2:        #11151d;
+  --admin-bg-3:        #171c26;
+  --admin-bg-4:        #1f2531;
+  --admin-bg-card:     #0f131b;
+  --admin-line:        rgba(255,255,255,0.07);
+  --admin-line-2:      rgba(255,255,255,0.13);
+  --admin-line-3:      rgba(255,255,255,0.22);
+  --admin-ink:         #eef1f7;
+  --admin-ink-2:       #aab3c5;
+  --admin-ink-3:       #6d7689;
+  --admin-ink-4:       #444c5d;
+  --admin-lime:        #cdfa50;
+  --admin-lime-2:      #b4dc3a;
+  --admin-lime-soft:   rgba(205,250,80,0.12);
+  --admin-amber:       #ffb22a;
+  --admin-amber-soft:  rgba(255,178,42,0.14);
+  --admin-rose:        #ff6b6b;
+  --admin-rose-soft:   rgba(255,107,107,0.14);
+  --admin-mint:        #3fe6a3;
+  --admin-mint-soft:   rgba(63,230,163,0.14);
+  --admin-sky:         #5cb1ff;
 }
 
 /* ─── Dark-mode token overrides ─── */
@@ -139,6 +227,19 @@ html.dark [data-portal="kitchen"] {
   --color-cream-50: #1a0f08;
   --color-cream-200: #2a160a;
   --color-tomato-900: #f7c8c2;
+
+  /* Cursor kitchen variables — dark overrides */
+  --kt-cream:   #2a160a;
+  --kt-cream-2: #3a1f0e;
+  --kt-cream-3: #3d2010;
+  --kt-cream-4: #2e1a0b;
+  --kt-paper:   #1a0e06;
+  --kt-ink:     #f4e6c1;
+  --kt-ink-2:   #d4b990;
+  --kt-ink-3:   #a88c68;
+  --kt-ink-4:   #7a6244;
+  --kt-line:    rgba(244,230,193,0.10);
+  --kt-line-2:  rgba(244,230,193,0.20);
 }
 /* Admin stays as designed — already a dark theme. */
 

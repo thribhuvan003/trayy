@@ -9,7 +9,7 @@ type Link = {
   url: string;
   icon: React.ReactNode;
   who: string;
-  accent: string;
+  accentBg: string;
 };
 
 function CopyRow({ link }: { link: Link }) {
@@ -22,21 +22,37 @@ function CopyRow({ link }: { link: Link }) {
   };
 
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-graphite-200/10 bg-graphite-800/40 px-4 py-3 group">
+    <div
+      className="flex items-center gap-3 group transition-colors"
+      style={{
+        padding: "12px 16px",
+        borderRadius: 10,
+        border: "1px solid rgba(255,255,255,0.07)",
+        background: "#0f131b",
+      }}
+      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.13)"; }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.07)"; }}
+    >
       {/* icon */}
-      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${link.accent}`}>
+      <div
+        className="flex shrink-0 items-center justify-center rounded-lg"
+        style={{ height: 36, width: 36, background: link.accentBg }}
+      >
         {link.icon}
       </div>
 
       {/* text */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="text-[13px] font-semibold text-graphite-100">{link.label}</span>
-          <span className="text-[10px] font-mono uppercase tracking-[0.1em] text-graphite-500">
+          <span className="font-semibold" style={{ fontSize: 13, color: "#eef1f7" }}>{link.label}</span>
+          <span
+            className="font-mono uppercase"
+            style={{ fontSize: 10, letterSpacing: "0.10em", color: "#6d7689" }}
+          >
             {link.who}
           </span>
         </div>
-        <p className="mt-0.5 truncate text-[11px] text-graphite-500 font-mono">{link.url}</p>
+        <p className="mt-0.5 truncate font-mono" style={{ fontSize: 11, color: "#6d7689" }}>{link.url}</p>
       </div>
 
       {/* actions */}
@@ -45,16 +61,22 @@ function CopyRow({ link }: { link: Link }) {
           type="button"
           onClick={copy}
           title="Copy link"
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-graphite-400 hover:bg-graphite-700 hover:text-graphite-100 transition-colors"
+          className="flex items-center justify-center rounded-lg transition-colors"
+          style={{ height: 32, width: 32, color: "#6d7689" }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#171c26"; (e.currentTarget as HTMLElement).style.color = "#eef1f7"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ""; (e.currentTarget as HTMLElement).style.color = "#6d7689"; }}
         >
-          {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+          {copied ? <Check size={14} style={{ color: "#3fe6a3" }} /> : <Copy size={14} />}
         </button>
         <a
           href={link.url}
           target="_blank"
           rel="noreferrer"
           title="Open in new tab"
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-graphite-400 hover:bg-graphite-700 hover:text-graphite-100 transition-colors"
+          className="flex items-center justify-center rounded-lg transition-colors"
+          style={{ height: 32, width: 32, color: "#6d7689" }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#171c26"; (e.currentTarget as HTMLElement).style.color = "#eef1f7"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ""; (e.currentTarget as HTMLElement).style.color = "#6d7689"; }}
         >
           <ExternalLink size={14} />
         </a>
@@ -81,25 +103,25 @@ export function CanteenLinks({
       label: "Student ordering",
       description: "Share with students or customers",
       url: `${base}/c/${tenantSlug}/menu`,
-      icon: <ShoppingBag size={16} className="text-sky-300" />,
+      icon: <ShoppingBag size={16} style={{ color: "#5cb1ff" }} />,
       who: "Students · Customers",
-      accent: "bg-sky-500/15",
+      accentBg: "rgba(92,177,255,0.14)",
     },
     {
       label: "Kitchen board",
       description: "Open on the kitchen tablet",
       url: `${base}/c/${tenantSlug}/kitchen`,
-      icon: <MonitorSmartphone size={16} className="text-tomato-400" />,
+      icon: <MonitorSmartphone size={16} style={{ color: "#ff6b6b" }} />,
       who: "Kitchen staff",
-      accent: "bg-tomato-500/15",
+      accentBg: "rgba(255,107,107,0.14)",
     },
     {
       label: "Admin dashboard",
       description: "Your management console",
       url: `${base}/c/${tenantSlug}/admin/dashboard`,
-      icon: <LayoutDashboard size={16} className="text-lime" />,
+      icon: <LayoutDashboard size={16} style={{ color: "#cdfa50" }} />,
       who: "You · Canteen admin",
-      accent: "bg-lime/15",
+      accentBg: "rgba(205,250,80,0.12)",
     },
     ...(collegeSlug
       ? [
@@ -107,20 +129,29 @@ export function CanteenLinks({
             label: "College portal",
             description: "All canteens at this institution",
             url: `${base}/college/${collegeSlug}`,
-            icon: <School size={16} className="text-violet-400" />,
+            icon: <School size={16} style={{ color: "#a78bfa" }} />,
             who: "College director",
-            accent: "bg-violet-500/15",
+            accentBg: "rgba(167,139,250,0.14)",
           } satisfies Link,
         ]
       : []),
   ];
 
   return (
-    <section className="mb-6 rounded-2xl border border-graphite-200/10 bg-graphite-900/60 p-4">
+    <section
+      className="mb-6 p-4"
+      style={{
+        borderRadius: 16,
+        border: "1px solid rgba(255,255,255,0.07)",
+        background: "rgba(15,19,27,0.60)",
+      }}
+    >
       <div className="mb-3 flex items-center justify-between">
         <div>
-          <h2 className="text-[13px] font-semibold text-graphite-100">{tenantName} — Your links</h2>
-          <p className="mt-0.5 text-[11px] text-graphite-500">
+          <h2 className="font-semibold" style={{ fontSize: 13, color: "#eef1f7" }}>
+            {tenantName} — Your links
+          </h2>
+          <p className="mt-0.5" style={{ fontSize: 11, color: "#6d7689" }}>
             Share the student link with your customers. Open the kitchen link on your tablet.
           </p>
         </div>

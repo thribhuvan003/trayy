@@ -169,8 +169,11 @@ export function DashboardView({
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
       {/* ── First-run onboarding checklist ───────────────────────────── */}
       {isFirstDay && (
-        <div className="mb-5 rounded-xl border border-lime/25 bg-lime/[0.05] p-5">
-          <div className="text-[13px] font-semibold text-lime mb-3">
+        <div
+          className="mb-5 rounded-xl p-5"
+          style={{ border: "1px solid rgba(205,250,80,0.25)", background: "rgba(205,250,80,0.05)" }}
+        >
+          <div className="text-[13px] font-semibold mb-3" style={{ color: "#cdfa50" }}>
             Welcome! Here&rsquo;s how to get your first order in 3 steps:
           </div>
           <ol className="flex flex-col gap-2.5">
@@ -196,18 +199,22 @@ export function DashboardView({
               },
             ].map((step) => (
               <li key={step.n} className="flex items-start gap-3">
-                <span className="mt-0.5 shrink-0 h-5 w-5 rounded-full bg-lime/20 text-lime text-[11px] font-bold inline-flex items-center justify-center">
+                <span
+                  className="mt-0.5 shrink-0 h-5 w-5 rounded-full text-[11px] font-bold inline-flex items-center justify-center"
+                  style={{ background: "rgba(205,250,80,0.20)", color: "#cdfa50" }}
+                >
                   {step.n}
                 </span>
-                <div className="flex-1 text-[13px] text-graphite-300">
+                <div className="flex-1 text-[13px]" style={{ color: "#aab3c5" }}>
                   {step.text}
                   {"note" in step && step.note && (
-                    <span className="ml-1 text-graphite-500">{step.note}</span>
+                    <span className="ml-1" style={{ color: "#6d7689" }}>{step.note}</span>
                   )}
                   {step.href && step.cta && (
                     <a
                       href={step.href}
-                      className="ml-2 text-lime text-[12px] font-medium hover:underline inline-flex items-center gap-0.5"
+                      className="ml-2 text-[12px] font-medium hover:underline inline-flex items-center gap-0.5"
+                      style={{ color: "#cdfa50" }}
                     >
                       {step.cta} <ArrowRight size={11} />
                     </a>
@@ -219,26 +226,47 @@ export function DashboardView({
         </div>
       )}
 
-      <div className="flex flex-wrap items-end justify-between gap-3 mb-5">
+      {/* ── Page heading + topbar-style row ─────────────────────────── */}
+      <div
+        className="flex flex-wrap items-end justify-between gap-3 mb-6 pb-5"
+        style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}
+      >
         <div>
-          <h1 className="font-display text-[26px] sm:text-[30px] font-semibold tracking-tight">
+          <h1
+            className="font-semibold leading-tight"
+            style={{ fontSize: 24, letterSpacing: "-0.025em", color: "#eef1f7" }}
+          >
             Today&rsquo;s overview
           </h1>
-          <div className="text-[11px] font-mono uppercase tracking-[0.12em] text-graphite-400 mt-0.5">
+          <div
+            className="font-mono uppercase mt-1"
+            style={{ fontSize: 11, letterSpacing: "0.06em", color: "#6d7689" }}
+          >
             {dayjs().format("ddd · D MMM YYYY").toUpperCase()} · {tenantName.toUpperCase()} · COUNTER 01
           </div>
         </div>
         <div className="flex items-center gap-2">
           <a
             href="/api/admin/export/orders"
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-graphite-200/15 text-[11px] font-mono uppercase tracking-wider text-graphite-300 hover:border-lime hover:text-lime transition-colors"
+            className="inline-flex items-center gap-1.5 font-mono uppercase tracking-wider transition-colors"
+            style={{
+              height: 36,
+              padding: "0 12px",
+              borderRadius: 7,
+              border: "1px solid rgba(255,255,255,0.13)",
+              fontSize: 11,
+              color: "#aab3c5",
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#cdfa50"; (e.currentTarget as HTMLElement).style.color = "#cdfa50"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.13)"; (e.currentTarget as HTMLElement).style.color = "#aab3c5"; }}
           >
             <Download size={11} /> Export CSV
           </a>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
+      {/* ── KPI cards ────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
         <KpiCard label="Revenue today" value={formatRupees(kpis.revenue)} delta={dRev.text} deltaUp={dRev.up} icon={IndianRupee} />
         <KpiCard label="Orders" value={String(kpis.count)} delta={dCount.text} deltaUp={dCount.up} icon={ListOrdered} />
         <KpiCard label="Avg ticket" value={formatRupees(kpis.avgTicket)} delta={dAvg.text} deltaUp={dAvg.up} icon={Receipt} tone="amber" />
