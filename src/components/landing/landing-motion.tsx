@@ -353,11 +353,12 @@ export function LandingMotion() {
               onEnter: () => {
                 gsap.fromTo(
                   diagram,
-                  { boxShadow: "0 0 0 0 rgba(232, 168, 106, 0)" },
+                  { boxShadow: "0 0 0 0 rgba(196, 61, 47, 0)" },
                   {
                     scale: 1,
                     opacity: 1,
-                    boxShadow: "0 0 0 1px rgba(232, 168, 106, 0.22), 0 24px 48px rgba(0, 0, 0, 0.35)",
+                    boxShadow:
+                      "0 0 0 1px rgba(196, 61, 47, 0.14), 0 20px 48px rgba(26, 20, 14, 0.08)",
                     duration: 0.75,
                     ease: HERO_EASE,
                   },
@@ -485,6 +486,29 @@ export function LandingMotion() {
             "top 82%",
           );
 
+          if (!lightMotion) {
+            root
+              .querySelectorAll<HTMLElement>(
+                ".tl-section-head h2, .tl-sync-grid h2, .tl-pull p",
+              )
+              .forEach((heading) => {
+                gsap.fromTo(
+                  heading,
+                  { y: 28 },
+                  {
+                    y: -12,
+                    ease: "none",
+                    scrollTrigger: {
+                      trigger: heading,
+                      start: "top bottom",
+                      end: "bottom top",
+                      scrub: 1.4,
+                    },
+                  },
+                );
+              });
+          }
+
           const closing = root.querySelector(".tl-closing");
           if (closing) {
             gsap.set(closing.querySelector("h2"), { opacity: 0, y: 48, scale: 0.96 });
@@ -578,10 +602,26 @@ export function LandingMotion() {
             });
 
             root.querySelectorAll<HTMLElement>(".tl-btn").forEach((btn) => {
-              const onEnter = () => gsap.to(btn, { scale: 1.03, duration: 0.2, ease: "power2.out" });
-              const onLeave = () => gsap.to(btn, { scale: 1, duration: 0.25, ease: "power2.out" });
-              const onDown = () => gsap.to(btn, { scale: 0.97, duration: 0.08 });
-              const onUp = () => gsap.to(btn, { scale: 1.03, duration: 0.15 });
+              const onEnter = () =>
+                gsap.to(btn, {
+                  scale: 1.03,
+                  y: -1,
+                  boxShadow: btn.classList.contains("tl-btn-pri")
+                    ? "inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 10px 28px rgba(26, 20, 14, 0.12)"
+                    : "0 6px 18px rgba(26, 20, 14, 0.08)",
+                  duration: 0.22,
+                  ease: "power2.out",
+                });
+              const onLeave = () =>
+                gsap.to(btn, {
+                  scale: 1,
+                  y: 0,
+                  clearProps: "boxShadow",
+                  duration: 0.28,
+                  ease: "power2.out",
+                });
+              const onDown = () => gsap.to(btn, { scale: 0.97, y: 0, duration: 0.08 });
+              const onUp = () => gsap.to(btn, { scale: 1.03, y: -1, duration: 0.15 });
               btn.addEventListener("mouseenter", onEnter);
               btn.addEventListener("mouseleave", onLeave);
               btn.addEventListener("mousedown", onDown);
