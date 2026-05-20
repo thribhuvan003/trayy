@@ -1258,7 +1258,7 @@ function applyTenantData(tenantId) {
   const menu = document.getElementById('tenantMenu');
   if (menu) {
     menu.querySelectorAll('.sb-tenant-opt').forEach(function (o) {
-      o.classList.toggle('active', o.dataset.tenant === tenantId);
+      o.classList.toggle('active', o.dataset.cid === tenantId);
     });
   }
 }

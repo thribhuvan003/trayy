@@ -46,11 +46,16 @@ export default async function PayPage({ params }: { params: Promise<{ orderId: s
       diet_snapshot: "veg" | "nonveg" | "egg";
     }[]>();
 
+  if (!tenant.upi_vpa) {
+    // Redirect back to menu with a notice — invalid UPI means payment is impossible
+    redirect(`/c/${tenant.slug}/menu?msg=no-upi`);
+  }
+
   return (
     <PayPanel
       tenantSlug={tenant.slug}
       tenantName={tenant.name}
-      tenantUpi={tenant.upi_vpa ?? "canteen@upi"}
+      tenantUpi={tenant.upi_vpa}
       order={order}
       lines={lines ?? []}
     />

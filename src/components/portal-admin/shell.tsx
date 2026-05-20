@@ -317,13 +317,12 @@ export function AdminShell({
             background: "rgba(11,14,20,0.95)",
           }}
         >
-          <div className="grid grid-cols-6">
+          <div className="grid grid-cols-5">
             {[
               { href: `/c/${tenantSlug}/admin/dashboard`, match: "/admin/dashboard", icon: LayoutGrid, label: "Home" },
               { href: `/c/${tenantSlug}/admin/orders`, match: "/admin/orders", icon: ListOrdered, label: "Orders" },
               { href: `/c/${tenantSlug}/admin/menu`, match: "/admin/menu", icon: BookOpen, label: "Menu" },
               { href: `/c/${tenantSlug}/admin/staff`, match: "/admin/staff", icon: Users, label: "Staff" },
-              { href: `/c/${tenantSlug}/admin/analytics`, match: "/admin/analytics", icon: LineChart, label: "Insights" },
               { href: `/c/${tenantSlug}/admin/settings`, match: "/admin/settings", icon: Settings, label: "Settings" },
             ].map((n) => (
               <Link
@@ -331,7 +330,7 @@ export function AdminShell({
                 href={n.href}
                 className="flex flex-col items-center justify-center gap-0.5 py-2.5 font-mono uppercase tracking-wider"
                 style={{
-                  fontSize: 10,
+                  fontSize: 12,
                   color: pathname?.startsWith(n.match) ? "#cdfa50" : "#6d7689",
                 }}
               >

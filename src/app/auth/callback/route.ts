@@ -71,11 +71,11 @@ export async function GET(req: NextRequest) {
     });
     authError = error;
   } else {
-    return NextResponse.redirect(new URL("/auth/login?error=Missing+code", origin));
+    return NextResponse.redirect(new URL("/login?error=Missing+code", origin));
   }
 
   if (authError) {
-    return NextResponse.redirect(new URL(`/auth/login?error=${encodeURIComponent(authError.message)}`, origin));
+    return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(authError.message)}`, origin));
   }
   const tenant = await resolveTenant(tenantSlug);
   const { data: u } = await supabase.auth.getUser();

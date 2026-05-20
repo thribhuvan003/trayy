@@ -570,14 +570,14 @@ function confirmPaid(){
 }
 
 function runTrackingSimulation(){
-  var progress=[25,60,100],idx=1;
+  var progress=[25,60,100],idx=0;
   document.getElementById("progressFill").style.width=progress[0]+"%";updateTrackUI(1);
   if(trackInterval)clearInterval(trackInterval);
   trackInterval=setInterval(function(){
-    idx++;if(idx>=3){clearInterval(trackInterval);trackInterval=null;updateTrackUI(2);document.getElementById("progressFill").style.width="100%";
+    idx++;if(idx>=progress.length-1){clearInterval(trackInterval);trackInterval=null;updateTrackUI(2);document.getElementById("progressFill").style.width="100%";
     document.getElementById("trackingSub").textContent=serviceMode==="dine"?"Your order is on the way to your table.":"Your order is ready at the counter.";
     setTimeout(function(){revealOtp(pickupOtp);setView("otp");},1500);return;}
-    updateTrackUI(idx);document.getElementById("progressFill").style.width=progress[idx]+"%";
+    document.getElementById("progressFill").style.width=progress[idx]+"%";
   },4000);
 }
 function updateTrackUI(ci){var els=$$(".track-step");els.forEach(function(el,i){var wasCur=el.classList.contains("is-current");el.classList.remove("is-done","is-current","is-pending","bounce-in");if(i<ci)el.classList.add("is-done");else if(i===ci){el.classList.add("is-current");if(!wasCur&&!REDUCED){void el.offsetWidth;el.classList.add("bounce-in");}}else el.classList.add("is-pending");});}

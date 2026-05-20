@@ -44,7 +44,10 @@ export function PayPanel({
   const [pending, start] = useTransition();
   const [verifying, startVerify] = useTransition();
   const [stillWaiting, setStillWaiting] = useState(false);
-  const [remaining, setRemaining] = useState(0);
+  const [remaining, setRemaining] = useState(() => {
+    if (!order.payment_expires_at) return 900;
+    return Math.max(0, Math.floor((new Date(order.payment_expires_at).getTime() - Date.now()) / 1000));
+  });
   const [demoDismissed, setDemoDismissed] = useState(false);
   const isSimMode = !process.env.NEXT_PUBLIC_RAZORPAY_LIVE;
 

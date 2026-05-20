@@ -43,6 +43,7 @@ type ItemRow = {
 export function DashboardView({
   tenantName,
   tenantSlug,
+  tenantId,
   ordersWeek,
   todayOrders,
   lastWeekToday,
@@ -51,6 +52,7 @@ export function DashboardView({
 }: {
   tenantName: string;
   tenantSlug: string;
+  tenantId: string;
   ordersWeek: OrderRow[];
   todayOrders: OrderRow[];
   lastWeekToday: OrderRow[];
@@ -65,7 +67,7 @@ export function DashboardView({
       .channel("admin-feed")
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "order_status_logs" },
+        { event: "INSERT", schema: "public", table: "order_status_logs", filter: `tenant_id=eq.${tenantId}` },
         (payload) => {
           setLogs((prev) => [(payload.new as StatusLog), ...prev].slice(0, 40));
         }
@@ -74,7 +76,7 @@ export function DashboardView({
     return () => {
       sb.removeChannel(ch);
     };
-  }, []);
+  }, [tenantId]);
 
   const kpis = useMemo(() => {
     const paid = (rows: OrderRow[]) =>

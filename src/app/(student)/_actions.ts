@@ -154,6 +154,21 @@ export async function placeOrder(
   if (!rl.success) return { ok: false, error: "Too many orders — slow down a moment", code: "RATE_LIMITED" };
 
   const supabase = await getServerClient(tenant.id);
+
+  // Verify canteen is accepting orders
+  const { data: tenantStatus } = await supabase
+    .from("tenants")
+    .select("is_open, paused_until")
+    .eq("id", tenant.id)
+    .maybeSingle<{ is_open: boolean; paused_until: string | null }>();
+
+  if (tenantStatus) {
+    const isPaused = tenantStatus.paused_until && new Date(tenantStatus.paused_until) > new Date();
+    if (!tenantStatus.is_open || isPaused) {
+      return { ok: false, error: isPaused ? "Orders are paused — please try again shortly" : "This canteen is currently closed" };
+    }
+  }
+
   const ids = lines.map((l) => l.menuItemId);
   const { data: itemsRaw, error: itemsErr } = await supabase
     .from("menu_items")
@@ -344,14 +359,19 @@ export async function verifyPaymentNow(orderId: string): Promise<VerifyResult> {
   const admin = getAdminClient(tenant.id);
   const { data: orderRow } = await admin
     .from("orders")
-    .select("id, user_id, status")
+    .select("id, user_id, status, payment_expires_at")
     .eq("id", orderId)
     .eq("tenant_id", tenant.id)
-    .maybeSingle<{ id: string; user_id: string | null; status: string }>();
+    .maybeSingle<{ id: string; user_id: string | null; status: string; payment_expires_at: string | null }>();
   if (!orderRow || orderRow.user_id !== user.id) return { status: "pending" };
 
   // Already past pending_payment — webhook (or a previous call) already moved it.
   if (orderRow.status !== "pending_payment") return { status: "paid" };
+
+  // Server-side expiry check — client timer can be bypassed
+  if (orderRow.payment_expires_at && new Date(orderRow.payment_expires_at) < new Date()) {
+    return { status: "failed" };
+  }
 
   // ── UPI-direct mode: trust the student's tap immediately ─────────────────────
   // Money already went directly to the canteen's bank account via UPI. We have no

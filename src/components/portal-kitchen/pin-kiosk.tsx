@@ -376,9 +376,9 @@ export function PinKiosk({
   const [selected, setSelected] = useState<StaffProfile | null>(null);
 
   const handleSuccess = useCallback(() => {
-    router.push("/kitchen");
+    router.push(`/c/${tenantSlug}/kitchen`);
     router.refresh();
-  }, [router]);
+  }, [router, tenantSlug]);
 
   return (
     <div className="min-h-screen flex flex-col">

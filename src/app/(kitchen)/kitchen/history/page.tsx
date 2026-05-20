@@ -80,6 +80,7 @@ export default async function KitchenHistoryPage() {
       .from("order_items")
       .select("order_id, name_snapshot, qty, diet_snapshot")
       .eq("tenant_id", tenant.id)
+      .gte("created_at" as string, todayIso)
       .returns<{ order_id: string; name_snapshot: string; qty: number; diet_snapshot: "veg" | "nonveg" | "egg" }[]>(),
   ]);
 

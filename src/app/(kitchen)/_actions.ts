@@ -7,6 +7,7 @@ import { resolveTenant } from "@/lib/tenant";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/auth/get-user";
 import { randomOtp } from "@/lib/utils";
+import { initiateRefundForOrder } from "@/app/(student)/_actions";
 
 type Outcome = { ok: true } | { ok: false; error: string };
 
@@ -354,7 +355,8 @@ export async function rejectOrder(orderId: string, reason: string): Promise<Outc
   }
 
   await admin.from("orders").update({ status: "rejected" }).eq("id", orderId);
-  await admin.from("payments").update({ status: "refunded" }).eq("order_id", orderId);
+  await admin.from("payments").update({ status: "refunded" }).eq("order_id", orderId).eq("status", "captured");
+  void initiateRefundForOrder(orderId, ctx.tenant.id).catch(() => {});
   await admin.from("order_status_logs").insert({
     tenant_id: ctx.tenant.id,
     order_id: orderId,
