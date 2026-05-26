@@ -18,6 +18,7 @@ type Status =
   | "expired"
   | "cancelled_by_kitchen"
   | "partially_ready"
+  | "payment_failed"
   | "refunded";
 type Order = {
   id: string;
@@ -96,6 +97,24 @@ export function TrackPanel({ tenantSlug, tenantName, order: initial, lines }: { 
     return () => window.clearInterval(t);
   }, [order.status]);
   const cancelWindowOpen = order.status === "placed" && now - placedAtMs < FIVE_MIN_MS;
+
+  if (order.status === "payment_failed") {
+    return (
+      <div className="mx-auto max-w-2xl px-4 sm:px-6 pt-12 pb-20 text-center">
+        <XCircle size={56} className="mx-auto text-rose-500 mb-4" />
+        <h1 className="font-display text-[36px] font-medium tracking-tight">Payment failed.</h1>
+        <p className="text-[14px] text-[color:var(--color-ink)]/65 mt-2">
+          Your UPI payment was declined. No money was charged. Please try placing the order again.
+        </p>
+        <Link
+          href={`/c/${tenantSlug}/menu`}
+          className="mt-6 inline-flex items-center gap-1.5 h-11 px-5 rounded-full bg-ocean-500 text-white text-[13px] font-medium hover:bg-ocean-600 transition-colors"
+        >
+          Try again
+        </Link>
+      </div>
+    );
+  }
 
   if (order.status === "rejected" || order.status === "expired") {
     return (

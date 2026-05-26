@@ -87,7 +87,7 @@ alter table public.webhook_dlq enable row level security;
 
 drop policy if exists "wd_tenant_read" on public.webhook_dlq;
 create policy "wd_tenant_read" on public.webhook_dlq
-  for select using (tenant_id = public.current_tenant_id() or public.current_tenant_id() is null);
+  for select using (tenant_id = public.current_tenant_id());
 
 -- Only service role writes to DLQ (from the webhook handler on unrecoverable error)
 comment on table public.webhook_dlq is

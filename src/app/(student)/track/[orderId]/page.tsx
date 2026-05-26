@@ -30,6 +30,7 @@ export default async function TrackPage({ params }: { params: Promise<{ orderId:
     .select("id, short_code, status, total_paise, placed_at, ready_at, collected_at, customer_name")
     .eq("id", orderId)
     .eq("tenant_id", tenant.id)
+    .eq("user_id", user.id)
     .maybeSingle<OrderRow>();
   if (!order) notFound();
   const { data: lines } = await supabase

@@ -53,7 +53,7 @@ export default async function AdminMenuPage() {
           + New item
         </Link>
       </div>
-      <MenuTable items={items ?? []} categories={cats ?? []} />
+      <MenuTable items={items ?? []} categories={cats ?? []} tenantSlug={tenant.slug} />
     </div>
   );
 }

@@ -48,7 +48,7 @@ export function fmtElapsed(seconds: number) {
 }
 
 export function randomOtp(): string {
-  return String(Math.floor(1000 + Math.random() * 9000));
+  return String(crypto.getRandomValues(new Uint32Array(1))[0] % 9000 + 1000);
 }
 
 export function tenantHeaders(tenantId: string | null) {

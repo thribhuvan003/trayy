@@ -19,6 +19,7 @@ export default async function PayPage({ params }: { params: Promise<{ orderId: s
     .select("id, short_code, total_paise, status, payment_expires_at, customer_name")
     .eq("id", orderId)
     .eq("tenant_id", tenant.id)
+    .eq("user_id", user.id)
     .maybeSingle<{
       id: string;
       short_code: string;

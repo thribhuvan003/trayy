@@ -204,6 +204,16 @@ export async function revokeStaff(membershipId: string): Promise<{ ok: boolean; 
 
   const start = Date.now();
   const admin = getAdminClient(c.tenant.id);
+  // Prevent admins from revoking their own access
+  const { data: target } = await admin
+    .from("tenant_memberships")
+    .select("user_id")
+    .eq("id", membershipId)
+    .eq("tenant_id", c.tenant.id)
+    .maybeSingle<{ user_id: string }>();
+  if (target?.user_id === c.user.id) {
+    return { ok: false, error: "You cannot revoke your own access" };
+  }
   const { error } = await admin
     .from("tenant_memberships")
     .update({ is_active: false })

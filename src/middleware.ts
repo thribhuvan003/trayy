@@ -13,7 +13,8 @@ export async function middleware(req: NextRequest) {
   const pathname = url.pathname;
   const requestHeaders = new Headers(req.headers);
 
-  // 1. Resolve slugs from path first, then subdomain, then ?tenant= override.
+  // 1. Resolve tenant from path first, then subdomain. No query-param override —
+  //    accepting ?tenant= from anonymous requests would allow cross-tenant data access.
   const canteenMatch = pathname.match(/^\/c\/([^/]+)(\/.*)?$/);
   const collegeMatch = pathname.match(/^\/college\/([^/]+)(\/.*)?$/);
 
@@ -27,9 +28,6 @@ export async function middleware(req: NextRequest) {
   } else {
     tenantSlug = tenantSlugFromHost(req.headers.get("host"));
   }
-
-  const queryOverride = url.searchParams.get("tenant");
-  if (queryOverride) tenantSlug = queryOverride.toLowerCase();
 
   const resolvedTenantSlug = (tenantSlug ?? "").toLowerCase();
   requestHeaders.set("x-tenant-slug", resolvedTenantSlug);

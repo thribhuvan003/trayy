@@ -19,7 +19,7 @@ type Row = {
   prep_target_seconds: number;
 };
 
-export function MenuTable({ items, categories }: { items: Row[]; categories: { id: string; name: string }[] }) {
+export function MenuTable({ items, categories, tenantSlug }: { items: Row[]; categories: { id: string; name: string }[]; tenantSlug: string }) {
   const [filter, setFilter] = useState<"all" | "live" | "draft" | "archived">("all");
   const [pending, start] = useTransition();
   const filtered = items.filter((i) => filter === "all" || i.status === filter);
@@ -151,7 +151,7 @@ export function MenuTable({ items, categories }: { items: Row[]; categories: { i
                       </button>
                     )}
                     <Link
-                      href={`/admin/menu/${it.id}/edit`}
+                      href={`/c/${tenantSlug}/admin/menu/${it.id}/edit`}
                       className="text-[10px] font-mono uppercase tracking-wider px-2 py-1 rounded border border-graphite-200/15 text-graphite-400 hover:bg-graphite-200/[0.06] hover:text-graphite-200 transition-colors"
                     >
                       Edit

@@ -331,7 +331,7 @@ export function KitchenBoard({
   const scheduleReconnect = () => {
     if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current);
 
-    const attempt = reconnectAttempt;
+    const attempt = reconnectAttemptRef.current;
     const base = Math.min(30000, 900 * Math.pow(2, Math.min(attempt, 6)));
     const jitter = Math.floor(Math.random() * 1400) - 300; // +/- jitter for real-world
     const delay = Math.max(800, base + jitter);
@@ -363,7 +363,7 @@ export function KitchenBoard({
 
     // Network events for faster recovery on campus Wi-Fi flaps
     const onNetOnline = () => {
-      if (connState !== "online") forceReconnect();
+      if (connStateRef.current !== "online") forceReconnect();
     };
     window.addEventListener("online", onNetOnline);
     // Note: no 'offline' listener needed — our poll + backoff handles it gracefully

@@ -78,7 +78,7 @@ export async function markPreparing(orderId: string): Promise<Outcome> {
 
   const start = Date.now();
 
-  await admin.from("orders").update({ status: "preparing" }).eq("id", orderId);
+  await admin.from("orders").update({ status: "preparing" }).eq("id", orderId).eq("tenant_id", ctx.tenant.id);
   await admin.from("order_status_logs").insert({
     tenant_id: ctx.tenant.id,
     order_id: orderId,
@@ -139,7 +139,8 @@ export async function markReady(orderId: string): Promise<Outcome> {
   await admin
     .from("orders")
     .update({ status: "ready", otp_hash: hash, ready_at: new Date().toISOString() })
-    .eq("id", orderId);
+    .eq("id", orderId)
+    .eq("tenant_id", ctx.tenant.id);
   await admin.from("pickup_secrets").upsert(
     { order_id: orderId, tenant_id: ctx.tenant.id, otp_plain: otp, expires_at: expiresAt },
     { onConflict: "order_id" }
@@ -212,7 +213,8 @@ export async function verifyAndCollect(
     await admin
       .from("orders")
       .update({ otp_attempts: cur.otp_attempts + 1 })
-      .eq("id", orderId);
+      .eq("id", orderId)
+      .eq("tenant_id", ctx.tenant.id);
 
     logger.warn("kitchen OTP verification failed", {
       tenant_id: ctx.tenant.id,
@@ -227,7 +229,8 @@ export async function verifyAndCollect(
   await admin
     .from("orders")
     .update({ status: "collected", collected_at: new Date().toISOString() })
-    .eq("id", orderId);
+    .eq("id", orderId)
+    .eq("tenant_id", ctx.tenant.id);
   // Plaintext OTP cleared. ON DELETE CASCADE from orders also covers it.
   await admin.from("pickup_secrets").delete().eq("order_id", orderId);
   await admin.from("order_status_logs").insert({
@@ -396,9 +399,10 @@ export async function verifyStaffPinAction(
     };
   }
 
-  // Success — write the 8-hour staff session cookie.
+  // Success — write the 8-hour staff session cookie scoped to this tenant so a
+  // staff member from canteen-A cannot access canteen-B's kitchen board.
   const cookieStore = await cookies();
-  cookieStore.set("kitchen_staff_id", p_user_id, {
+  cookieStore.set(`kitchen_staff_id_${tenant.id}`, p_user_id, {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
@@ -425,8 +429,9 @@ export async function rejectOrder(orderId: string, reason: string): Promise<Outc
     return { ok: false, error: `Cannot reject a "${cur.status}" order` };
   }
 
-  await admin.from("orders").update({ status: "rejected" }).eq("id", orderId);
-  await admin.from("payments").update({ status: "refunded" }).eq("order_id", orderId).eq("status", "captured");
+  await admin.from("orders").update({ status: "rejected" }).eq("id", orderId).eq("tenant_id", ctx.tenant.id);
+  // Initiate the refund and only mark the payment refunded if it succeeds.
+  // The reconcile cron sweeps rejected orders with captured payments as a safety net.
   void initiateRefundForOrder(orderId, ctx.tenant.id).catch(() => {});
   await admin.from("order_status_logs").insert({
     tenant_id: ctx.tenant.id,
@@ -487,9 +492,9 @@ export async function revertStatus(
 
   // Perform the revert (typed explicitly to satisfy strict Supabase update types)
   if (toStatus === "placed") {
-    await admin.from("orders").update({ status: "placed", ready_at: null }).eq("id", orderId);
+    await admin.from("orders").update({ status: "placed", ready_at: null }).eq("id", orderId).eq("tenant_id", ctx.tenant.id);
   } else {
-    await admin.from("orders").update({ status: "preparing" }).eq("id", orderId);
+    await admin.from("orders").update({ status: "preparing" }).eq("id", orderId).eq("tenant_id", ctx.tenant.id);
   }
 
   // Clean up secrets if backing out of ready (harmless to leave otp_hash; next Ready will overwrite)
