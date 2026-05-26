@@ -78,7 +78,10 @@ export function PayPanel({
 
   // Live UPI VPA subscription — when the canteen owner changes their UPI ID in settings,
   // the QR on this student's pay panel updates in real time without a full reload.
-  // Reuses the exact browser Supabase client + postgres_changes pattern from the admin activity feed and kitchen board.
+  // Use a ref for liveTenantUpi so the channel is subscribed once and never torn down
+  // on VPA changes — avoids a brief subscription gap each time the UPI updates.
+  const liveTenantUpiRef = useRef(liveTenantUpi);
+  liveTenantUpiRef.current = liveTenantUpi;
   useEffect(() => {
     const sb = getBrowserClient();
     const ch = sb
@@ -88,7 +91,7 @@ export function PayPanel({
         { event: "UPDATE", schema: "public", table: "tenants", filter: `slug=eq.${tenantSlug}` },
         (payload) => {
           const nextUpi = (payload.new as { upi_vpa: string | null }).upi_vpa;
-          if (nextUpi && nextUpi !== liveTenantUpi) {
+          if (nextUpi && nextUpi !== liveTenantUpiRef.current) {
             setLiveTenantUpi(nextUpi);
           }
         }
@@ -97,7 +100,8 @@ export function PayPanel({
     return () => {
       sb.removeChannel(ch);
     };
-  }, [tenantSlug, liveTenantUpi]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tenantSlug]);
 
   useEffect(() => {
     const sb = getBrowserClient();
@@ -108,9 +112,10 @@ export function PayPanel({
         { event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${order.id}` },
         (payload) => {
           const next = (payload.new as { status: string }).status;
-          if (next === "placed" || next === "preparing" || next === "ready") {
-            // BUG 2 FIX: guard against double-redirect when both Realtime and
-            // polling handlers fire at the same time.
+          // Redirect to track page for ANY terminal/advanced status — this covers
+          // payment_failed, expired, rejected, placed, preparing, ready, collected, etc.
+          // The track page already has dedicated UI for every status including payment_failed.
+          if (next !== "pending_payment") {
             if (redirectedRef.current) return;
             redirectedRef.current = true;
             router.push(`/c/${tenantSlug}/track/${order.id}`);
@@ -177,7 +182,11 @@ export function PayPanel({
         redirectedRef.current = true;
         router.push(`/c/${tenantSlug}/track/${order.id}`);
       } else if (r.status === "failed") {
-        toast.error("Payment failed — try the QR again");
+        // Payment was declined or expired — redirect to track which shows the
+        // correct payment_failed/expired UI with a "Try again" link back to menu.
+        if (redirectedRef.current) return;
+        redirectedRef.current = true;
+        router.push(`/c/${tenantSlug}/track/${order.id}`);
       } else {
         setStillWaiting(true);
       }

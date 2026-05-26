@@ -109,11 +109,17 @@ export function TrackPanel({ tenantSlug, tenantName, order: initial, lines }: { 
     return () => clearInterval(id);
   }, [order.status, router]);
 
+  const [otpTimedOut, setOtpTimedOut] = useState(false);
   useEffect(() => {
     if (order.status === "ready") {
-      getMyOrderOtpWithTimeout(order.id).then((r) => setOtp(r.otp));
+      setOtpTimedOut(false);
+      getMyOrderOtpWithTimeout(order.id).then((r) => {
+        setOtp(r.otp);
+        if (r.timedOut) setOtpTimedOut(true);
+      });
     } else {
       setOtp(null);
+      setOtpTimedOut(false);
     }
   }, [order.status, order.id]);
 
@@ -261,8 +267,17 @@ export function TrackPanel({ tenantSlug, tenantName, order: initial, lines }: { 
       )}
       {!isCancelled && isReady && !otp && (
         <div className="mb-6 rounded-3xl border border-amber-500/30 bg-amber-500/5 p-5 text-[13px] text-[color:var(--color-ink)]/70 flex items-center gap-3">
-          <span className="animate-spin inline-block h-4 w-4 border-2 border-amber-500 border-t-transparent rounded-full shrink-0" />
-          <span>Your order is ready — fetching your pickup code…</span>
+          {otpTimedOut ? (
+            <>
+              <AlertTriangle size={16} className="text-amber-600 shrink-0" />
+              <span>Couldn&rsquo;t load your pickup code — show order <span className="font-medium">#{order.short_code}</span> to staff at the counter.</span>
+            </>
+          ) : (
+            <>
+              <span className="animate-spin inline-block h-4 w-4 border-2 border-amber-500 border-t-transparent rounded-full shrink-0" />
+              <span>Your order is ready — fetching your pickup code…</span>
+            </>
+          )}
         </div>
       )}
 

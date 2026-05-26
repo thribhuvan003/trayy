@@ -5,6 +5,7 @@ import { resolveTenant } from "@/lib/tenant";
 import { getServerClient } from "@/lib/supabase/server";
 import { formatRupees, formatDateIST, formatTimeIST } from "@/lib/utils";
 import { CancelOrderButton } from "@/components/portal-admin/cancel-order-button";
+import { RefundOrderButton } from "@/components/portal-admin/refund-order-button";
 
 type Row = {
   id: string;
@@ -136,9 +137,12 @@ export default async function OrdersPage() {
                     {o.status.replace(/_/g, " ")}
                   </span>
                 </td>
-                <td className="px-4 py-2.5">
+                <td className="px-4 py-2.5 flex items-center gap-1.5">
                   {["placed", "preparing", "pending_payment"].includes(o.status) && (
                     <CancelOrderButton orderId={o.id} shortCode={o.short_code} />
+                  )}
+                  {["collected", "cancelled_by_kitchen"].includes(o.status) && (
+                    <RefundOrderButton orderId={o.id} shortCode={o.short_code} />
                   )}
                 </td>
               </tr>

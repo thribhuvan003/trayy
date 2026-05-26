@@ -387,6 +387,7 @@ export async function placeOrder(
     .eq("key", idemKey);
 
   revalidatePath(`/c/${tenant.slug}/menu`);
+  revalidatePath(`/c/${tenant.slug}/orders`);
   return successResult;
 }
 
@@ -504,8 +505,12 @@ export async function verifyPaymentNow(orderId: string): Promise<VerifyResult> {
     .maybeSingle<{ id: string; user_id: string | null; status: string; payment_expires_at: string | null }>();
   if (!orderRow || orderRow.user_id !== user.id) return { status: "pending" };
 
-  // Already past pending_payment — webhook (or a previous call) already moved it.
-  if (orderRow.status !== "pending_payment") return { status: "paid" };
+  // Already past pending_payment — map to the right result so the UI gets a
+  // truthful status. payment_failed/expired → "failed"; everything else → "paid".
+  if (orderRow.status !== "pending_payment") {
+    const failedStatuses = ["payment_failed", "expired", "rejected"];
+    return { status: failedStatuses.includes(orderRow.status) ? "failed" : "paid" };
+  }
 
   // Server-side expiry check — client timer can be bypassed
   if (orderRow.payment_expires_at && new Date(orderRow.payment_expires_at) < new Date()) {

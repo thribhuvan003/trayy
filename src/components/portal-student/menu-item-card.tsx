@@ -25,7 +25,7 @@ export function MenuItemCard({ item }: { item: MenuItem }) {
     <article
       className={cn(
         "group relative rounded-2xl border bg-[color:var(--color-paper)] overflow-hidden flex flex-col transition-all",
-        oos ? "opacity-60" : "border-[color:var(--color-line)] hover:border-ocean-500/40 hover:shadow-[0_8px_24px_-12px_rgba(10,22,40,0.12)]"
+        oos ? "opacity-60 border-[color:var(--color-line)]" : "border-[color:var(--color-line)] hover:border-ocean-500/40 hover:shadow-[0_8px_24px_-12px_rgba(10,22,40,0.12)]"
       )}
     >
       <div className="relative aspect-[4/3] bg-gradient-to-br from-ocean-50 to-cream-100 dark:from-ocean-500/10 dark:to-graphite-700">

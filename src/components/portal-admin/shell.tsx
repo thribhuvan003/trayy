@@ -306,6 +306,30 @@ export function AdminShell({
 
         <main className="px-5 sm:px-8 py-6">{children}</main>
 
+        {/* Footer */}
+        <footer
+          className="hidden lg:block border-t mt-auto"
+          style={{ borderColor: "rgba(255,255,255,0.07)" }}
+        >
+          <div
+            className="mx-auto max-w-7xl px-8 py-4 flex flex-wrap items-center justify-between gap-2 font-mono"
+            style={{ fontSize: 11, color: "#6d7689" }}
+          >
+            <span>
+              Powered by{" "}
+              <Link href="/" className="font-medium transition-colors" style={{ color: "#aab3c5" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#cdfa50"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#aab3c5"; }}
+              >Tray</Link>
+              {" "}· Campus Edition · Payments by Razorpay
+            </span>
+            <span className="flex items-center gap-3">
+              <Link href="/legal/terms" className="transition-colors hover:text-[#aab3c5]">Terms</Link>
+              <Link href="/legal/privacy" className="transition-colors hover:text-[#aab3c5]">Privacy</Link>
+            </span>
+          </div>
+        </footer>
+
         {/* Mobile bottom nav */}
         <nav
           className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t backdrop-blur-xl"

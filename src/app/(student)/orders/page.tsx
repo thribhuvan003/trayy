@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import { resolveTenant } from "@/lib/tenant";
 import { getServerClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/get-user";
@@ -24,7 +24,7 @@ export default async function OrdersPage() {
   const h = await headers();
   const slug = h.get("x-tenant-slug") ?? "";
   const tenant = await resolveTenant(slug);
-  if (!tenant) return null;
+  if (!tenant) notFound();
   const user = await getCurrentUser();
   if (!user) redirect(`/c/${tenant.slug}/login?next=/c/${tenant.slug}/orders`);
 

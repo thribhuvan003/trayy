@@ -18,7 +18,7 @@ export default async function TrackPage({ params }: { params: Promise<{ orderId:
   type OrderRow = {
     id: string;
     short_code: string;
-    status: "pending_payment" | "placed" | "preparing" | "ready" | "collected" | "rejected" | "expired" | "cancelled_by_kitchen" | "partially_ready" | "refunded";
+    status: "pending_payment" | "placed" | "preparing" | "ready" | "collected" | "rejected" | "expired" | "cancelled_by_kitchen" | "partially_ready" | "payment_failed" | "refunded";
     total_paise: number;
     placed_at: string;
     ready_at: string | null;
@@ -33,6 +33,8 @@ export default async function TrackPage({ params }: { params: Promise<{ orderId:
     .eq("user_id", user.id)
     .maybeSingle<OrderRow>();
   if (!order) notFound();
+  // A pending_payment order belongs on the pay page, not the track page.
+  if (order.status === "pending_payment") redirect(`/c/${tenant.slug}/pay/${orderId}`);
   const { data: lines } = await supabase
     .from("order_items")
     .select("id, name_snapshot, qty, diet_snapshot, price_paise_snapshot")

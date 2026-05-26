@@ -580,3 +580,55 @@ export async function cancelOrderAsAdmin(
   revalidatePath(`/c/${c.tenant.slug}/kitchen`);
   return { ok: true };
 }
+
+// ── Admin-initiated refund (wrong item delivered, dispute, goodwill) ──────────
+// Works for any order that has a captured payment — including collected orders.
+// The student sees the refund appear on their track page in real-time.
+export async function refundOrderAsAdmin(
+  orderId: string,
+  reason: string
+): Promise<{ ok: boolean; error?: string }> {
+  const c = await adminContext();
+  if (!c.ok) return { ok: false, error: c.error };
+
+  const rate = await tenantRateLimit(c.tenant.id, "admin_action", c.user.id);
+  if (!rate.success) return { ok: false, error: "Too many admin actions — slow down" };
+
+  const admin = getAdminClient(c.tenant.id);
+
+  const { data: cur } = await admin
+    .from("orders")
+    .select("status")
+    .eq("id", orderId)
+    .eq("tenant_id", c.tenant.id)
+    .maybeSingle<{ status: string }>();
+  if (!cur) return { ok: false, error: "Order not found" };
+
+  const refundable = ["collected", "placed", "preparing", "cancelled_by_kitchen"];
+  if (!refundable.includes(cur.status)) {
+    return { ok: false, error: `Cannot refund an order in "${cur.status}" status` };
+  }
+
+  await admin.from("audit_logs").insert({
+    tenant_id: c.tenant.id,
+    actor_user_id: c.user.id,
+    action: "order.admin_refund_initiated",
+    target_type: "order",
+    target_id: orderId,
+    meta: { reason, from_status: cur.status },
+  });
+
+  const result = await initiateRefundForOrder(orderId, c.tenant.id);
+  if (!result.ok) return { ok: false, error: result.error ?? "Refund failed" };
+
+  logger.info("admin initiated refund", {
+    tenant_id: c.tenant.id,
+    actor_user_id: c.user.id,
+    order_id: orderId,
+    refund_id: result.refundId,
+    reason,
+  });
+
+  revalidatePath(`/c/${c.tenant.slug}/admin/orders`);
+  return { ok: true };
+}

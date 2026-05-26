@@ -8,6 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "demo:verify": "node scripts/demo-verify.mjs",
     "demo:verify:e2e": "node scripts/demo-verify.mjs --e2e"
   },
@@ -51,10 +54,12 @@
     "@types/node": "^22.9.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "@vitest/coverage-v8": "^4.1.7",
     "eslint": "^9.14.0",
     "eslint-config-next": "^15.0.3",
     "playwright": "^1.60.0",
     "tailwindcss": "^4.0.0",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^4.1.7"
   }
 }

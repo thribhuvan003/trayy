@@ -57,7 +57,7 @@ export function SignupForm({
     start(async () => {
       const sb = getBrowserClient();
       const redirectTo = new URL(
-        `/auth/callback?next=${encodeURIComponent(next)}&tenant=${tenantSlug}`,
+        `/auth/callback?next=${encodeURIComponent(next)}&tenant=${encodeURIComponent(tenantSlug)}`,
         window.location.origin
       ).toString();
       const { error } = await sb.auth.signUp({

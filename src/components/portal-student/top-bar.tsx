@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Clock, History, User } from "lucide-react";
+import { ArrowLeft, Clock, History, User, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ResolvedTenant } from "@/lib/tenant";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { getBrowserClient } from "@/lib/supabase/browser";
 
 function currentServiceLabel(): string {
   // Extract the current IST hour directly from a UTC offset calculation.
@@ -21,7 +22,14 @@ function currentServiceLabel(): string {
 export function StudentTopBar({ tenant }: { tenant: ResolvedTenant }) {
   const [t, setT] = useState<string>("");
   const [serviceLabel, setServiceLabel] = useState<string>(() => currentServiceLabel());
+  const [isSignedIn, setIsSignedIn] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    getBrowserClient().auth.getSession().then(({ data }) => {
+      setIsSignedIn(!!data.session);
+    });
+  }, []);
   useEffect(() => {
     const tick = () =>
       setT(
@@ -45,7 +53,13 @@ export function StudentTopBar({ tenant }: { tenant: ResolvedTenant }) {
         <div className="flex items-center gap-3">
           <button
             aria-label="Go back"
-            onClick={() => router.back()}
+            onClick={() => {
+              if (typeof window !== "undefined" && window.history.length > 1) {
+                router.back();
+              } else {
+                router.push(`/c/${tenant.slug}/menu`);
+              }
+            }}
             className="inline-flex items-center gap-1 text-[12px] font-mono text-[color:var(--color-ink)]/50 hover:text-[color:var(--color-ink)] transition-colors"
           >
             <ArrowLeft size={13} /> Back
@@ -86,13 +100,28 @@ export function StudentTopBar({ tenant }: { tenant: ResolvedTenant }) {
           >
             <History size={15} />
           </Link>
-          <Link
-            href={`/c/${tenant.slug}/login`}
-            aria-label="Account"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--color-line)] hover:border-ocean-500 hover:text-ocean-500 transition-colors"
-          >
-            <User size={15} />
-          </Link>
+          {isSignedIn ? (
+            <button
+              type="button"
+              aria-label="Sign out"
+              onClick={() => {
+                getBrowserClient().auth.signOut().then(() => {
+                  router.push(`/c/${tenant.slug}/login`);
+                });
+              }}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--color-line)] hover:border-rose-500 hover:text-rose-500 transition-colors"
+            >
+              <LogOut size={15} />
+            </button>
+          ) : (
+            <Link
+              href={`/c/${tenant.slug}/login`}
+              aria-label="Sign in"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--color-line)] hover:border-ocean-500 hover:text-ocean-500 transition-colors"
+            >
+              <User size={15} />
+            </Link>
+          )}
         </div>
       </div>
     </header>
