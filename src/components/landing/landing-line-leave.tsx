@@ -23,7 +23,6 @@ const OPTIONS = [
 export function LandingLineLeave() {
   const [active, setActive] = useState<(typeof OPTIONS)[number]["id"]>("queue");
   const [hintFading, setHintFading] = useState(false);
-
   const copy = OPTIONS.find((o) => o.id === active) ?? OPTIONS[1];
 
   const pick = useCallback((id: (typeof OPTIONS)[number]["id"]) => {

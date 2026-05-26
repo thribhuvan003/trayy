@@ -332,7 +332,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
         </div>
       </div>
       <div class="r">
-        <select id="kitchenCanteen" class="btn btn-ghost btn-sm" aria-label="Kitchen canteen" title="Switch canteen queue"></select>
+        <select id="kitchenCanteen" class="btn btn-ghost btn-sm" aria-label="Kitchen canteen" title="Switch canteen queue" style="display:none"></select>
         <button class="btn btn-ghost btn-sm" type="button" id="btnSounds">🔔 Sounds</button>
         <button class="btn btn-ghost btn-sm" onclick="manualPush()">+ Walk-in order</button>
         <button type="button" class="btn btn-pri btn-sm" id="btnRefresh">⟳ Refresh</button>
@@ -899,7 +899,7 @@ $('#btnRefresh').addEventListener('click', () => {
 });
 
 initKitchenCanteenSelect();
-applyCanteen(currentCanteenId);
+applyCanteen("aditya");
 if (ingestInbox()) toast('Student order synced to Incoming');
 
 // Auto-advance one preparing order every ~6s

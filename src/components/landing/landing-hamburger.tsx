@@ -10,10 +10,8 @@ import Link from "next/link";
  */
 export function LandingHamburger() {
   const [open, setOpen] = useState(false);
-
   const close = useCallback(() => setOpen(false), []);
 
-  // Close on Escape
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") close(); };
@@ -21,7 +19,6 @@ export function LandingHamburger() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open, close]);
 
-  // Prevent body scroll when open
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
@@ -40,7 +37,6 @@ export function LandingHamburger() {
         <span className="tl-bar-b" />
         <span className="tl-bar-c" />
       </button>
-
       <div
         id="tl-mobile-overlay"
         className={`tl-mobile-overlay${open ? " is-open" : ""}`}

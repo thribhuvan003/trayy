@@ -1325,7 +1325,7 @@ function NoCollegeBanner() {
           If your institution restricts ordering by email domain, ask your admin to add{" "}
           <strong>@{"{your domain}"}</strong> in the canteen settings.
           Otherwise,{" "}
-          <Link href="/get-started" style={{ color: "#b45309", fontWeight: 600 }}>
+          <Link href="/signup" style={{ color: "#b45309", fontWeight: 600 }}>
             browse all canteens
           </Link>{" "}
           or contact your institution to get set up on Tray.
@@ -1439,7 +1439,7 @@ export function LandingPage({ tenant, msg }: { tenant: ResolvedTenant | null; ms
               <a href="/demo/student.html" className="tl-btn tl-btn-pri tl-btn-lg" data-magnetic>
                 Try the student app →
               </a>
-              <Link href="/get-started" className="tl-btn tl-btn-ghost tl-btn-lg">Set up my canteen — free</Link>
+              <Link href="/signup" className="tl-btn tl-btn-ghost tl-btn-lg">Set up my canteen — free</Link>
             </div>
             <div className="tl-note">DEMO IS LIVE · NO SIGN-UP · 90-SECOND TOUR</div>
             <div className="tl-trust">
@@ -1767,7 +1767,7 @@ export function LandingPage({ tenant, msg }: { tenant: ResolvedTenant | null; ms
               <a href="/demo/student.html">Student app</a>
               <a href="/demo/kitchen.html">Kitchen view</a>
               <a href="/demo/admin.html">Admin console</a>
-              <Link href="/get-started">Get started</Link>
+              <Link href="/signup">Get started</Link>
             </div>
           </div>
           <div>
