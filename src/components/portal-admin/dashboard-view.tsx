@@ -252,7 +252,7 @@ export function DashboardView({
         pollIntervalRef.current = null;
       }
     };
-  }, [tenantId]);
+  }, [tenantId, refreshMoneyData]);
 
   useEffect(() => {
     const cleanup = setupRealtime();
