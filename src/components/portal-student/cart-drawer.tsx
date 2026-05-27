@@ -77,10 +77,19 @@ export function CartDrawer({ tenantSlug, tenantName }: { tenantSlug: string; ten
         if (res.code === "AUTH_REQUIRED") {
           toast.info("Sign in to place your order — your cart is saved");
           router.push(`/c/${tenantSlug}/login?next=/c/${tenantSlug}/menu`);
+        } else if (res.code === "OUT_OF_STOCK") {
+          toast.error(res.error ?? "An item sold out — please update your cart");
         } else {
           toast.error(res.error ?? "Could not place order");
         }
         return;
+      }
+      // Scenario 26: Kitchen busy warning — show Zomato-style "High demand" toast
+      // before navigating to pay. Student is informed but not blocked.
+      if (res.queueWarning) {
+        toast.warning("Kitchen is very busy right now — your order is placed but expect a longer wait 🍳", {
+          duration: 6000,
+        });
       }
       clear();
       setOpen(false);

@@ -227,7 +227,7 @@ export function KitchenBoard({
       .in("status", ["placed", "preparing", "ready", "collected"])
       .gte("placed_at", today.toISOString())
       .order("placed_at", { ascending: true })
-      .limit(120)
+      .limit(300) // raised from 120 — handles high-volume campuses (200+ orders/day)
       .returns<OrderRow[]>();
     if (data) {
       const seen = seenOrderIdsRef.current;

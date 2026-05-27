@@ -135,7 +135,7 @@ export async function cancelOrderByStudent(orderId: string): Promise<CancelResul
 type PlaceArgs = { menuItemId: string; qty: number }[];
 
 type PlaceResult =
-  | { ok: true; orderId: string; razorpayOrderId: string | null; simulated: boolean }
+  | { ok: true; orderId: string; razorpayOrderId: string | null; simulated: boolean; queueWarning?: boolean }
   | { ok: false; error: string; code?: "AUTH_REQUIRED" | "EMPTY" | "RATE_LIMITED" | "OUT_OF_STOCK" };
 
 type MenuRow = {
@@ -196,21 +196,18 @@ export async function placeOrder(
     }
   }
 
-  // Scenario 26: Soft queue-depth guard (30+ active orders = very busy kitchen)
-  // Uses a fast COUNT — Postgres can execute this without a full scan due to the
-  // composite index on (tenant_id, status). No hard block; returns a warning code
-  // so the client can show "Kitchen is very busy" but still allow ordering.
+  // Scenario 26: Soft queue-depth guard — warn student if kitchen is swamped.
+  // Uses HEAD COUNT (no data returned) — fast index-only scan on (tenant_id, status).
+  // Pattern: Zomato/Swiggy-style "High demand" banner. Never hard-blocks (admin pause does that).
   const { count: activeCount } = await supabase
     .from("orders")
     .select("id", { count: "exact", head: true })
     .eq("tenant_id", tenant.id)
     .in("status", ["placed", "preparing"]);
 
-  if ((activeCount ?? 0) >= 30) {
-    log.warn("placeOrder: kitchen queue depth threshold reached", { active_orders: activeCount });
-    // Soft warn — don't block, but surface to client for UX messaging
-    // The client can show "Very busy — wait time may be longer than usual"
-    // Hard block only kicks in via admin "pause" — keeps autonomy with canteen owner
+  const kitchenBusy = (activeCount ?? 0) >= 30;
+  if (kitchenBusy) {
+    log.warn("placeOrder: kitchen queue busy", { active_orders: activeCount });
   }
 
   const ids = lines.map((l) => l.menuItemId);
@@ -430,6 +427,7 @@ export async function placeOrder(
     orderId: order.id,
     razorpayOrderId: rzp.id,
     simulated: rzp.simulated,
+    queueWarning: kitchenBusy,
   };
 
   await getAdminClient(tenant.id)

@@ -60,7 +60,7 @@ export default async function KitchenPage() {
       .in("status", ["placed", "preparing", "ready", "collected"])
       .gte("placed_at", todayIso)
       .order("placed_at", { ascending: true })
-      .limit(120)
+      .limit(300) // raised from 120 — handles high-volume campus canteens (150+ orders/day)
       .returns<OrderRow[]>(),
     supabase
       .from("menu_items")
