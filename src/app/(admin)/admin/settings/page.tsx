@@ -86,8 +86,20 @@ export default async function SettingsPage() {
   async function handleSettings(fd: FormData) {
     "use server";
     const guestOrdersEnabled = fd.get("guest_orders_enabled") === "on";
-    const upiVpa = (fd.get("upi_vpa") as string | null)?.trim() || null;
-    await updateCanteenSettings({ guestOrdersEnabled, upiVpa });
+    const rawVpa = (fd.get("upi_vpa") as string | null)?.trim() || null;
+
+    // Scenario 1/2: Validate UPI VPA format before saving so money never goes
+    // to an invalid address. Format: localpart@provider (e.g. name@okaxis, 9876543210@paytm)
+    // Real-world format from NPCI spec: alphanumeric + dots/hyphens @ provider
+    if (rawVpa) {
+      const vpaRegex = /^[a-zA-Z0-9.\-_+]{2,256}@[a-zA-Z]{2,64}$/;
+      if (!vpaRegex.test(rawVpa)) {
+        // Server actions can't return errors to the form directly without useActionState,
+        // but we guard against obviously malformed VPAs. The input has pattern validation on the client too.
+        throw new Error(`Invalid UPI VPA format: "${rawVpa}". Expected format: name@bankcode (e.g. 9876543210@paytm)`);
+      }
+    }
+    await updateCanteenSettings({ guestOrdersEnabled, upiVpa: rawVpa });
   }
 
   return (
@@ -265,10 +277,14 @@ export default async function SettingsPage() {
                 name="upi_vpa"
                 defaultValue={row.upi_vpa ?? ""}
                 placeholder="e.g. canteen@okaxis or 9876543210@ybl"
-                className="h-9 px-3 rounded-md border border-graphite-200/15 bg-graphite-700/60 text-[13px] text-graphite-200 placeholder:text-graphite-500 focus:outline-none focus:border-lime/60 transition-colors"
+                pattern="^[a-zA-Z0-9.\-_+]{2,256}@[a-zA-Z]{2,64}$"
+                title="Enter a valid UPI VPA: localpart@provider (e.g. 9876543210@paytm)"
+                spellCheck={false}
+                autoComplete="off"
+                className="h-9 px-3 rounded-md border border-graphite-200/15 bg-graphite-700/60 text-[13px] text-graphite-200 placeholder:text-graphite-500 focus:outline-none focus:border-lime/60 transition-colors invalid:border-rose-500/60"
               />
               <p className="text-[11px] text-graphite-500">
-                Your UPI ID (e.g. yourname@okaxis). Students will pay directly to this ID — money goes straight to your bank. No platform cut.
+                Your UPI ID (e.g. yourname@okaxis). Students pay <strong className="text-graphite-300">directly</strong> to this — money lands in your bank, not ours. Double-check it before saving. Wrong VPA = wrong bank.
               </p>
             </div>
 

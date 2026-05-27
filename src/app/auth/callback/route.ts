@@ -193,8 +193,9 @@ export async function GET(req: NextRequest) {
       const role = mem.role;
       if (role === "canteen_admin" || role === "super_admin") {
         return NextResponse.redirect(new URL(`/c/${slug}/admin/dashboard`, origin));
-      } else if (role === "kitchen") {
-        return NextResponse.redirect(new URL(`/c/${slug}/kitchen`, origin));
+      } else if (role === "kitchen_staff" || role === "kitchen") {
+        // "kitchen_staff" is the DB enum value; "kitchen" kept as legacy fallback
+        return NextResponse.redirect(new URL(`/c/${slug}/kitchen/staff-select`, origin));
       } else {
         return NextResponse.redirect(new URL(`/c/${slug}/menu`, origin));
       }
