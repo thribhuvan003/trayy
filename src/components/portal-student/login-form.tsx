@@ -17,6 +17,15 @@ export function LoginForm({ next, slug = "", role = "student" }: { next: string;
 
   const onGoogleSignIn = () => {
     start(async () => {
+      // Save role/tenant/next in a short-lived cookie BEFORE the OAuth redirect.
+      // If Supabase's redirect allowlist isn't configured, it falls back to the
+      // site URL (/). Our middleware reads this cookie there and forwards the
+      // auth code to /auth/callback with the correct context restored.
+      try {
+        const ctx = JSON.stringify({ role, tenant: slug, next });
+        document.cookie = `_tray_auth_ctx=${encodeURIComponent(ctx)}; path=/; max-age=300; SameSite=Lax`;
+      } catch { /* non-fatal */ }
+
       const sb = getBrowserClient();
       const { error } = await sb.auth.signInWithOAuth({
         provider: "google",
@@ -178,8 +187,14 @@ export function LoginForm({ next, slug = "", role = "student" }: { next: string;
     e.preventDefault();
     start(async () => {
       const sb = getBrowserClient();
+      // Save context cookie so the middleware can restore it if Supabase
+      // sends the magic-link token_hash to the site root instead of /auth/callback
+      try {
+        const ctx = JSON.stringify({ role, tenant: slug, next });
+        document.cookie = `_tray_auth_ctx=${encodeURIComponent(ctx)}; path=/; max-age=300; SameSite=Lax`;
+      } catch { /* non-fatal */ }
       const redirectTo = new URL(
-          `/auth/callback?next=${encodeURIComponent(next)}&tenant=${encodeURIComponent(slug)}`,
+          `/auth/callback?next=${encodeURIComponent(next)}&tenant=${encodeURIComponent(slug)}&role=${encodeURIComponent(role)}`,
           window.location.origin
         ).toString();
       if (mode === "magic") {

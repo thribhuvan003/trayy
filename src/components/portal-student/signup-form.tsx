@@ -26,6 +26,11 @@ export function SignupForm({
 
   const onGoogleSignIn = () => {
     start(async () => {
+      try {
+        const ctx = JSON.stringify({ tenant: tenantSlug, next });
+        document.cookie = `_tray_auth_ctx=${encodeURIComponent(ctx)}; path=/; max-age=300; SameSite=Lax`;
+      } catch { /* non-fatal */ }
+
       const sb = getBrowserClient();
       const { error } = await sb.auth.signInWithOAuth({
         provider: "google",

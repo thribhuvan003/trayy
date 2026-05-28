@@ -97,6 +97,37 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // ── AUTH CODE RESCUE ──────────────────────────────────────────────────────
+  // When Supabase's allowed-redirect-URLs list doesn't include the full callback
+  // URL (e.g. not yet configured in the dashboard), Supabase falls back to the
+  // Site URL and appends ?code= or ?token_hash= to the root path.
+  // We intercept it here and forward it to /auth/callback so the session is
+  // established correctly — no Supabase dashboard change required.
+  if (pathname === "/" && (url.searchParams.has("code") || url.searchParams.has("token_hash"))) {
+    const callbackUrl = new URL("/auth/callback", req.url);
+    // Forward ALL search params (code, token_hash, type, etc.)
+    url.searchParams.forEach((value, key) => callbackUrl.searchParams.set(key, value));
+    // Restore role/tenant/next context from the pre-OAuth cookie
+    const savedCtx = req.cookies.get("_tray_auth_ctx")?.value;
+    if (savedCtx) {
+      try {
+        const ctx = JSON.parse(decodeURIComponent(savedCtx)) as {
+          role?: string; tenant?: string; next?: string;
+        };
+        if (ctx.role && !callbackUrl.searchParams.has("role"))
+          callbackUrl.searchParams.set("role", ctx.role);
+        if (ctx.tenant && !callbackUrl.searchParams.has("tenant"))
+          callbackUrl.searchParams.set("tenant", ctx.tenant);
+        if (ctx.next && !callbackUrl.searchParams.has("next"))
+          callbackUrl.searchParams.set("next", ctx.next);
+      } catch { /* malformed cookie — proceed without context */ }
+    }
+    const res = NextResponse.redirect(callbackUrl);
+    // Clear the context cookie — it's single-use
+    res.cookies.delete("_tray_auth_ctx");
+    return res;
+  }
+
   const requestHeaders = new Headers(req.headers);
 
   // 1. Resolve tenant slug from path first, then subdomain.
