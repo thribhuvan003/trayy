@@ -9,34 +9,38 @@ type Role = "student" | "kitchen" | "owner";
 const ROLES: {
   id: Role;
   label: string;
-  tag: string;
+  icon: string;
   headline: string;
-  italic: string;
+  accent: string;
   sub: string;
+  cta: string;
 }[] = [
   {
     id: "student",
     label: "Student",
-    tag: "LEARNER",
-    headline: "Sign in.",
-    italic: "Eat sooner.",
-    sub: "Your campus email gets you a magic link. No password, no friction.",
+    icon: "→",
+    headline: "Order food,\nskip the queue.",
+    accent: "Eat sooner.",
+    sub: "Use any email. Get a magic link in seconds — no password needed.",
+    cta: "Send magic link",
   },
   {
     id: "kitchen",
     label: "Kitchen",
-    tag: "STAFF",
-    headline: "Staff access.",
-    italic: "Serve faster.",
-    sub: "Your admin will share login credentials. PIN login is also supported.",
+    icon: "→",
+    headline: "Manage orders,\nserve faster.",
+    accent: "Kitchen view.",
+    sub: "Sign in with your email or PIN. Your admin sets up your access.",
+    cta: "Sign in to kitchen",
   },
   {
     id: "owner",
     label: "Admin",
-    tag: "OWNER",
-    headline: "Admin sign in.",
-    italic: "Your canteen, your system.",
-    sub: "Full control — menus, staff, revenue, analytics. One login, everything.",
+    icon: "→",
+    headline: "Your canteen,\nyour dashboard.",
+    accent: "Full control.",
+    sub: "Any email works. Access menus, staff, payments, and live analytics.",
+    cta: "Sign in to admin",
   },
 ];
 
@@ -55,9 +59,9 @@ export function LoginRoleTabs({
   const role = ROLES.find((r) => r.id === activeRole) ?? ROLES[0];
 
   return (
-    <>
-      {/* ── Role tabs ─────────────────────────────────────────────── */}
-      <div className="flex gap-0 mb-9 border-b border-[color:var(--color-line)]">
+    <div className="flex flex-col">
+      {/* ── Role selector ─────────────────────────────────────────── */}
+      <div className="flex gap-2 mb-8">
         {ROLES.map((r) => {
           const isActive = activeRole === r.id;
           return (
@@ -65,79 +69,55 @@ export function LoginRoleTabs({
               key={r.id}
               type="button"
               onClick={() => setActiveRole(r.id)}
-              className="relative flex-1 py-3 text-[11px] font-bold uppercase tracking-[0.18em] transition-colors duration-150 focus:outline-none select-none"
+              className="flex-1 py-2.5 rounded-xl text-[11.5px] font-bold uppercase tracking-[0.16em] transition-all duration-200 focus:outline-none select-none"
               style={{
                 fontFamily: "var(--font-dm-mono, monospace)",
-                color: isActive ? "var(--color-ocean-500, #e60000)" : "var(--color-ink, #1A1A19)",
-                opacity: isActive ? 1 : 0.38,
+                background: isActive ? "var(--color-ink, #1A1A19)" : "transparent",
+                color: isActive ? "var(--color-paper, #F4EFE6)" : "var(--color-ink, #1A1A19)",
+                opacity: isActive ? 1 : 0.35,
+                border: isActive ? "1px solid var(--color-ink, #1A1A19)" : "1px solid rgba(26,26,25,0.15)",
               }}
             >
               {r.label}
-              {/* Active underline */}
-              {isActive && (
-                <span
-                  className="absolute bottom-[-1px] left-0 right-0 h-[2px]"
-                  style={{ background: "var(--color-ocean-500, #e60000)" }}
-                />
-              )}
             </button>
           );
         })}
-
-        {/* Super Admin — coming soon, always disabled */}
-        <button
-          type="button"
-          disabled
-          className="relative flex-1 py-3 text-[11px] font-bold uppercase tracking-[0.18em] cursor-not-allowed select-none"
-          style={{
-            fontFamily: "var(--font-dm-mono, monospace)",
-            color: "var(--color-ink, #1A1A19)",
-            opacity: 0.22,
-          }}
-          title="Multi-canteen director console — coming soon"
-        >
-          Director
-          <span
-            className="absolute -top-1.5 right-1.5 rounded-full px-1.5 text-[8px] font-bold uppercase tracking-wider"
-            style={{
-              background: "var(--color-ocean-500, #e60000)",
-              color: "#fff",
-              fontFamily: "var(--font-dm-mono, monospace)",
-              lineHeight: "1.6",
-            }}
-          >
-            Soon
-          </span>
-        </button>
       </div>
 
       {/* ── Headline ──────────────────────────────────────────────── */}
       <div className="mb-7">
         <h1
-          className="leading-[0.92] tracking-[-0.04em] uppercase"
+          className="leading-[0.88] tracking-[-0.04em] uppercase"
           style={{
-            fontFamily: "var(--font-barlow, var(--font-bricolage))",
+            fontFamily: "var(--font-barlow, 'Barlow Condensed', sans-serif)",
             fontWeight: 900,
-            fontSize: "clamp(2.4rem, 6vw, 3.8rem)",
+            fontSize: "clamp(2.6rem, 7vw, 4rem)",
             color: "var(--color-ink, #1A1A19)",
+            whiteSpace: "pre-line",
           }}
         >
-          {role.headline}{" "}
-          <span
-            style={{
-              fontFamily: "var(--font-fraunces, serif)",
-              fontStyle: "italic",
-              textTransform: "none",
-              fontWeight: 400,
-              color: "var(--color-ocean-500, #e60000)",
-            }}
-          >
-            {role.italic}
-          </span>
+          {role.headline.split("\n").map((line, i) => (
+            <span key={i}>
+              {i > 0 && <br />}
+              {i === 1 ? (
+                <span
+                  style={{
+                    fontFamily: "var(--font-fraunces, serif)",
+                    fontStyle: "italic",
+                    textTransform: "none",
+                    fontWeight: 400,
+                    color: "var(--color-ocean-500, #e60000)",
+                  }}
+                >
+                  {line}
+                </span>
+              ) : line}
+            </span>
+          ))}
         </h1>
         <p
-          className="mt-3 text-[13.5px] leading-[1.65]"
-          style={{ color: "var(--color-ink, #1A1A19)", opacity: 0.55 }}
+          className="mt-3 text-[14px] leading-[1.6]"
+          style={{ color: "var(--color-ink, #1A1A19)", opacity: 0.52 }}
         >
           {role.sub}
         </p>
@@ -146,7 +126,7 @@ export function LoginRoleTabs({
       {/* ── Error banner ──────────────────────────────────────────── */}
       {error && (
         <div
-          className="mb-6 rounded-xl border px-4 py-3 text-[13px]"
+          className="mb-5 rounded-2xl border px-4 py-3 text-[13px] leading-[1.55]"
           style={{
             borderColor: "rgba(230,0,0,0.2)",
             background: "rgba(230,0,0,0.04)",
@@ -155,11 +135,12 @@ export function LoginRoleTabs({
         >
           {error}
           {(error.toLowerCase().includes("no account") ||
-            error.toLowerCase().includes("sign up")) && (
+            error.toLowerCase().includes("sign up") ||
+            error.toLowerCase().includes("found")) && (
             <span className="ml-1">
               <Link
-                href={`/signup?next=${encodeURIComponent(next)}`}
-                className="underline font-semibold"
+                href={`/signup?next=${encodeURIComponent(next)}&role=${activeRole}`}
+                className="font-semibold underline underline-offset-2"
               >
                 Create account →
               </Link>
@@ -172,28 +153,37 @@ export function LoginRoleTabs({
       <LoginForm next={next} slug={slug} />
 
       {/* ── Footer ────────────────────────────────────────────────── */}
-      <div
-        className="mt-8 flex flex-wrap items-center justify-between gap-2 text-[12px]"
-        style={{ color: "var(--color-ink, #1A1A19)", opacity: 0.45 }}
-      >
-        <span>
-          New here?{" "}
+      <div className="mt-7 pt-5 border-t border-[color:var(--color-line)] flex flex-col gap-2">
+        {activeRole !== "owner" ? (
+          <p
+            className="text-[13px]"
+            style={{ color: "var(--color-ink, #1A1A19)", opacity: 0.5 }}
+          >
+            New here?{" "}
+            <Link
+              href={`/signup?next=${encodeURIComponent(next)}&role=${activeRole}`}
+              className="font-semibold hover:underline underline-offset-2"
+              style={{ color: "var(--color-ocean-500, #e60000)", opacity: 1 }}
+            >
+              Create your account
+            </Link>
+          </p>
+        ) : null}
+
+        <p
+          className="text-[13px]"
+          style={{ color: "var(--color-ink, #1A1A19)", opacity: 0.5 }}
+        >
+          Own a canteen?{" "}
           <Link
-            href={`/signup?next=${encodeURIComponent(next)}`}
-            className="hover:underline"
+            href="/get-started"
+            className="font-semibold hover:underline underline-offset-2"
             style={{ color: "var(--color-ocean-500, #e60000)", opacity: 1 }}
           >
-            Create account
+            Set up your canteen on Tray →
           </Link>
-        </span>
-        <Link
-          href="/get-started"
-          className="hover:underline"
-          style={{ color: "var(--color-ocean-500, #e60000)", opacity: 1 }}
-        >
-          I have a canteen →
-        </Link>
+        </p>
       </div>
-    </>
+    </div>
   );
 }

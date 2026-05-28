@@ -104,14 +104,15 @@ export async function GET(req: NextRequest) {
   const tenant = tenantSlug ? await resolveTenant(tenantSlug) : null;
   const { data: u } = await supabase.auth.getUser();
   if (tenant && u.user) {
-    // Server-side domain check — client-side validation alone is not enough.
-    // If the tenant restricts by email domain, reject OAuth users from other domains.
-    if (tenant.allowed_domain) {
+    // Domain check: only enforce if the tenant has opted in with allowed_domain.
+    // Per product decision: any email is accepted by default (personal, college, work).
+    // allowed_domain can be set per-tenant by admins who want stricter control later.
+    if (tenant.allowed_domain && tenant.allowed_domain.trim() !== "") {
       const userDomain = u.user.email?.split("@")[1]?.toLowerCase();
       if (userDomain !== tenant.allowed_domain.toLowerCase()) {
         await supabase.auth.signOut();
         const msg = encodeURIComponent(
-          `This canteen requires a @${tenant.allowed_domain} email address. Please sign in with your campus email.`
+          `This canteen is restricted to @${tenant.allowed_domain} accounts. Please use that email.`
         );
         return NextResponse.redirect(new URL(`/c/${tenant.slug}/login?error=${msg}`, origin));
       }

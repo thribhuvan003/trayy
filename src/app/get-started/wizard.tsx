@@ -82,14 +82,14 @@ function ProgressBar({ step }: { step: Step }) {
                 transition: "all 0.2s",
                 background:
                   step > s.n
-                    ? "#0066ff"
+                    ? "#e60000"
                     : step === s.n
-                    ? "#0066ff"
+                    ? "#e60000"
                     : "transparent",
                 color:
                   step >= s.n ? "#fff" : "var(--gs-ink-muted)",
                 border:
-                  step >= s.n ? "2px solid #0066ff" : "2px solid var(--gs-line)",
+                  step >= s.n ? "2px solid #e60000" : "2px solid var(--gs-line)",
               }}
             >
               {step > s.n ? (
@@ -118,7 +118,7 @@ function ProgressBar({ step }: { step: Step }) {
               style={{
                 flex: 1,
                 height: 2,
-                background: step > s.n ? "#0066ff" : "var(--gs-line)",
+                background: step > s.n ? "#e60000" : "var(--gs-line)",
                 transition: "background 0.3s",
                 marginBottom: 20,
                 marginLeft: 8,
@@ -309,15 +309,15 @@ function Step1({
             gap: 10,
             padding: "12px 14px",
             borderRadius: 10,
-            background: "rgba(0,102,255,0.06)",
-            border: "1px solid rgba(0,102,255,0.15)",
+            background: "rgba(22,163,74,0.06)",
+            border: "1px solid rgba(22,163,74,0.18)",
           }}
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ marginTop: 1, flexShrink: 0 }}>
-            <circle cx="8" cy="8" r="7" stroke="#0066ff" strokeWidth="1.5" />
-            <path d="M8 5v4M8 10.5v.01" stroke="#0066ff" strokeWidth="1.5" strokeLinecap="round" />
+            <circle cx="8" cy="8" r="7" stroke="#e60000" strokeWidth="1.5" />
+            <path d="M8 5v4M8 10.5v.01" stroke="#e60000" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
-          <p style={{ margin: 0, fontSize: 13, color: "rgba(0,102,255,0.9)", lineHeight: 1.5 }}>
+          <p style={{ margin: 0, fontSize: 13, color: "rgba(22,163,74,0.95)", lineHeight: 1.5 }}>
             <strong>Open access</strong> — any signed-in user can order here. No email domain required.
           </p>
         </div>
@@ -503,7 +503,7 @@ function Step3({
 function Sidebar() {
   const portals = [
     {
-      color: "#0066ff",
+      color: "#e60000",
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
@@ -603,8 +603,8 @@ function Sidebar() {
                 width: 18,
                 height: 18,
                 borderRadius: "50%",
-                background: "#0066ff18",
-                color: "#0066ff",
+                background: "#e6000018",
+                color: "#e60000",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -612,7 +612,7 @@ function Sidebar() {
               }}
             >
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                <path d="M2 5l2.5 2.5L8 2.5" stroke="#0066ff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M2 5l2.5 2.5L8 2.5" stroke="#e60000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
             <span style={{ fontSize: 13, color: "var(--gs-ink-muted)" }}>{item}</span>
@@ -731,11 +731,11 @@ export function GetStartedWizard() {
           --gs-ink: #e8ecf2;
           --gs-ink-muted: rgba(232, 236, 242, 0.55);
         }
-        .gs-input:focus { border-color: #0066ff !important; box-shadow: 0 0 0 3px rgba(0,102,255,0.12); }
+        .gs-input:focus { border-color: #e60000 !important; box-shadow: 0 0 0 3px rgba(230,0,0,0.10); }
         .gs-btn-primary {
           height: 48px;
           border-radius: 12px;
-          background: #0066ff;
+          background: #e60000;
           color: #fff;
           border: none;
           font-size: 15px;
@@ -790,7 +790,7 @@ export function GetStartedWizard() {
         }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
             <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-              <rect width="28" height="28" rx="8" fill="#0066ff" />
+              <rect width="28" height="28" rx="8" fill="#e60000" />
               <rect x="6" y="10" width="16" height="2.5" rx="1.25" fill="white" />
               <rect x="8" y="14.5" width="12" height="2.5" rx="1.25" fill="white" />
               <rect x="10" y="19" width="8" height="2.5" rx="1.25" fill="white" />
@@ -798,7 +798,7 @@ export function GetStartedWizard() {
             <span style={{ fontWeight: 700, fontSize: 16, color: "var(--gs-ink)", letterSpacing: "-0.02em" }}>Tray</span>
           </Link>
           <Link href="/login" style={{ fontSize: 13, color: "var(--gs-ink-muted)", textDecoration: "none" }}>
-            Already have an account? <span style={{ color: "#0066ff", fontWeight: 600 }}>Sign in</span>
+            Already have an account? <span style={{ color: "#e60000", fontWeight: 600 }}>Sign in</span>
           </Link>
         </header>
 
