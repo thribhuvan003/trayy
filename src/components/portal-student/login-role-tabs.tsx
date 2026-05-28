@@ -139,7 +139,7 @@ export function LoginRoleTabs({
             error.toLowerCase().includes("found")) && (
             <span className="ml-1">
               <Link
-                href={`/signup?next=${encodeURIComponent(next)}&role=${activeRole}`}
+                href={slug ? `/c/${slug}/signup?next=${encodeURIComponent(next)}&role=${activeRole}` : `/signup?next=${encodeURIComponent(next)}&role=${activeRole}`}
                 className="font-semibold underline underline-offset-2"
               >
                 Create account →
@@ -161,7 +161,7 @@ export function LoginRoleTabs({
           >
             New here?{" "}
             <Link
-              href={`/signup?next=${encodeURIComponent(next)}&role=${activeRole}`}
+              href={slug ? `/c/${slug}/signup?next=${encodeURIComponent(next)}&role=${activeRole}` : `/signup?next=${encodeURIComponent(next)}&role=${activeRole}`}
               className="font-semibold hover:underline underline-offset-2"
               style={{ color: "var(--color-ocean-500, #e60000)", opacity: 1 }}
             >

@@ -156,6 +156,11 @@ export const resolveTenant = cache(async (slug: string): Promise<ResolvedTenant 
   // silently routed orders + UPI payments to the "aditya" demo account.
   if (!normalized) return null;
 
+  const cached = await fetchTenantEdgeCached(normalized);
+  if (cached) return cached;
+  const uncached = await fetchTenantUncached(normalized);
+  if (uncached) return uncached;
+
   // In development/preview, allow the "aditya" demo slug to work from the
   // in-memory mock so local dev doesn't need a Supabase row.
   if (process.env.NODE_ENV !== "production" && normalized === "aditya") {
@@ -175,9 +180,7 @@ export const resolveTenant = cache(async (slug: string): Promise<ResolvedTenant 
     };
   }
 
-  const cached = await fetchTenantEdgeCached(normalized);
-  if (cached) return cached;
-  return fetchTenantUncached(normalized);
+  return null;
 });
 
 const DEMO_CANTEENS: CollegeCanteen[] = [
@@ -221,11 +224,26 @@ const fetchCollegeCanteensUncached = async (collegeSlug: string): Promise<Colleg
     const { data, error } = await client.rpc("college_canteens", {
       p_college_slug: collegeSlug.toLowerCase(),
     });
-    if (error || !data || data.length === 0) return DEMO_CANTEENS;
+    if (error) {
+      logger.error("collegeCanteens failed", error, { collegeSlug });
+      if (process.env.NODE_ENV !== "production" && collegeSlug.toLowerCase() === "aditya-college") {
+        return DEMO_CANTEENS;
+      }
+      return [];
+    }
+    if (!data || data.length === 0) {
+      if (process.env.NODE_ENV !== "production" && collegeSlug.toLowerCase() === "aditya-college") {
+        return DEMO_CANTEENS;
+      }
+      return [];
+    }
     return data as unknown as CollegeCanteen[];
   } catch (err) {
     logger.error("collegeCanteens failed", err, { collegeSlug });
-    return DEMO_CANTEENS;
+    if (process.env.NODE_ENV !== "production" && collegeSlug.toLowerCase() === "aditya-college") {
+      return DEMO_CANTEENS;
+    }
+    return [];
   }
 };
 
@@ -238,7 +256,10 @@ const fetchCollegeCanteensCached = unstable_cache(
 export const collegeCanteens = cache(async (slug: string): Promise<CollegeCanteen[]> => {
   const canteens = await fetchCollegeCanteensCached(slug);
   if (canteens && canteens.length > 0) return canteens;
-  return DEMO_CANTEENS;
+  if (process.env.NODE_ENV !== "production" && slug.toLowerCase() === "aditya-college") {
+    return DEMO_CANTEENS;
+  }
+  return [];
 });
 
 // ── Production-Grade Tenant Context Helper (BlackRock/HFT level) ─────────────

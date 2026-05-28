@@ -140,10 +140,12 @@ export async function middleware(req: NextRequest) {
   // OPTIMIZATION: Only verify token if a Supabase session cookie exists.
   // This cuts redundant auth API calls on public/unauthenticated routes.
   const hasSessionCookie = req.cookies.getAll().some((c) => c.name.startsWith("sb-"));
+  console.log("Middleware path:", pathname, "hasSessionCookie:", hasSessionCookie);
   let user = null;
   if (hasSessionCookie) {
-    const { data } = await supabase.auth.getUser();
+    const { data, error } = await supabase.auth.getUser();
     user = data.user;
+    if (error) console.log("getUser error:", error);
   }
 
   // 3. Edge-level role guard for kitchen and admin routes.
@@ -155,23 +157,29 @@ export async function middleware(req: NextRequest) {
 
   if (isKitchenPath || isAdminPath) {
     const targetSlug = resolvedTenantSlug;
+    console.log("Edge role check - path:", pathname, "user:", user?.email);
     if (!user) {
+      console.log("No user found, redirecting to login");
       return NextResponse.redirect(
         new URL(`/c/${targetSlug}/login?next=${encodeURIComponent(pathname)}`, req.url)
       );
     }
     const tenant = await getMiddlewareTenant(targetSlug);
+    console.log("Resolved tenant in middleware:", tenant?.name);
     if (!tenant) {
       return new NextResponse("Tenant Not Found", { status: 404 });
     }
     const role = await getMiddlewareUserRole(supabase, user.id, tenant.id, tenant.college_id);
+    console.log("Resolved user role:", role);
 
     if (isKitchenPath) {
       if (role !== "kitchen_staff" && role !== "canteen_admin" && role !== "super_admin") {
+        console.log("Not kitchen staff, redirecting to unauthorised");
         return NextResponse.redirect(new URL(`/c/${targetSlug}/unauthorised`, req.url));
       }
     } else if (isAdminPath) {
       if (role !== "canteen_admin" && role !== "super_admin") {
+        console.log("Not admin, redirecting to unauthorised");
         return NextResponse.redirect(new URL(`/c/${targetSlug}/unauthorised`, req.url));
       }
     }

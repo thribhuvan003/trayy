@@ -300,81 +300,78 @@ export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
                 <em style={{ fontStyle: "italic", color: "var(--tray-clay)" }}>in eleven minutes.</em>
               </h2>
             </RevealItem>
-            <div className="mt-8 sm:mt-14 grid gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-5 tl-flow-track-horizontal">
-              {[...Array(2)].flatMap((_, setIdx) =>
-                ([
-                  ["01", "Choose canteen",  "Browse active canteens on your campus.",            "SELECTING"],
-                  ["02", "Browse menu",     "Live availability, prep times, veg/non-veg.",       "CART"],
-                  ["03", "Pay by UPI",      "Single-use QR. Webhook confirms in seconds.",       "PAID"],
-                  ["04", "Track live",      "Queued → preparing → ready in ~250 ms.",            "PREPARING"],
-                  ["05", "Collect w/ OTP",  "Four-digit code at counter. Staff marks complete.", "READY"],
-                ] as const).map(([num, title, desc, tag], i) => {
-                  const cardIdx = setIdx * 5 + i;
-                  const isHovered = hoveredStep === cardIdx;
-                  const baseIdx = cardIdx % 5;
+            <div className="mt-8 sm:mt-18 grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
+              {([
+                ["01", "Choose canteen",  "Browse active canteens on your campus.",            "SELECTING"],
+                ["02", "Browse menu",     "Live availability, prep times, veg/non-veg.",       "CART"],
+                ["03", "Pay by UPI",      "Single-use QR. Webhook confirms in seconds.",       "PAID"],
+                ["04", "Track live",      "Queued → preparing → ready in ~250 ms.",            "PREPARING"],
+                ["05", "Collect w/ OTP",  "Four-digit code at counter. Staff marks complete.", "READY"],
+              ] as const).map(([num, title, desc, tag], i) => {
+                const isHovered = hoveredStep === i;
+                const baseIdx = i;
 
-                  let cardBg = "rgba(255,255,255,0.65)";
-                  let cardText = "var(--tray-ink, #1A1619)";
-                  let numColor = "var(--tray-clay, #E60000)";
-                  let tagBg = "rgba(26,22,25,0.05)";
-                  let tagBorder = "var(--tray-border)";
-                  let tagColor = "var(--tray-muted)";
-                  let borderStyle = "1px solid var(--tray-border)";
-                  let descOpacity = "0.6";
+                let cardBg = "rgba(255,255,255,0.65)";
+                let cardText = "var(--tray-ink, #1A1619)";
+                let numColor = "var(--tray-clay, #E60000)";
+                let tagBg = "rgba(26,22,25,0.05)";
+                let tagBorder = "var(--tray-border)";
+                let tagColor = "var(--tray-muted)";
+                let borderStyle = "1px solid var(--tray-border)";
+                let descOpacity = "0.6";
 
-                  const showRedTheme = (
-                    ((baseIdx === 0 || baseIdx === 4 || baseIdx === 2) && isHovered) ||
-                    ((baseIdx === 1 || baseIdx === 3) && !isHovered)
-                  );
+                const showRedTheme = (
+                  ((baseIdx === 0 || baseIdx === 4 || baseIdx === 2) && isHovered) ||
+                  ((baseIdx === 1 || baseIdx === 3) && !isHovered)
+                );
 
-                  if (showRedTheme) {
-                    cardBg = "var(--tray-clay, #E60000)";
-                    cardText = "#FAF8F5";
-                    numColor = "rgba(250,248,245,0.3)";
-                    tagBg = "rgba(250,248,245,0.15)";
-                    tagBorder = "rgba(250,248,245,0.2)";
-                    tagColor = "rgba(250,248,245,0.7)";
-                    borderStyle = "none";
-                    descOpacity = "0.8";
-                  } else if (baseIdx === 2 && !isHovered) {
-                    cardBg = "rgba(255,255,255,0.65)";
-                    cardText = "var(--tray-clay, #E60000)";
-                    numColor = "var(--tray-ink, #1A1619)";
-                    tagBg = "rgba(230,0,0,0.05)";
-                    tagBorder = "rgba(230,0,0,0.2)";
-                    tagColor = "var(--tray-clay, #E60000)";
-                    borderStyle = "1px solid var(--tray-border)";
-                    descOpacity = "0.7";
-                  }
+                if (showRedTheme) {
+                  cardBg = "var(--tray-clay, #E60000)";
+                  cardText = "#FAF8F5";
+                  numColor = "rgba(250,248,245,0.3)";
+                  tagBg = "rgba(250,248,245,0.15)";
+                  tagBorder = "rgba(250,248,245,0.2)";
+                  tagColor = "rgba(250,248,245,0.7)";
+                  borderStyle = "none";
+                  descOpacity = "0.8";
+                } else if (baseIdx === 2 && !isHovered) {
+                  cardBg = "rgba(255,255,255,0.65)";
+                  cardText = "var(--tray-clay, #E60000)";
+                  numColor = "var(--tray-ink, #1A1619)";
+                  tagBg = "rgba(230,0,0,0.05)";
+                  tagBorder = "rgba(230,0,0,0.2)";
+                  tagColor = "var(--tray-clay, #E60000)";
+                  borderStyle = "1px solid var(--tray-border)";
+                  descOpacity = "0.7";
+                }
 
-                  return (
-                    <div
-                      key={`${num}-${setIdx}`}
-                      onMouseEnter={() => setHoveredStep(cardIdx)}
-                      onMouseLeave={() => setHoveredStep(null)}
-                      className="flex flex-col gap-3 sm:gap-4 rounded-[1.5rem] sm:rounded-[1.75rem] p-6 sm:p-9 lg:p-10 transition-all duration-300 ease-out hover:scale-[1.03] hover:-translate-y-1 hover:shadow-xl select-none cursor-pointer h-full tl-flow-card-horizontal"
-                      style={{ background: cardBg, color: cardText, border: borderStyle }}
-                    >
-                      <span
-                        className="leading-none tracking-[-0.02em]"
-                        style={{ fontFamily: "var(--font-bebas)", fontSize: "clamp(3.5rem, 5vw, 4.5rem)", color: numColor }}
-                      >{num}</span>
-                      <h3
-                        className="text-[1.15rem] sm:text-[1.25rem] tracking-tight leading-[1.2]"
-                        style={{ fontFamily: "var(--font-fraunces)", fontStyle: "italic", fontWeight: 500 }}
-                      >{title}</h3>
-                      <p
-                        className="flex-1 text-[0.88rem] leading-[1.65]"
-                        style={{ fontFamily: "var(--font-jakarta)", opacity: descOpacity }}
-                      >{desc}</p>
-                      <span
-                        className="mt-auto self-start rounded-full px-3 py-1 text-[0.68rem] uppercase tracking-[0.16em]"
-                        style={{ fontFamily: "var(--font-dm-mono)", color: tagColor, background: tagBg, border: `1px solid ${tagBorder}` }}
-                      >{tag}</span>
-                    </div>
-                  );
-                })
-              )}
+                return (
+                  <div
+                    key={num}
+                    onMouseEnter={() => setHoveredStep(i)}
+                    onMouseLeave={() => setHoveredStep(null)}
+                    className="flex flex-col gap-3 sm:gap-4 rounded-[1.5rem] sm:rounded-[1.75rem] p-6 sm:p-8 lg:p-9 transition-all duration-300 ease-out hover:scale-[1.03] hover:-translate-y-1 hover:shadow-xl select-none cursor-pointer h-full tl-flow-card-horizontal"
+                    style={{ background: cardBg, color: cardText, border: borderStyle }}
+                  >
+                    <span
+                      className="leading-none tracking-[-0.02em] block mb-2"
+                      style={{ fontFamily: "var(--font-bebas)", fontSize: "clamp(3.8rem, 6vw, 4.8rem)", color: numColor }}
+                    >{num}</span>
+                    <h3
+                      className="text-[1.15rem] sm:text-[1.25rem] tracking-tight leading-[1.2]"
+                      style={{ fontFamily: "var(--font-fraunces)", fontStyle: "italic", fontWeight: 500 }}
+                    >{title}</h3>
+                    <p
+                      className="flex-1 text-[0.88rem] leading-[1.65]"
+                      style={{ fontFamily: "var(--font-jakarta)", opacity: descOpacity }}
+                    >{desc}</p>
+                    <span
+                      className="mt-auto self-start rounded-full px-3 py-1 text-[0.68rem] uppercase tracking-[0.16em]"
+                      style={{ fontFamily: "var(--font-dm-mono)", color: tagColor, background: tagBg, border: `1px solid ${tagBorder}` }}
+                    >{tag}</span>
+                  </div>
+                );
+              })}
             </div>
           </motion.div>
         </SectionReveal>

@@ -14,7 +14,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div
       data-portal="admin"
-      className="min-h-screen bg-graphite-900 text-graphite-200 relative overflow-x-hidden"
+      className="min-h-screen bg-admin-bg text-admin-ink relative overflow-x-hidden transition-colors duration-200"
     >
       <div className="grid-paper fixed inset-0 z-0" />
       <AdminShell tenantName={tenant.name} tenantSlug={tenant.slug} userEmail={user.email}>

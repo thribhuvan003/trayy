@@ -56,6 +56,51 @@ export function LoginForm({ next, slug = "" }: { next: string; slug?: string }) 
     return () => clearTimeout(t);
   }, [sent, otpVisible, otpCountdown]);
 
+  const redirectUser = async (user: any) => {
+    const isDefaultNext =
+      next === "/" ||
+      next === `/c/${slug}/menu` ||
+      next === `/c/${slug}` ||
+      next === `/c/${slug.toLowerCase()}/menu` ||
+      next === `/c/${slug.toLowerCase()}` ||
+      next.endsWith("/menu");
+
+    if (isDefaultNext && slug) {
+      try {
+        const sb = getBrowserClient();
+        const { data: tenantData } = (await sb
+          .from("tenants")
+          .select("id")
+          .eq("slug", slug.toLowerCase())
+          .maybeSingle()) as unknown as { data: { id: string } | null };
+
+        if (tenantData) {
+          const { data: membership } = (await sb
+            .from("tenant_memberships")
+            .select("role")
+            .eq("user_id", user.id)
+            .eq("tenant_id", tenantData.id)
+            .eq("is_active", true)
+            .maybeSingle()) as unknown as { data: { role: string } | null };
+
+          if (membership) {
+            const role = membership.role;
+            if (role === "canteen_admin" || role === "super_admin") {
+              window.location.href = `/c/${slug}/admin/dashboard`;
+              return;
+            } else if (role === "kitchen_staff" || role === "kitchen") {
+              window.location.href = `/c/${slug}/kitchen/staff-select`;
+              return;
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to query role for login redirect:", err);
+      }
+    }
+    window.location.href = next;
+  };
+
   const onVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (otp.length !== 6 || verifying) return;
@@ -78,7 +123,7 @@ export function LoginForm({ next, slug = "" }: { next: string; slug?: string }) 
       setVerifying(false);
       return;
     }
-    window.location.href = next;
+    await redirectUser(session.user);
   };
 
   const onSubmit = (e: React.FormEvent) => {
@@ -106,13 +151,17 @@ export function LoginForm({ next, slug = "" }: { next: string; slug?: string }) 
           toast.success("Magic link sent — check your inbox.");
         }
       } else {
-        const { error } = await sb.auth.signInWithPassword({ email, password });
+        const { data, error } = await sb.auth.signInWithPassword({ email, password });
         if (error) {
           const msg = error.message.toLowerCase().includes("invalid")
             ? "Wrong email or password. Try again."
             : error.message;
           toast.error(msg);
-        } else window.location.href = next;
+        } else if (data.user) {
+          await redirectUser(data.user);
+        } else {
+          window.location.href = next;
+        }
       }
     });
   };

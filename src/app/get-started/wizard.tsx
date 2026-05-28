@@ -4,6 +4,7 @@ import React, { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createInstitution, type CreateInstitutionForm } from "./_actions";
+import { getBrowserClient } from "@/lib/supabase/browser";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -699,6 +700,27 @@ export function GetStartedWizard({ isNewUser = false, isSignedIn = false }: { is
         setSubmitError(result.error ?? "Something went wrong. Please try again.");
         return;
       }
+
+      // Log the browser in using the newly created admin account
+      try {
+        const sb = getBrowserClient();
+        const { error: loginError } = await sb.auth.signInWithPassword({
+          email: formData.adminEmail,
+          password: formData.adminPassword,
+        });
+        if (loginError) {
+          console.error("Auto login after canteen creation failed:", loginError);
+          router.push(
+            `/c/${result.canteenSlug}/login?next=${encodeURIComponent(
+              `/c/${result.canteenSlug}/admin/dashboard?welcome=1`
+            )}&role=owner`
+          );
+          return;
+        }
+      } catch (err) {
+        console.error("Auto login error:", err);
+      }
+
       router.push(`/c/${result.canteenSlug}/admin/dashboard?welcome=1`);
     });
   }

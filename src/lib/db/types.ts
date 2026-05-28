@@ -199,6 +199,7 @@ export type Database = {
           id: string
           image_url: string | null
           in_stock: boolean
+          is_special: boolean
           name: string
           prep_target_seconds: number
           price_paise: number
@@ -216,6 +217,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           in_stock?: boolean
+          is_special?: boolean
           name: string
           prep_target_seconds?: number
           price_paise: number
@@ -233,6 +235,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           in_stock?: boolean
+          is_special?: boolean
           name?: string
           prep_target_seconds?: number
           price_paise?: number

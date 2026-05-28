@@ -101,6 +101,8 @@ export async function GET(req: NextRequest) {
     const msg = userFacingAuthError(authError.message);
     return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(msg)}`, origin));
   }
+  const isSignup = searchParams.get("signup") === "1";
+
   const tenant = tenantSlug ? await resolveTenant(tenantSlug) : null;
   const { data: u } = await supabase.auth.getUser();
   if (tenant && u.user) {
@@ -119,20 +121,46 @@ export async function GET(req: NextRequest) {
     }
     try {
       const admin = getAdminClient(tenant.id);
-      await admin
+      const { data: existing } = await admin
         .from("tenant_memberships")
-        .upsert(
-          {
+        .select("role")
+        .eq("user_id", u.user.id)
+        .eq("tenant_id", tenant.id)
+        .maybeSingle();
+
+      if (!existing) {
+        if (!isSignup) {
+          // Block unauthorized login for non-members
+          await supabase.auth.signOut();
+          const msg = encodeURIComponent("No account found with this email. Please create an account first.");
+          return NextResponse.redirect(new URL(`/c/${tenant.slug}/login?error=${msg}`, origin));
+        }
+
+        // Safe to create account/membership on explicit signup flow
+        await admin
+          .from("tenant_memberships")
+          .insert({
             user_id: u.user.id,
             tenant_id: tenant.id,
             role: "student",
             display_name: (u.user.user_metadata?.display_name as string | undefined) ?? null,
             is_active: true,
-          },
-          { onConflict: "user_id,tenant_id" }
-        );
-    } catch {
-      // membership creation is best-effort — RLS may also handle it on first call
+          });
+      } else {
+        await admin
+          .from("tenant_memberships")
+          .update({
+            display_name: (u.user.user_metadata?.display_name as string | undefined) ?? null,
+            is_active: true,
+          })
+          .eq("user_id", u.user.id)
+          .eq("tenant_id", tenant.id);
+      }
+    } catch (err) {
+      logger.error("auth callback role creation/update failed", err, {
+        user_id: u.user.id,
+        tenant_id: tenant.id,
+      });
     }
   }
 
@@ -177,48 +205,58 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // If next === "/" (user signed in from landing), route to their portal instead.
-  // OAuth FIX: When next === "/" (sign-in from landing page or direct /login visit),
-  // look up the user's membership and route to their correct portal.
-  // Previously this fell through to "/" (landing page) when the tenants join returned null,
-  // causing "Google sign-in takes me back to the landing page" bug.
-  if (next === "/" && u.user) {
-    // Explicit two-step query: first get membership, then resolve the slug separately.
-    // Avoids the Supabase PostgREST join returning {tenants: null} on FK lookup failures.
-    const { data: memberships } = await supabase
+  const isDefaultNext =
+    next === "/" ||
+    (tenantSlug &&
+      (next === `/c/${tenantSlug}/menu` ||
+        next === `/c/${tenantSlug}` ||
+        next === `/c/${tenantSlug.toLowerCase()}/menu` ||
+        next === `/c/${tenantSlug.toLowerCase()}` ||
+        next.endsWith("/menu")));
+
+  if (isDefaultNext && u.user) {
+    const { data: memberships } = (await supabase
       .from("tenant_memberships")
       .select("tenant_id, role")
       .eq("user_id", u.user.id)
       .eq("is_active", true)
-      .order("created_at", { ascending: false })
-      .limit(1);
+      .order("created_at", { ascending: false })) as unknown as { data: { tenant_id: string; role: string }[] | null };
 
-    const mem = memberships?.[0] as { tenant_id: string; role: string } | undefined;
+    if (memberships && memberships.length > 0) {
+      let activeMem = memberships[0];
 
-    if (mem?.tenant_id) {
-      // Second query: resolve the slug from the tenant_id directly
-      const { data: tenantRow } = await supabase
+      if (tenantSlug) {
+        const { data: specificTenant } = (await supabase
+          .from("tenants")
+          .select("id")
+          .eq("slug", tenantSlug.toLowerCase())
+          .maybeSingle()) as unknown as { data: { id: string } | null };
+
+        if (specificTenant) {
+          const match = memberships.find((m) => m.tenant_id === specificTenant.id);
+          if (match) activeMem = match;
+        }
+      }
+
+      const { data: tenantRow } = (await supabase
         .from("tenants")
         .select("slug")
-        .eq("id", mem.tenant_id)
-        .maybeSingle<{ slug: string }>();
+        .eq("id", activeMem.tenant_id)
+        .maybeSingle()) as unknown as { data: { slug: string } | null };
 
-      const slug = tenantRow?.slug;
-      if (slug) {
-        const role = mem.role;
+      const resolvedSlug = tenantRow?.slug;
+      if (resolvedSlug) {
+        const role = activeMem.role;
         if (role === "canteen_admin" || role === "super_admin") {
-          return NextResponse.redirect(new URL(`/c/${slug}/admin/dashboard`, origin));
+          return NextResponse.redirect(new URL(`/c/${resolvedSlug}/admin/dashboard`, origin));
         } else if (role === "kitchen_staff" || role === "kitchen") {
-          return NextResponse.redirect(new URL(`/c/${slug}/kitchen/staff-select`, origin));
+          return NextResponse.redirect(new URL(`/c/${resolvedSlug}/kitchen/staff-select`, origin));
         } else {
-          return NextResponse.redirect(new URL(`/c/${slug}/menu`, origin));
+          return NextResponse.redirect(new URL(`/c/${resolvedSlug}/menu`, origin));
         }
       }
     }
 
-    // No membership found — brand-new user who signed in from the landing page.
-    // get-started walks them through creating a canteen (admin) or explains
-    // how to find a student ordering URL (student). Never "/".
     return NextResponse.redirect(new URL("/get-started?new=1", origin));
   }
 

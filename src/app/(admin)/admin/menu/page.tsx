@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { getServerClient } from "@/lib/supabase/server";
-import { MenuTable } from "@/components/portal-admin/menu-table";
+import { MenuDashboard } from "@/components/portal-admin/menu-dashboard";
 import { requireTenantContext } from "@/lib/tenant";
 
 type Row = {
@@ -34,6 +34,7 @@ export default async function AdminMenuPage() {
       .from("menu_categories")
       .select("id, name")
       .eq("tenant_id", tenant.id)
+      .order("sort_order")
       .returns<{ id: string; name: string }[]>(),
   ]);
 
@@ -41,19 +42,19 @@ export default async function AdminMenuPage() {
     <div>
       <div className="mb-5 flex items-start justify-between gap-4">
         <div>
-          <h1 className="font-display text-[26px] sm:text-[30px] font-semibold tracking-tight">Menu</h1>
-          <div className="text-[11px] font-mono uppercase tracking-[0.12em] text-graphite-400 mt-0.5">
-            {items?.length ?? 0} items · draft / live / archived workflow
+          <h1 className="font-display text-[26px] sm:text-[30px] font-semibold tracking-tight text-admin-ink">Menu</h1>
+          <div className="text-[11px] font-mono uppercase tracking-[0.12em] text-admin-ink-3 mt-0.5">
+            {items?.length ?? 0} items · categories & specials console
           </div>
         </div>
         <Link
           href={`/c/${tenant.slug}/admin/menu/new`}
-          className="shrink-0 rounded-lg bg-primary px-4 py-2 text-[13px] font-medium text-white hover:bg-primary/90 transition-colors"
+          className="shrink-0 rounded-lg bg-admin-lime px-4 py-2 text-[13px] font-medium text-admin-bg hover:bg-admin-lime-2 transition-colors"
         >
           + New item
         </Link>
       </div>
-      <MenuTable items={items ?? []} categories={cats ?? []} tenantSlug={tenant.slug} />
+      <MenuDashboard items={items ?? []} categories={cats ?? []} tenantSlug={tenant.slug} />
     </div>
   );
 }

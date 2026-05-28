@@ -4,7 +4,7 @@ import { resolveTenant, collegeCanteens, getTenantSlugFromHeaders } from "@/lib/
 import { getCurrentUser } from "@/lib/auth/get-user";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { StudentTopBar } from "@/components/portal-student/top-bar";
-import { CartDrawer } from "@/components/portal-student/cart-drawer";
+import { CartDrawerConditional } from "@/components/portal-student/cart-drawer-conditional";
 import { CartTenantSync } from "@/components/portal-student/cart-tenant-sync";
 import { OrderReadyListener } from "@/components/portal-student/order-ready-listener";
 
@@ -64,11 +64,11 @@ export default async function StudentLayout({ children }: { children: React.Reac
           Mobile stays single-column; the CartDrawer self-promotes to a
           floating button + Vaul drawer below the lg breakpoint. */}
       <main
-        className="lg:pb-12 w-full"
+        className="w-full max-w-[1440px] mx-auto px-4 sm:px-5 lg:px-7 lg:grid lg:grid-cols-[1fr_320px] lg:gap-8 lg:items-start lg:pb-12"
         style={{ paddingBottom: "calc(5rem + env(safe-area-inset-bottom, 0px))" }}
       >
         <div className="min-w-0">{children}</div>
-        <CartDrawer tenantSlug={tenant.slug} tenantName={tenant.name} />
+        <CartDrawerConditional tenantSlug={tenant.slug} tenantName={tenant.name} />
       </main>
     </div>
   );

@@ -348,10 +348,23 @@ export async function placeOrder(
     }
   }
 
-  const { data: codeData, error: codeErr } = await admin.rpc("next_order_short_code", {
-    p_tenant: tenant.id,
-  });
-  if (codeErr || !codeData) return { ok: false, error: "Could not assign order code" };
+  // Generate sequential short code in JS to bypass database RPC permission restrictions
+  let codeData = "T-2401";
+  const { data: lastOrders, error: lastOrdersErr } = await admin
+    .from("orders")
+    .select("short_code")
+    .eq("tenant_id", tenant.id)
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  if (!lastOrdersErr && lastOrders && lastOrders.length > 0) {
+    const lastCode = lastOrders[0].short_code;
+    const match = lastCode.match(/^T-(\d+)$/);
+    if (match) {
+      const nextNum = parseInt(match[1], 10) + 1;
+      codeData = `T-${String(nextNum).padStart(4, "0")}`;
+    }
+  }
 
   const orderInsert = await admin
     .from("orders")

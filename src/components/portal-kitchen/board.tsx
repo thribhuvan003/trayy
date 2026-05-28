@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { Bell, BellOff, ChefHat, History as HistoryIcon, Radio, UserRoundCog } from "lucide-react";
+import { Bell, BellOff, ChefHat, History as HistoryIcon, Radio, UserRoundCog, X } from "lucide-react";
 import { toast } from "sonner";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { cn, formatRupees, formatTimeIST } from "@/lib/utils";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { toggleItemSpecial } from "@/app/(admin)/admin/_actions";
 import { OrderColumn } from "./order-column";
 import { OtpVerifyDialog } from "./otp-verify-dialog";
 import { WalkInDialog } from "./walk-in-dialog";
@@ -42,17 +42,41 @@ export function KitchenBoard({
   tenantSlug,
   orders: initialOrders,
   lines: initialLines,
-  marquee,
+  menuItems: initialMenuItems,
 }: {
   tenantId: string;
   tenantName: string;
   tenantSlug: string;
   orders: OrderRow[];
   lines: LineRow[];
-  marquee: { id: string; name: string; price_paise: number; diet: "veg" | "nonveg" | "egg" }[];
+  menuItems: { id: string; name: string; price_paise: number; diet: "veg" | "nonveg" | "egg"; is_special: boolean; in_stock: boolean; category_id: string | null }[];
 }) {
   const [orders, setOrders] = useState(initialOrders);
   const [lines, setLines] = useState(initialLines);
+  const [menuItems, setMenuItems] = useState(initialMenuItems);
+  const [togglingSpecialId, setTogglingSpecialId] = useState<string | null>(null);
+  const [manageSpecialsOpen, setManageSpecialsOpen] = useState(false);
+  const [pendingTransition, startTransition] = useTransition();
+
+  const handleToggleSpecial = (itemId: string, isSpecial: boolean) => {
+    setTogglingSpecialId(itemId);
+    setMenuItems((prev) => 
+      prev.map((it) => it.id === itemId ? { ...it, is_special: isSpecial } : it)
+    );
+    startTransition(async () => {
+      const r = await toggleItemSpecial(itemId, isSpecial);
+      setTogglingSpecialId(null);
+      if (!r.ok) {
+        toast.error(r.error ?? "Failed to toggle special status");
+        setMenuItems((prev) => 
+          prev.map((it) => it.id === itemId ? { ...it, is_special: !isSpecial } : it)
+        );
+      } else {
+        toast.success(isSpecial ? "Added to Today's Specials" : "Removed from Specials");
+      }
+    });
+  };
+
   const [verifyId, setVerifyId] = useState<string | null>(null);
   const [walkInOpen, setWalkInOpen] = useState(false);
   const [clock, setClock] = useState<string>("--:--");
@@ -487,8 +511,14 @@ export function KitchenBoard({
 
       {/* ── SIDEBAR — matches kitchen.html .sb spec exactly ── */}
       <aside
-        className="hidden lg:flex flex-col sticky top-0 h-screen px-4 gap-1"
+        className="hidden lg:flex flex-col px-4 gap-1"
         style={{
+          position: "fixed",
+          top: 0,
+          bottom: 0,
+          left: 0,
+          width: "228px",
+          zIndex: 30,
           background: "var(--kt-paper)",
           borderRight: "1px solid var(--kt-line)",
           paddingTop: "18px",
@@ -765,6 +795,7 @@ export function KitchenBoard({
           </div>
         </div>
       </aside>
+      <div className="hidden lg:block shrink-0" style={{ width: 228 }} />
 
       {/* ── MAIN CONTENT ── */}
       <div className="flex flex-col min-w-0">
@@ -940,7 +971,6 @@ export function KitchenBoard({
                 {bellOn ? <Bell size={12} /> : <BellOff size={12} />}
                 {bellOn ? "Sounds" : "Muted"}
               </button>
-              <ThemeToggle className="text-[var(--kt-ink-3)]" />
               {/* Mobile-only quick links */}
               <Link
                 href={`/c/${tenantSlug}/kitchen/history`}
@@ -985,11 +1015,84 @@ export function KitchenBoard({
           <KitchenKpiStrip orders={orders} newOrderFlash={newOrderFlash} />
         </header>
 
-        <KitchenMarquee items={marquee} />
+        <KitchenMarquee items={menuItems.filter(it => it.in_stock)} />
 
         {/* Main board area */}
         <main style={{ padding: "24px 24px 64px" }}>
           <PrepTotalsStrip orders={orders} lines={lines} onSessionExpired={() => setSessionExpired(true)} />
+
+          {/* Today's Specials Header section */}
+          <div className="mb-6 p-5 rounded-2xl border-2 border-dashed border-[color:var(--kt-tomato)] bg-tomato-500/5 flex flex-col gap-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-[18px]">✨</span>
+                <div>
+                  <h3 className="font-display font-bold text-[18px] text-[color:var(--kt-ink)] leading-none">Today&apos;s Specials</h3>
+                  <p className="text-[11px] font-mono text-[color:var(--kt-ink-3)] uppercase tracking-wider mt-1">Highlighted on student ordering screens</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setManageSpecialsOpen((v) => !v)}
+                className="px-4 py-1.5 rounded-lg border border-tomato-500/20 text-[12.5px] font-semibold text-tomato-600 bg-white hover:bg-tomato-50/50 transition-colors active:scale-95 cursor-pointer"
+              >
+                {manageSpecialsOpen ? "Close panel" : "⚙️ Manage Specials"}
+              </button>
+            </div>
+
+            {/* List of items currently marked as special */}
+            <div className="flex flex-wrap gap-2.5">
+              {menuItems.filter(it => it.is_special).map(it => (
+                <div 
+                  key={it.id} 
+                  className="px-3.5 py-2 rounded-xl border border-tomato-500/20 bg-tomato-500/10 text-[13px] font-bold text-tomato-600 flex items-center gap-2"
+                >
+                  <span className="shrink-0">
+                    {it.diet === "veg" ? "🥬" : it.diet === "egg" ? "🍳" : "🍗"}
+                  </span>
+                  <span>{it.name}</span>
+                  <button
+                    onClick={() => handleToggleSpecial(it.id, false)}
+                    disabled={togglingSpecialId === it.id}
+                    className="p-0.5 rounded-full hover:bg-tomato-500/20 text-tomato-500 hover:text-tomato-600 transition-colors cursor-pointer"
+                    title="Remove from specials"
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+              ))}
+              {menuItems.filter(it => it.is_special).length === 0 && (
+                <div className="text-[12.5px] text-[color:var(--kt-ink-3)] italic">No specials selected for today. Tap &ldquo;Manage Specials&rdquo; to highlight items!</div>
+              )}
+            </div>
+
+            {/* Collapsible panel to manage specials */}
+            {manageSpecialsOpen && (
+              <div className="mt-2 pt-4 border-t border-dashed border-[color:var(--kt-line)]">
+                <p className="text-[12px] font-semibold text-[color:var(--kt-ink-2)] mb-3">Toggle Special Status for Live Items:</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                  {menuItems.map(it => {
+                    const isSp = it.is_special;
+                    return (
+                      <button
+                        key={it.id}
+                        onClick={() => handleToggleSpecial(it.id, !isSp)}
+                        disabled={togglingSpecialId === it.id}
+                        className={cn(
+                          "px-3 py-2 rounded-xl border text-[12px] font-bold transition-all text-left flex items-center justify-between gap-2 active:scale-[0.98] cursor-pointer",
+                          isSp
+                            ? "border-tomato-500/30 bg-tomato-500/15 text-tomato-600"
+                            : "border-[color:var(--kt-line)] bg-white text-[color:var(--kt-ink-2)] hover:bg-[color:var(--kt-cream-3)]"
+                        )}
+                      >
+                        <span className="truncate">{it.name}</span>
+                        <span className="text-[14px] shrink-0">{isSp ? "★" : "☆"}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* 4-column queue board — matches .queue-board + .queue-cols */}
           <div

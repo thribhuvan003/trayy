@@ -89,41 +89,41 @@ export function AdminShell({
   }
 
   return (
-    <div className="relative z-10 flex" style={{ background: "#0b0e14", minHeight: "100vh" }}>
+    <div className="relative z-10 flex transition-colors duration-200" style={{ background: "var(--admin-bg)", minHeight: "100vh" }}>
       {/* ── Sidebar ─────────────────────────────────────────── */}
       <aside
-        className="hidden lg:flex w-[248px] shrink-0 sticky top-0 self-start h-screen flex-col"
+        className="hidden lg:flex w-[248px] shrink-0 sticky top-0 self-start h-screen flex-col transition-colors duration-200"
         style={{
-          background: "#11151d",
-          borderRight: "1px solid rgba(255,255,255,0.07)",
+          background: "var(--admin-bg-2)",
+          borderRight: "1px solid var(--admin-line)",
         }}
       >
         {/* Brand */}
-        <div style={{ padding: "18px 14px 14px", borderBottom: "1px solid rgba(255,255,255,0.07)", marginBottom: "14px" }}>
+        <div style={{ padding: "18px 14px 14px", borderBottom: "1px solid var(--admin-line)", marginBottom: "14px" }}>
           <Link
             href={`/c/${tenantSlug}/admin/dashboard`}
             className="inline-flex items-center gap-2.5 font-semibold text-[18px] tracking-tight"
-            style={{ color: "#eef1f7", letterSpacing: "-0.025em" }}
+            style={{ color: "var(--admin-ink)", letterSpacing: "-0.025em" }}
           >
             {/* 28px lime square brand mark with glow */}
             <span
-              className="inline-flex items-center justify-center font-mono font-bold text-[13px] shrink-0"
+              className="inline-flex items-center justify-center font-mono font-bold text-[13px] shrink-0 transition-all duration-200"
               style={{
                 width: 28,
                 height: 28,
                 borderRadius: 7,
-                background: "#cdfa50",
-                color: "#0b0e14",
-                boxShadow: "0 0 20px rgba(205,250,80,0.32)",
+                background: "var(--admin-lime)",
+                color: "var(--admin-bg)",
+                boxShadow: "0 0 20px var(--admin-lime-soft)",
               }}
             >
               T
             </span>
-            Tray<span className="italic font-medium" style={{ color: "#cdfa50", marginLeft: -2 }}>.</span>
+            Tray<span className="italic font-medium" style={{ color: "var(--admin-lime)", marginLeft: -2 }}>.</span>
           </Link>
           <div
-            className="mt-2 font-mono uppercase font-semibold"
-            style={{ fontSize: 10, letterSpacing: "0.14em", color: "#6d7689" }}
+            className="mt-2 font-mono uppercase font-semibold transition-colors duration-200"
+            style={{ fontSize: 10, letterSpacing: "0.14em", color: "var(--admin-ink-3)" }}
           >
             {tenantName}
           </div>
@@ -135,13 +135,13 @@ export function AdminShell({
             "group" in n ? (
               <div
                 key={i}
-                className="font-mono font-semibold"
+                className="font-mono font-semibold transition-colors duration-200"
                 style={{
                   padding: "14px 10px 6px",
                   fontSize: 10,
                   letterSpacing: "0.16em",
                   textTransform: "uppercase",
-                  color: "#6d7689",
+                  color: "var(--admin-ink-3)",
                 }}
               >
                 {n.group}
@@ -150,30 +150,30 @@ export function AdminShell({
               <Link
                 key={n.key}
                 href={navHref(n.key)}
-                className="group flex items-center gap-[11px] rounded-[7px] font-medium transition-colors"
+                className="group flex items-center gap-[11px] rounded-[7px] font-medium transition-all duration-200"
                 style={{
                   padding: "8px 11px",
-                  background: isActive(n.key) ? "rgba(205,250,80,0.12)" : "transparent",
-                  color: isActive(n.key) ? "#cdfa50" : "#aab3c5",
+                  background: isActive(n.key) ? "var(--admin-lime-soft)" : "transparent",
+                  color: isActive(n.key) ? "var(--admin-lime)" : "var(--admin-ink-2)",
                   fontWeight: isActive(n.key) ? 600 : 500,
                 }}
               >
                 <n.icon
                   size={15}
                   strokeWidth={1.6}
-                  style={{ opacity: isActive(n.key) ? 1 : 0.65, color: isActive(n.key) ? "#cdfa50" : undefined, flexShrink: 0 }}
+                  style={{ opacity: isActive(n.key) ? 1 : 0.65, color: isActive(n.key) ? "var(--admin-lime)" : undefined, flexShrink: 0 }}
                 />
                 <span>{n.label}</span>
                 {"kbd" in n && n.kbd && (
                   <span
-                    className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity font-mono font-medium"
+                    className="ml-auto opacity-0 group-hover:opacity-100 transition-all duration-200 font-mono font-medium"
                     style={{
                       fontSize: 10,
                       padding: "1px 5px",
-                      background: isActive(n.key) ? "rgba(205,250,80,0.06)" : "#171c26",
-                      border: `1px solid ${isActive(n.key) ? "rgba(205,250,80,0.18)" : "rgba(255,255,255,0.13)"}`,
+                      background: isActive(n.key) ? "var(--admin-lime-soft)" : "var(--admin-bg-3)",
+                      border: `1px solid ${isActive(n.key) ? "var(--admin-line-2)" : "var(--admin-line)"}`,
                       borderRadius: 4,
-                      color: isActive(n.key) ? "#cdfa50" : "#6d7689",
+                      color: isActive(n.key) ? "var(--admin-lime)" : "var(--admin-ink-3)",
                     }}
                   >
                     {n.kbd}
@@ -189,7 +189,7 @@ export function AdminShell({
           <OrderingLinkBanner tenantSlug={tenantSlug} />
 
           {/* Portal quick-links in mono */}
-          <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", padding: "14px 14px 0" }}>
+          <div style={{ borderTop: "1px solid var(--admin-line)", padding: "14px 14px 0" }}>
             {[
               { label: "Kitchen", href: `/c/${tenantSlug}/kitchen` },
               { label: "Student menu", href: `/c/${tenantSlug}/menu` },
@@ -197,17 +197,17 @@ export function AdminShell({
               <Link
                 key={pl.href}
                 href={pl.href}
-                className="flex items-center justify-between rounded-md transition-colors"
+                className="flex items-center justify-between rounded-md transition-all duration-200"
                 style={{
                   padding: "7px 11px",
                   fontFamily: "var(--font-geist-mono), ui-monospace, monospace",
                   fontSize: 11,
-                  color: "#6d7689",
+                  color: "var(--admin-ink-3)",
                   letterSpacing: "0.04em",
                   textTransform: "uppercase",
                 }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#171c26"; (e.currentTarget as HTMLElement).style.color = "#eef1f7"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ""; (e.currentTarget as HTMLElement).style.color = "#6d7689"; }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--admin-bg-3)"; (e.currentTarget as HTMLElement).style.color = "var(--admin-ink)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ""; (e.currentTarget as HTMLElement).style.color = "var(--admin-ink-3)"; }}
               >
                 <span>{pl.label}</span>
                 <ExternalLink size={10} />
@@ -217,11 +217,11 @@ export function AdminShell({
 
           {/* User row */}
           <div
-            className="flex items-center gap-2.5 mx-[14px] mb-[14px] mt-2 rounded-lg"
+            className="flex items-center gap-2.5 mx-[14px] mb-[14px] mt-2 rounded-lg transition-all duration-200"
             style={{
               padding: "8px 10px",
-              background: "#171c26",
-              border: "1px solid rgba(255,255,255,0.07)",
+              background: "var(--admin-bg-3)",
+              border: "1px solid var(--admin-line)",
             }}
           >
             {/* Avatar: lime→mint gradient */}
@@ -230,19 +230,19 @@ export function AdminShell({
               style={{
                 width: 30,
                 height: 30,
-                background: "linear-gradient(135deg, #cdfa50, #3fe6a3)",
-                color: "#0b0e14",
+                background: "linear-gradient(135deg, var(--admin-lime), #3fe6a3)",
+                color: "var(--admin-bg)",
               }}
             >
               {(userEmail ?? "A").slice(0, 1).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0" style={{ lineHeight: 1.2 }}>
-              <div className="truncate font-semibold" style={{ fontSize: 12.5, color: "#eef1f7" }}>
+              <div className="truncate font-semibold transition-colors duration-200" style={{ fontSize: 12.5, color: "var(--admin-ink)" }}>
                 {userEmail ?? "admin"}
               </div>
               <div
-                className="font-mono"
-                style={{ fontSize: 10, color: "#6d7689", letterSpacing: "0.04em" }}
+                className="font-mono transition-colors duration-200"
+                style={{ fontSize: 10, color: "var(--admin-ink-3)", letterSpacing: "0.04em" }}
               >
                 canteen_admin
               </div>
@@ -251,7 +251,7 @@ export function AdminShell({
               href="/auth/signout"
               aria-label="Sign out"
               className="inline-flex items-center justify-center rounded-md transition-colors"
-              style={{ height: 28, width: 28, color: "#6d7689" }}
+              style={{ height: 28, width: 28, color: "var(--admin-ink-3)" }}
             >
               <LogOut size={13} />
             </Link>
@@ -263,41 +263,42 @@ export function AdminShell({
       <div className="flex-1 min-w-0">
         {/* Topbar: sticky, blur backdrop, border-bottom */}
         <header
-          className="sticky top-0 z-20 flex items-center justify-between gap-3"
+          className="sticky top-0 z-20 flex items-center justify-between gap-3 transition-colors duration-200"
           style={{
             height: 52,
             padding: "0 32px",
-            background: "rgba(11,14,20,0.85)",
+            background: "var(--admin-bg)",
+            opacity: 0.95,
             backdropFilter: "blur(10px)",
             WebkitBackdropFilter: "blur(10px)",
-            borderBottom: "1px solid rgba(255,255,255,0.07)",
+            borderBottom: "1px solid var(--admin-line)",
           }}
         >
           {/* Left: tenant context */}
           <div
-            className="flex items-center gap-2 font-mono"
-            style={{ fontSize: 11, color: "#6d7689" }}
+            className="flex items-center gap-2 font-mono transition-colors duration-200"
+            style={{ fontSize: 11, color: "var(--admin-ink-3)" }}
           >
             <span className="hidden sm:inline">
-              <span style={{ color: "#cdfa50" }}>{tenantSlug}</span>.tray.app/admin
+              <span style={{ color: "var(--admin-lime)" }}>{tenantSlug}</span>.tray.app/admin
             </span>
           </div>
           {/* Right: theme toggle + kitchen link */}
           <div className="flex items-center gap-2">
-            <ThemeToggle className="text-[#aab3c5]" />
+            <ThemeToggle className="text-[color:var(--admin-ink-3)] border-[color:var(--admin-line-2)] hover:bg-[color:var(--admin-bg-3)]" />
             <Link
               href={`/c/${tenantSlug}/kitchen`}
-              className="hidden md:inline-flex items-center gap-1.5 font-mono uppercase tracking-wider transition-colors"
+              className="hidden md:inline-flex items-center gap-1.5 font-mono uppercase tracking-wider transition-all duration-200"
               style={{
                 height: 32,
                 padding: "0 12px",
                 borderRadius: 7,
-                border: "1px solid rgba(255,255,255,0.13)",
+                border: "1px solid var(--admin-line-2)",
                 fontSize: 11,
-                color: "#aab3c5",
+                color: "var(--admin-ink-2)",
               }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#cdfa50"; (e.currentTarget as HTMLElement).style.color = "#cdfa50"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.13)"; (e.currentTarget as HTMLElement).style.color = "#aab3c5"; }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--admin-lime)"; (e.currentTarget as HTMLElement).style.color = "var(--admin-lime)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--admin-line-2)"; (e.currentTarget as HTMLElement).style.color = "var(--admin-ink-2)"; }}
             >
               <Activity size={11} /> Kitchen
             </Link>

@@ -362,6 +362,7 @@ export async function createMenuItem(form: {
   category_id: string | null;
   image_url: string | null;
   sort_order: number;
+  is_special?: boolean;
 }): Promise<{ ok: boolean; error?: string; id?: string }> {
   const c = await adminContext();
   if (!c.ok) return { ok: false, error: c.error };
@@ -384,6 +385,7 @@ export async function createMenuItem(form: {
       category_id: form.category_id,
       image_url: form.image_url,
       sort_order: form.sort_order,
+      is_special: form.is_special ?? false,
       status: "live",
       in_stock: true,
     })
@@ -416,6 +418,7 @@ export async function updateMenuItem(
     sort_order: number;
     status: "draft" | "live" | "archived";
     in_stock: boolean;
+    is_special?: boolean;
   }
 ): Promise<{ ok: boolean; error?: string }> {
   const c = await adminContext();
@@ -440,6 +443,7 @@ export async function updateMenuItem(
       sort_order: form.sort_order,
       status: form.status,
       in_stock: form.in_stock,
+      is_special: form.is_special ?? false,
     })
     .eq("id", id)
     .eq("tenant_id", c.tenant.id);
@@ -690,3 +694,154 @@ export async function validateUpiVpa(
     return { valid: false, error: "Could not reach Razorpay to validate VPA — check your connection" };
   }
 }
+
+// ── Category & Special Toggles ──────────────────────────────────────────────
+
+export async function createCategory(name: string): Promise<{ ok: boolean; error?: string }> {
+  const c = await adminContext();
+  if (!c.ok) return { ok: false, error: c.error };
+
+  const rate = await tenantRateLimit(c.tenant.id, "admin_action", c.user.id);
+  if (!rate.success) {
+    return { ok: false, error: "Too many admin actions — slow down a little" };
+  }
+
+  const start = Date.now();
+  const admin = getAdminClient(c.tenant.id);
+  const { error } = await admin
+    .from("menu_categories")
+    .insert({
+      tenant_id: c.tenant.id,
+      name: name.trim(),
+      sort_order: 100,
+    });
+  if (error) return { ok: false, error: error.message };
+
+  logger.info("admin menu category created", {
+    tenant_id: c.tenant.id,
+    slug: c.tenant.slug,
+    actor_user_id: c.user.id,
+    category_name: name,
+    latency_ms: Date.now() - start,
+  });
+
+  revalidatePath(`/c/${c.tenant.slug}/admin/menu`);
+  revalidatePath(`/c/${c.tenant.slug}/menu`);
+  return { ok: true };
+}
+
+export async function updateCategory(id: string, name: string): Promise<{ ok: boolean; error?: string }> {
+  const c = await adminContext();
+  if (!c.ok) return { ok: false, error: c.error };
+
+  const rate = await tenantRateLimit(c.tenant.id, "admin_action", c.user.id);
+  if (!rate.success) {
+    return { ok: false, error: "Too many admin actions — slow down a little" };
+  }
+
+  const start = Date.now();
+  const admin = getAdminClient(c.tenant.id);
+  const { error } = await admin
+    .from("menu_categories")
+    .update({ name: name.trim() })
+    .eq("id", id)
+    .eq("tenant_id", c.tenant.id);
+  if (error) return { ok: false, error: error.message };
+
+  logger.info("admin menu category updated", {
+    tenant_id: c.tenant.id,
+    slug: c.tenant.slug,
+    actor_user_id: c.user.id,
+    category_id: id,
+    category_name: name,
+    latency_ms: Date.now() - start,
+  });
+
+  revalidatePath(`/c/${c.tenant.slug}/admin/menu`);
+  revalidatePath(`/c/${c.tenant.slug}/menu`);
+  return { ok: true };
+}
+
+export async function deleteCategory(id: string): Promise<{ ok: boolean; error?: string }> {
+  const c = await adminContext();
+  if (!c.ok) return { ok: false, error: c.error };
+
+  const rate = await tenantRateLimit(c.tenant.id, "admin_action", c.user.id);
+  if (!rate.success) {
+    return { ok: false, error: "Too many admin actions — slow down a little" };
+  }
+
+  const start = Date.now();
+  const admin = getAdminClient(c.tenant.id);
+
+  // Safely null out category_id for items referencing this category first
+  const { error: updateError } = await admin
+    .from("menu_items")
+    .update({ category_id: null })
+    .eq("category_id", id)
+    .eq("tenant_id", c.tenant.id);
+
+  if (updateError) return { ok: false, error: updateError.message };
+
+  const { error } = await admin
+    .from("menu_categories")
+    .delete()
+    .eq("id", id)
+    .eq("tenant_id", c.tenant.id);
+  if (error) return { ok: false, error: error.message };
+
+  logger.info("admin menu category deleted", {
+    tenant_id: c.tenant.id,
+    slug: c.tenant.slug,
+    actor_user_id: c.user.id,
+    category_id: id,
+    latency_ms: Date.now() - start,
+  });
+
+  revalidatePath(`/c/${c.tenant.slug}/admin/menu`);
+  revalidatePath(`/c/${c.tenant.slug}/menu`);
+  return { ok: true };
+}
+
+export async function toggleItemSpecial(id: string, isSpecial: boolean): Promise<{ ok: boolean; error?: string }> {
+  let tenantCtx;
+  try {
+    tenantCtx = await requireTenantContext();
+  } catch {
+    return { ok: false, error: "Tenant context invalid" };
+  }
+
+  const user = await requireRole(["kitchen_staff", "canteen_admin", "super_admin"]);
+  if (!user) {
+    return { ok: false, error: "Not authorised" };
+  }
+
+  const rate = await tenantRateLimit(tenantCtx.tenant.id, "admin_action", user.id);
+  if (!rate.success) {
+    return { ok: false, error: "Too many actions — slow down a little" };
+  }
+
+  const start = Date.now();
+  const admin = getAdminClient(tenantCtx.tenant.id);
+  const { error } = await admin
+    .from("menu_items")
+    .update({ is_special: isSpecial })
+    .eq("id", id)
+    .eq("tenant_id", tenantCtx.tenant.id);
+  if (error) return { ok: false, error: error.message };
+
+  logger.info("menu item special toggled", {
+    tenant_id: tenantCtx.tenant.id,
+    slug: tenantCtx.tenant.slug,
+    actor_user_id: user.id,
+    item_id: id,
+    is_special: isSpecial,
+    latency_ms: Date.now() - start,
+  });
+
+  revalidatePath(`/c/${tenantCtx.tenant.slug}/admin/menu`);
+  revalidatePath(`/c/${tenantCtx.tenant.slug}/menu`);
+  revalidatePath(`/c/${tenantCtx.tenant.slug}/kitchen`);
+  return { ok: true };
+}
+

@@ -5,6 +5,7 @@ import { updateMenuItem, deleteMenuItem } from "@/app/(admin)/admin/_actions";
 import { DeleteItemButton } from "@/components/portal-admin/delete-item-button";
 import type { MenuItem } from "@/lib/db/types";
 import { requireTenantContext } from "@/lib/tenant";
+import { ImageUploadField } from "@/components/portal-admin/image-upload-field";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,7 @@ export default async function EditMenuItemPage({ params }: Props) {
     supabase
       .from("menu_items")
       .select(
-        "id, name, description, price_paise, diet, category_id, image_url, sort_order, status, in_stock"
+        "id, name, description, price_paise, diet, category_id, image_url, sort_order, status, in_stock, is_special"
       )
       .eq("id", id)
       .eq("tenant_id", tenant.id)
@@ -52,6 +53,7 @@ export default async function EditMenuItemPage({ params }: Props) {
     const sort_order = parseInt((formData.get("sort_order") as string | null) ?? "0", 10) || 0;
     const status = (formData.get("status") as "draft" | "live" | "archived") ?? "draft";
     const in_stock = formData.get("in_stock") === "on";
+    const is_special = formData.get("is_special") === "on";
 
     const result = await updateMenuItem(id, {
       name,
@@ -63,6 +65,7 @@ export default async function EditMenuItemPage({ params }: Props) {
       sort_order,
       status,
       in_stock,
+      is_special,
     });
 
     if (result.ok) {
@@ -85,12 +88,12 @@ export default async function EditMenuItemPage({ params }: Props) {
       <div className="mb-5 flex items-center gap-3">
         <Link
           href={`/c/${tenant.slug}/admin/menu`}
-          className="text-[11px] font-mono uppercase tracking-[0.12em] text-graphite-400 hover:text-graphite-700 transition-colors"
+          className="text-[11px] font-mono uppercase tracking-[0.12em] text-admin-ink-3 hover:text-admin-ink-2 transition-colors"
         >
           ← Menu
         </Link>
-        <span className="text-graphite-200">/</span>
-        <h1 className="font-display text-[26px] sm:text-[30px] font-semibold tracking-tight">
+        <span className="text-admin-line-3">/</span>
+        <h1 className="font-display text-[26px] sm:text-[30px] font-semibold tracking-tight text-admin-ink">
           Edit item
         </h1>
       </div>
@@ -98,8 +101,8 @@ export default async function EditMenuItemPage({ params }: Props) {
       <form action={handleUpdate} className="max-w-lg space-y-5">
         {/* Name */}
         <div>
-          <label className="block text-[13px] font-medium text-graphite-700 mb-1" htmlFor="name">
-            Name <span className="text-red-500">*</span>
+          <label className="block text-[13px] font-medium text-admin-ink-2 mb-1" htmlFor="name">
+            Name <span className="text-admin-rose">*</span>
           </label>
           <input
             id="name"
@@ -107,13 +110,13 @@ export default async function EditMenuItemPage({ params }: Props) {
             type="text"
             required
             defaultValue={item.name}
-            className="w-full rounded-lg border border-graphite-200 bg-white px-3 py-2 text-[14px] text-graphite-900 placeholder:text-graphite-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+            className="w-full rounded-lg border border-admin-line-2 bg-admin-bg-card px-3 py-2 text-[14px] text-admin-ink placeholder:text-admin-ink-4 focus:outline-none focus:ring-2 focus:ring-admin-lime-soft focus:border-admin-lime"
           />
         </div>
 
         {/* Description */}
         <div>
-          <label className="block text-[13px] font-medium text-graphite-700 mb-1" htmlFor="description">
+          <label className="block text-[13px] font-medium text-admin-ink-2 mb-1" htmlFor="description">
             Description
           </label>
           <textarea
@@ -121,15 +124,15 @@ export default async function EditMenuItemPage({ params }: Props) {
             name="description"
             rows={3}
             defaultValue={item.description ?? ""}
-            className="w-full rounded-lg border border-graphite-200 bg-white px-3 py-2 text-[14px] text-graphite-900 placeholder:text-graphite-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary resize-none"
+            className="w-full rounded-lg border border-admin-line-2 bg-admin-bg-card px-3 py-2 text-[14px] text-admin-ink placeholder:text-admin-ink-4 focus:outline-none focus:ring-2 focus:ring-admin-lime-soft focus:border-admin-lime resize-none"
             placeholder="Optional short description"
           />
         </div>
 
         {/* Price */}
         <div>
-          <label className="block text-[13px] font-medium text-graphite-700 mb-1" htmlFor="price">
-            Price (₹) <span className="text-red-500">*</span>
+          <label className="block text-[13px] font-medium text-admin-ink-2 mb-1" htmlFor="price">
+            Price (₹) <span className="text-admin-rose">*</span>
           </label>
           <input
             id="price"
@@ -139,13 +142,13 @@ export default async function EditMenuItemPage({ params }: Props) {
             min="0.01"
             step="0.01"
             defaultValue={priceRupees}
-            className="w-full rounded-lg border border-graphite-200 bg-white px-3 py-2 text-[14px] text-graphite-900 placeholder:text-graphite-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+            className="w-full rounded-lg border border-admin-line-2 bg-admin-bg-card px-3 py-2 text-[14px] text-admin-ink placeholder:text-admin-ink-4 focus:outline-none focus:ring-2 focus:ring-admin-lime-soft focus:border-admin-lime"
           />
         </div>
 
         {/* Diet */}
         <div>
-          <span className="block text-[13px] font-medium text-graphite-700 mb-2">Diet</span>
+          <span className="block text-[13px] font-medium text-admin-ink-2 mb-2">Diet</span>
           <div className="flex gap-5">
             {[
               { value: "veg", label: "Veg" },
@@ -158,9 +161,9 @@ export default async function EditMenuItemPage({ params }: Props) {
                   name="diet"
                   value={opt.value}
                   defaultChecked={item.diet === opt.value}
-                  className="accent-primary"
+                  className="accent-admin-lime"
                 />
-                <span className="text-[14px] text-graphite-800">{opt.label}</span>
+                <span className="text-[14px] text-admin-ink-2">{opt.label}</span>
               </label>
             ))}
           </div>
@@ -169,14 +172,14 @@ export default async function EditMenuItemPage({ params }: Props) {
         {/* Category */}
         {cats && cats.length > 0 && (
           <div>
-            <label className="block text-[13px] font-medium text-graphite-700 mb-1" htmlFor="category_id">
+            <label className="block text-[13px] font-medium text-admin-ink-2 mb-1" htmlFor="category_id">
               Category
             </label>
             <select
               id="category_id"
               name="category_id"
               defaultValue={item.category_id ?? ""}
-              className="w-full rounded-lg border border-graphite-200 bg-white px-3 py-2 text-[14px] text-graphite-900 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+              className="w-full rounded-lg border border-admin-line-2 bg-admin-bg-card px-3 py-2 text-[14px] text-admin-ink focus:outline-none focus:ring-2 focus:ring-admin-lime-soft focus:border-admin-lime"
             >
               <option value="">No category</option>
               {cats.map((cat) => (
@@ -188,24 +191,31 @@ export default async function EditMenuItemPage({ params }: Props) {
           </div>
         )}
 
-        {/* Image URL */}
-        <div>
-          <label className="block text-[13px] font-medium text-graphite-700 mb-1" htmlFor="image_url">
-            Image URL (optional)
-          </label>
+        {/* Today's Special Toggle */}
+        <div className="flex items-center gap-2 pt-1 pb-1">
           <input
-            id="image_url"
-            name="image_url"
-            type="url"
-            defaultValue={item.image_url ?? ""}
-            className="w-full rounded-lg border border-graphite-200 bg-white px-3 py-2 text-[14px] text-graphite-900 placeholder:text-graphite-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
-            placeholder="https://..."
+            type="checkbox"
+            id="is_special"
+            name="is_special"
+            defaultChecked={item.is_special}
+            className="rounded border-admin-line-2 text-admin-lime focus:ring-admin-lime accent-admin-lime h-4 w-4"
           />
+          <label htmlFor="is_special" className="text-[13px] font-medium text-admin-ink-2 cursor-pointer select-none">
+            ✨ Mark as Today&apos;s Special item
+          </label>
+        </div>
+
+        {/* Image Upload */}
+        <div>
+          <label className="block text-[13px] font-medium text-admin-ink-2 mb-2">
+            Image
+          </label>
+          <ImageUploadField name="image_url" defaultUrl={item.image_url} />
         </div>
 
         {/* Sort order */}
         <div>
-          <label className="block text-[13px] font-medium text-graphite-700 mb-1" htmlFor="sort_order">
+          <label className="block text-[13px] font-medium text-admin-ink-2 mb-1" htmlFor="sort_order">
             Sort order
           </label>
           <input
@@ -213,20 +223,20 @@ export default async function EditMenuItemPage({ params }: Props) {
             name="sort_order"
             type="number"
             defaultValue={item.sort_order}
-            className="w-full rounded-lg border border-graphite-200 bg-white px-3 py-2 text-[14px] text-graphite-900 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+            className="w-full rounded-lg border border-admin-line-2 bg-admin-bg-card px-3 py-2 text-[14px] text-admin-ink focus:outline-none focus:ring-2 focus:ring-admin-lime-soft focus:border-admin-lime"
           />
         </div>
 
         {/* Status */}
         <div>
-          <label className="block text-[13px] font-medium text-graphite-700 mb-1" htmlFor="status">
+          <label className="block text-[13px] font-medium text-admin-ink-2 mb-1" htmlFor="status">
             Status
           </label>
           <select
             id="status"
             name="status"
             defaultValue={item.status}
-            className="w-full rounded-lg border border-graphite-200 bg-white px-3 py-2 text-[14px] text-graphite-900 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
+            className="w-full rounded-lg border border-admin-line-2 bg-admin-bg-card px-3 py-2 text-[14px] text-admin-ink focus:outline-none focus:ring-2 focus:ring-admin-lime-soft focus:border-admin-lime"
           >
             <option value="draft">Draft</option>
             <option value="live">Live</option>
@@ -241,9 +251,9 @@ export default async function EditMenuItemPage({ params }: Props) {
               type="checkbox"
               name="in_stock"
               defaultChecked={item.in_stock}
-              className="h-4 w-4 rounded border-graphite-300 accent-primary"
+              className="h-4 w-4 rounded border-admin-line-3 accent-admin-lime"
             />
-            <span className="text-[14px] text-graphite-800">Item is in stock</span>
+            <span className="text-[14px] text-admin-ink-2">Item is in stock</span>
           </label>
         </div>
 
@@ -251,13 +261,13 @@ export default async function EditMenuItemPage({ params }: Props) {
         <div className="flex items-center gap-3 pt-2">
           <button
             type="submit"
-            className="rounded-lg bg-primary px-5 py-2 text-[14px] font-medium text-white hover:bg-primary/90 transition-colors"
+            className="rounded-lg bg-admin-lime px-5 py-2 text-[14px] font-medium text-admin-bg hover:bg-admin-lime-2 transition-colors cursor-pointer"
           >
             Save changes
           </button>
           <Link
             href={`/c/${tenant.slug}/admin/menu`}
-            className="rounded-lg px-5 py-2 text-[14px] font-medium text-graphite-600 hover:text-graphite-900 transition-colors"
+            className="rounded-lg px-5 py-2 text-[14px] font-medium text-admin-ink-3 hover:text-admin-ink transition-colors"
           >
             Cancel
           </Link>
@@ -265,8 +275,8 @@ export default async function EditMenuItemPage({ params }: Props) {
       </form>
 
       {/* Delete section */}
-      <div className="mt-12 max-w-lg border-t border-graphite-100 pt-6">
-        <p className="text-[13px] text-graphite-500 mb-3">
+      <div className="mt-12 max-w-lg border-t border-admin-line pt-6">
+        <p className="text-[13px] text-admin-ink-3 mb-3">
           Deleting archives this item. It will no longer appear on the menu.
         </p>
         <DeleteItemButton deleteAction={handleDelete} />

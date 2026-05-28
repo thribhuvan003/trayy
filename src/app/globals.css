@@ -11,7 +11,7 @@
   --font-sans: var(--portal-font-sans, "Inter", ui-sans-serif, system-ui);
   --font-display: var(--portal-font-display, "Fraunces", ui-serif, Georgia);
   --font-serif: "Fraunces", ui-serif, Georgia;
-  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --font-mono: var(--portal-font-mono, "JetBrains Mono", ui-monospace, Menlo, monospace);
 
   /* Student — ocean */
   --color-ocean-50:  #eaf3fb;
@@ -56,6 +56,23 @@
   --color-violet-DEFAULT:#a78bfa;
 
   /* Universal */
+  --color-primary: var(--color-ocean-500);
+  --color-admin-bg: var(--admin-bg);
+  --color-admin-bg-2: var(--admin-bg-2);
+  --color-admin-bg-3: var(--admin-bg-3);
+  --color-admin-bg-4: var(--admin-bg-4);
+  --color-admin-bg-card: var(--admin-bg-card);
+  --color-admin-line: var(--admin-line);
+  --color-admin-line-2: var(--admin-line-2);
+  --color-admin-line-3: var(--admin-line-3);
+  --color-admin-ink: var(--admin-ink);
+  --color-admin-ink-2: var(--admin-ink-2);
+  --color-admin-ink-3: var(--admin-ink-3);
+  --color-admin-ink-4: var(--admin-ink-4);
+  --color-admin-lime: var(--admin-lime);
+  --color-admin-lime-2: var(--admin-lime-2);
+  --color-admin-lime-soft: var(--admin-lime-soft);
+
   --color-ink: #0a1628;
   --color-paper: #ffffff;
   --color-paper-dim: #f7f9fc;
@@ -115,12 +132,18 @@
 
 /* ─── Portal overrides ─── */
 [data-portal="student"] {
-  --portal-font-sans:    var(--font-bricolage), ui-sans-serif, system-ui;
+  --portal-font-sans:    var(--font-jakarta), var(--font-geist), ui-sans-serif, system-ui;
   --portal-font-display: var(--font-bricolage), ui-sans-serif, system-ui;
+  --color-primary:       var(--color-ocean-500);
+  --scrollbar-thumb:       rgba(26, 26, 25, 0.18);
+  --scrollbar-thumb-hover: rgba(26, 26, 25, 0.28);
 }
 [data-portal="kitchen"] {
-  --portal-font-sans:    var(--font-manrope), ui-sans-serif, system-ui;
+  --portal-font-sans:    var(--font-jakarta), var(--font-geist), ui-sans-serif, system-ui;
   --portal-font-display: var(--font-newsreader), ui-serif, Georgia;
+  --color-primary:       var(--kt-tomato);
+  --scrollbar-thumb:       rgba(42, 22, 10, 0.18);
+  --scrollbar-thumb-hover: rgba(42, 22, 10, 0.28);
 
   /* Cursor kitchen design-spec variables — matches kitchen.html exactly */
   --kt-cream:        #f4e6c1;
@@ -186,36 +209,54 @@
   animation: stampIn 0.35s cubic-bezier(0.5, 1.5, 0.5, 1);
 }
 [data-portal="admin"] {
-  --portal-font-sans:    var(--font-manrope), ui-sans-serif, system-ui;
+  --portal-font-sans:    var(--font-jakarta), var(--font-geist), ui-sans-serif, system-ui;
   --portal-font-display: var(--font-fraunces), ui-serif, Georgia;
   --portal-font-mono:    var(--font-jetbrains), ui-monospace, Menlo, monospace;
 
-  /* Admin Dark Editorial Crimson & Charcoal palette — reversed Theme H colors */
-  --admin-bg:          #1A1A19;
-  --admin-bg-2:        #222221;
-  --admin-bg-3:        #2A2A29;
-  --admin-bg-4:        #333332;
-  --admin-bg-card:     #222221;
-  --admin-line:        rgba(244, 239, 230, 0.08);
-  --admin-line-2:      rgba(244, 239, 230, 0.15);
-  --admin-line-3:      rgba(244, 239, 230, 0.25);
-  --admin-ink:         #F4EFE6;
-  --admin-ink-2:       #D0C7B7;
-  --admin-ink-3:       #908879;
-  --admin-ink-4:       #60594B;
-  --admin-lime:        #cdfa50;
-  --admin-lime-2:      #b2df40;
-  --admin-lime-soft:   rgba(205, 250, 80, 0.12);
-  --admin-amber:       #ffb22a;
-  --admin-amber-soft:  rgba(255, 178, 42, 0.14);
-  --admin-rose:        #ff6b6b;
-  --admin-rose-soft:   rgba(255, 107, 107, 0.14);
-  --admin-mint:        #3fe6a3;
-  --admin-mint-soft:   rgba(63, 230, 163, 0.14);
-  --admin-sky:         #5cb1ff;
-  --admin-sky-soft:    rgba(92, 177, 255, 0.14);
-  --admin-violet:      #a78bfa;
-  --admin-violet-soft: rgba(167, 139, 250, 0.14);
+  /* Universal scrollbar settings */
+  --scrollbar-thumb:       rgba(26, 26, 25, 0.18);
+  --scrollbar-thumb-hover: rgba(26, 26, 25, 0.28);
+
+  /* Primary branding */
+  --color-primary:         var(--admin-lime);
+
+  /* Admin Bright (Light) Theme - Inverted Graphite & Warm Pulp */
+  --color-graphite-900: #FDFBF7; /* Dashboard background */
+  --color-graphite-800: #F6F3EB; /* Sidebar background */
+  --color-graphite-700: #EAE5DA; /* Card backgrounds/hover */
+  --color-graphite-600: #DFD9CD; /* Form elements / borders */
+  --color-graphite-500: #908879; /* Extra muted / labels */
+  --color-graphite-400: #7D766A; /* Muted text / helper text */
+  --color-graphite-300: #5E5950; /* Body text */
+  --color-graphite-200: #444440; /* Strong body / subheadings */
+  --color-graphite-100: #1A1A19; /* Primary text / headings */
+
+  --admin-bg:          var(--color-graphite-900);
+  --admin-bg-2:        var(--color-graphite-800);
+  --admin-bg-3:        var(--color-graphite-700);
+  --admin-bg-4:        var(--color-graphite-600);
+  --admin-bg-card:     #FFFFFF;
+  --admin-line:        rgba(26, 26, 25, 0.08);
+  --admin-line-2:      rgba(26, 26, 25, 0.15);
+  --admin-line-3:      rgba(26, 26, 25, 0.25);
+  --admin-ink:         var(--color-graphite-100);
+  --admin-ink-2:       var(--color-graphite-200);
+  --admin-ink-3:       var(--color-graphite-400);
+  --admin-ink-4:       var(--color-graphite-500);
+
+  --admin-lime:        #8fb305; /* A readable chartreuse green for light bg */
+  --admin-lime-2:      #769404;
+  --admin-lime-soft:   rgba(143, 179, 5, 0.08);
+  --admin-amber:       #d97706;
+  --admin-amber-soft:  rgba(217, 119, 6, 0.08);
+  --admin-rose:        #dc2626;
+  --admin-rose-soft:   rgba(220, 38, 38, 0.08);
+  --admin-mint:        #059669;
+  --admin-mint-soft:   rgba(5, 150, 105, 0.08);
+  --admin-sky:         #0284c7;
+  --admin-sky-soft:    rgba(2, 132, 199, 0.08);
+  --admin-violet:      #7c3aed;
+  --admin-violet-soft: rgba(124, 58, 237, 0.08);
 }
 
 /* ─── Dark-mode token overrides ─── */
@@ -270,14 +311,176 @@ html.dark [data-portal="kitchen"] {
   --kt-line:    rgba(244,230,193,0.10);
   --kt-line-2:  rgba(244,230,193,0.20);
 }
-/* Admin stays as designed — already a dark theme. */
+/* Student dark: scrollbar variables */
+html.dark [data-portal="student"] {
+  --scrollbar-thumb:       rgba(244, 239, 230, 0.18);
+  --scrollbar-thumb-hover: rgba(244, 239, 230, 0.28);
+}
+/* Kitchen dark: scrollbar variables */
+html.dark [data-portal="kitchen"] {
+  --scrollbar-thumb:       rgba(244, 230, 193, 0.18);
+  --scrollbar-thumb-hover: rgba(244, 230, 193, 0.28);
+}
+/* Admin dark theme overrides */
+html.dark [data-portal="admin"] {
+  --scrollbar-thumb:       rgba(244, 239, 230, 0.18);
+  --scrollbar-thumb-hover: rgba(244, 239, 230, 0.28);
+
+  /* Admin Night (Dark) Theme - Charcoal & Lime Glow */
+  --color-graphite-900: #0a0d12;
+  --color-graphite-800: #0f131a;
+  --color-graphite-700: #161b25;
+  --color-graphite-600: #1c2230;
+  --color-graphite-500: #3f4756;
+  --color-graphite-400: #646d80;
+  --color-graphite-300: #a3acbd;
+  --color-graphite-200: #e8ecf2;
+  --color-graphite-100: #f4f6fa;
+
+  --admin-bg:          var(--color-graphite-900);
+  --admin-bg-2:        var(--color-graphite-800);
+  --admin-bg-3:        var(--color-graphite-700);
+  --admin-bg-4:        var(--color-graphite-600);
+  --admin-bg-card:     #222221;
+  --admin-line:        rgba(244, 239, 230, 0.08);
+  --admin-line-2:      rgba(244, 239, 230, 0.15);
+  --admin-line-3:      rgba(244, 239, 230, 0.25);
+  --admin-ink:         var(--color-graphite-100);
+  --admin-ink-2:       var(--color-graphite-200);
+  --admin-ink-3:       var(--color-graphite-400);
+  --admin-ink-4:       var(--color-graphite-500);
+
+  --admin-lime:        #cdfa50;
+  --admin-lime-2:      #b2df40;
+  --admin-lime-soft:   rgba(205, 250, 80, 0.12);
+  --admin-amber:       #ffb22a;
+  --admin-amber-soft:  rgba(255, 178, 42, 0.14);
+  --admin-rose:        #ff6b6b;
+  --admin-rose-soft:   rgba(255, 107, 107, 0.14);
+  --admin-mint:        #3fe6a3;
+  --admin-mint-soft:   rgba(63, 230, 163, 0.14);
+  --admin-sky:         #5cb1ff;
+  --admin-sky-soft:    rgba(92, 177, 255, 0.14);
+  --admin-violet:      #a78bfa;
+  --admin-violet-soft: rgba(167, 139, 250, 0.14);
+}
+
+/* ─── Portal Dropdown Selects and Type consistency ─── */
+[data-portal] {
+  font-family: var(--font-sans);
+}
+[data-portal] input,
+[data-portal] textarea,
+[data-portal] select,
+[data-portal] button {
+  font-family: var(--font-sans) !important;
+}
+
+/* Beautiful curved select styling for Admin Portal */
+[data-portal="admin"] select {
+  appearance: none !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%237D766A'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  background-size: 16px !important;
+  padding-right: 36px !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+}
+html.dark [data-portal="admin"] select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23646d80'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") !important;
+}
+[data-portal="admin"] select option {
+  background-color: var(--admin-bg-card, #ffffff);
+  color: var(--admin-ink, #000000);
+  font-family: var(--portal-font-sans);
+}
+
+/* Beautiful curved select styling for Kitchen Portal */
+[data-portal="kitchen"] select {
+  appearance: none !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%235c3e26'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  background-size: 16px !important;
+  padding-right: 36px !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+}
+html.dark [data-portal="kitchen"] select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23d4b990'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") !important;
+}
+[data-portal="kitchen"] select option {
+  background-color: var(--kt-paper, #fffaf0);
+  color: var(--kt-ink, #2a160a);
+  font-family: var(--portal-font-sans);
+}
+
+/* Beautiful curved select styling for Student Portal */
+[data-portal="student"] select {
+  appearance: none !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%231A1A19'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  background-size: 16px !important;
+  padding-right: 36px !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+}
+html.dark [data-portal="student"] select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23F4EFE6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") !important;
+}
+[data-portal="student"] select option {
+  background-color: var(--student-card-bg, #ffffff);
+  color: var(--color-ink, #1A1A19);
+  font-family: var(--portal-font-sans);
+}
+
+/* Base option tag stylings for all standard selects */
+select option {
+  font-family: inherit;
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+}
 
 /* ─── Base resets ─── */
 @layer base {
+  :root {
+    --scrollbar-thumb: rgba(26, 26, 25, 0.18);
+    --scrollbar-thumb-hover: rgba(26, 26, 25, 0.28);
+  }
+  html.dark {
+    --scrollbar-thumb: rgba(244, 239, 230, 0.18);
+    --scrollbar-thumb-hover: rgba(244, 239, 230, 0.28);
+  }
   html { color-scheme: light; }
   html.dark { color-scheme: dark; }
   html {
     overflow-x: hidden;
+  }
+
+  /* Curved and matching scrollbars globally */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+    border-radius: 9999px;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scrollbar-thumb-hover);
+    border: 3px solid transparent;
+    background-clip: padding-box;
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
   }
   body {
     background: var(--color-paper);

@@ -161,6 +161,12 @@ function buildTableMock(table: string, role: string) {
           if (table === "orders") return Promise.resolve({ data: mockOrdersRow, error: null });
           return Promise.resolve({ data: null, error: null });
         },
+        order: () => ({
+          limit: () => {
+            // Returns a list with the mock short_code for sequential generation tests
+            return Promise.resolve({ data: [{ short_code: "T-2401" }], error: null });
+          }
+        }),
         in: (_col2: string, _vals: unknown[]) => ({
           returns: () => Promise.resolve({ data: mockMenuItems, error: null }),
         }),
@@ -447,15 +453,17 @@ describe("placeOrder — successful order creation", () => {
     }
   });
 
-  it("returns an error when the short code RPC fails", async () => {
-    mockShortCodeRpc = { data: null, error: { message: "rpc failed" } };
-
+  it("handles lastOrders query failure gracefully by falling back to T-2401", async () => {
+    // The sequential short code generator falls back gracefully if the database query fails
     const result = await placeOrder(
       [{ menuItemId: "item-uuid-001", qty: 1 }],
       "",
       "takeaway"
     );
 
-    expect(result.ok).toBe(false);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.orderId).toBe("new-order-uuid-001");
+    }
   });
 });

@@ -110,16 +110,14 @@ export function MenuBoard({
 
   const specialsCategory = useMemo(() => categories.find((c) => c.name.toLowerCase() === "specials"), [categories]);
   const specialsItems = useMemo(() => !specialsCategory ? [] : items.filter((it) => it.category_id === specialsCategory.id), [items, specialsCategory]);
-  const showSpecials = activeCat === "all" || (specialsCategory && activeCat === specialsCategory.id);
   const filteredSpecials = useMemo(() => {
-    if (!showSpecials) return [];
     const needle = q.trim().toLowerCase();
     return specialsItems.filter((it) => {
       if (vegOnly && it.diet !== "veg") return false;
       if (!needle) return true;
       return it.name.toLowerCase().includes(needle) || (it.description ?? "").toLowerCase().includes(needle);
     });
-  }, [showSpecials, specialsItems, vegOnly, q]);
+  }, [specialsItems, vegOnly, q]);
 
   const otherItems = useMemo(() => !specialsCategory ? items : items.filter((it) => it.category_id !== specialsCategory.id), [items, specialsCategory]);
   const filteredOther = useMemo(() => {
@@ -141,9 +139,6 @@ export function MenuBoard({
     return m;
   }, [filteredOther]);
 
-  const showOther = activeCat === "all" || (!!specialsCategory && activeCat !== specialsCategory.id) || !specialsCategory;
-  const activeCategoryList = useMemo(() => activeCat === "all" ? categories : categories.filter((c) => c.id === activeCat), [categories, activeCat]);
-
   const { orderType, setOrderType, tableLabel, setTableLabel, lines, clear } = useCart();
   const cartDec = useCart((s) => s.decrement);
   const cartInc = useCart((s) => s.increment);
@@ -158,6 +153,59 @@ export function MenuBoard({
     const wait = Math.min(20, Math.max(3, 3 + (sib.pending_orders_count ?? 0)));
     return `~${wait} min wait`;
   }
+
+  const scrollToCategory = (catId: string) => {
+    setActiveCat(catId);
+    if (catId === "all") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    const targetId = (specialsCategory && catId === specialsCategory.id)
+      ? "category-specials"
+      : `category-${catId}`;
+    const el = document.getElementById(targetId);
+    if (el) {
+      const offset = isDesktop ? 80 : 120; // sticky header + mobile chip bar offset
+      const bodyRect = document.body.getBoundingClientRect().top;
+      const elementRect = el.getBoundingClientRect().top;
+      const elementPosition = elementRect - bodyRect;
+      const offsetPosition = elementPosition - offset;
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth"
+      });
+    }
+  };
+
+  useEffect(() => {
+    const observerOptions = {
+      root: null,
+      rootMargin: "-120px 0px -60% 0px",
+      threshold: 0
+    };
+
+    const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const id = entry.target.id;
+          if (id === "category-specials") {
+            setActiveCat(specialsCategory?.id || "all");
+          } else if (id.startsWith("category-")) {
+            const catId = id.replace("category-", "");
+            setActiveCat(catId);
+          }
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+    const targets = document.querySelectorAll("[data-category-section]");
+    targets.forEach((t) => observer.observe(t));
+
+    return () => {
+      targets.forEach((t) => observer.unobserve(t));
+    };
+  }, [categories, specialsCategory, items]);
 
   useEffect(() => {
     const sb = getBrowserClient();
@@ -199,7 +247,7 @@ export function MenuBoard({
         <p style={{ fontFamily: S.fontDisplay, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: S.muted, margin: "0 12px 14px" }}>Browse</p>
         <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 4 }}>
           <li>
-            <button onClick={() => setActiveCat("all")} style={{ width: "100%", textAlign: "left", padding: "10px 14px", borderRadius: S.radiusSm, fontSize: 15, fontWeight: 500, background: activeCat === "all" ? S.accentDim : "transparent", color: activeCat === "all" ? S.accent : S.muted, cursor: "pointer", border: "none", transition: "color .2s, background .2s", fontFamily: S.fontDisplay }}>
+            <button onClick={() => scrollToCategory("all")} style={{ width: "100%", textAlign: "left", padding: "10px 14px", borderRadius: S.radiusSm, fontSize: 15, fontWeight: 500, background: activeCat === "all" ? S.accentDim : "transparent", color: activeCat === "all" ? S.accent : S.muted, cursor: "pointer", border: "none", transition: "color .2s, background .2s", fontFamily: S.fontDisplay }}>
               All items
               <span style={{ display: "block", fontSize: 11, color: S.muted2, marginTop: 2, fontWeight: 500 }}>{items.length} dishes</span>
             </button>
@@ -209,7 +257,7 @@ export function MenuBoard({
             const isActive = activeCat === cat.id;
             return (
               <li key={cat.id}>
-                <button onClick={() => setActiveCat(cat.id)} style={{ width: "100%", textAlign: "left", padding: "10px 14px", borderRadius: S.radiusSm, fontSize: 15, fontWeight: 500, background: isActive ? S.accentDim : "transparent", color: isActive ? S.accent : S.muted, cursor: "pointer", border: "none", transition: "color .2s, background .2s", fontFamily: S.fontDisplay }}>
+                <button onClick={() => scrollToCategory(cat.id)} style={{ width: "100%", textAlign: "left", padding: "10px 14px", borderRadius: S.radiusSm, fontSize: 15, fontWeight: 500, background: isActive ? S.accentDim : "transparent", color: isActive ? S.accent : S.muted, cursor: "pointer", border: "none", transition: "color .2s, background .2s", fontFamily: S.fontDisplay }}>
                   {cat.name}
                   <span style={{ display: "block", fontSize: 11, color: S.muted2, marginTop: 2, fontWeight: 500 }}>{cnt} dish{cnt === 1 ? "" : "es"}</span>
                 </button>
@@ -288,12 +336,15 @@ export function MenuBoard({
             </div>
           </div>
 
-          {/* Mobile category pills */}
-          <div style={{ display: isDesktop ? "none" : "flex", gap: 8, overflowX: "auto", paddingBottom: 16, margin: "0 -4px", scrollbarWidth: "none" }}>
+          {/* Mobile sticky category chips */}
+          <div 
+            className="sticky top-[56px] z-20 py-3 mb-4 backdrop-blur-md bg-[color:var(--color-paper)]/85 border-b border-[color:var(--color-line)] -mx-4 px-4 sm:-mx-5 sm:px-5 flex gap-2 overflow-x-auto"
+            style={{ display: isDesktop ? "none" : "flex", scrollbarWidth: "none" }}
+          >
             {[{ id: "all", name: "All items" }, ...categories].map((cat) => {
               const isActive = activeCat === cat.id;
               return (
-                <button key={cat.id} onClick={() => setActiveCat(cat.id)} style={{ flexShrink: 0, padding: "8px 14px", borderRadius: 999, fontSize: 14, fontWeight: 500, border: isActive ? "1px solid transparent" : `1px solid ${S.border}`, color: isActive ? "#F4EFE6" : S.muted, background: isActive ? S.accent : S.surface, cursor: "pointer", transition: "all .2s", fontFamily: S.fontDisplay }}>
+                <button key={cat.id} onClick={() => scrollToCategory(cat.id)} style={{ flexShrink: 0, padding: "8px 14px", borderRadius: 999, fontSize: 13, fontWeight: 600, border: isActive ? "1px solid transparent" : `1px solid ${S.border}`, color: isActive ? "#FAF8F5" : S.muted, background: isActive ? S.accent : S.surface, cursor: "pointer", transition: "all .2s", fontFamily: S.fontDisplay }}>
                   {cat.name}
                 </button>
               );
@@ -308,9 +359,9 @@ export function MenuBoard({
             </div>
           )}
 
-          {/* Specials carousel */}
-          {showSpecials && filteredSpecials.length > 0 && (
-            <div style={{ marginBottom: 32 }}>
+          {/* Specials Section */}
+          {filteredSpecials.length > 0 && (
+            <div id="category-specials" data-category-section="" style={{ marginBottom: 32, scrollMarginTop: "140px" }} className="pt-2">
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
                 <h2 style={{ margin: 0, fontFamily: S.fontDisplay, fontSize: "clamp(1.5rem, 5vw, 1.95rem)", fontWeight: 400, letterSpacing: "-0.02em", lineHeight: 1.15 }}>Today&apos;s <span style={{ fontStyle: "italic" }}>specials.</span></h2>
                 <span style={{ fontFamily: S.fontMono, fontSize: 11, letterSpacing: "0.06em", color: "#0c8a43", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}>
@@ -324,20 +375,20 @@ export function MenuBoard({
           )}
 
           {/* Menu grid */}
-          {showOther && filteredOther.length > 0 && (
-            <div>
-              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
+          {filteredOther.length > 0 && (
+            <div className="flex flex-col gap-6">
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 4 }}>
                 <h2 style={{ margin: 0, fontFamily: S.fontDisplay, fontSize: "clamp(1.5rem, 5vw, 1.95rem)", fontWeight: 400, letterSpacing: "-0.02em", lineHeight: 1.15 }}>
-                  {activeCat === "all" ? "Menu" : (categories.find((c) => c.id === activeCat)?.name ?? "Menu")}
+                  Menu
                 </h2>
                 <p style={{ margin: 0, fontFamily: S.fontMono, fontSize: 12, color: S.muted }}>{filteredOther.length} item{filteredOther.length === 1 ? "" : "s"}</p>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-                {activeCategoryList.filter((cat) => !specialsCategory || cat.id !== specialsCategory.id).map((cat) => {
+                {categories.filter((cat) => !specialsCategory || cat.id !== specialsCategory.id).map((cat) => {
                   const list = byCat.get(cat.id) ?? [];
                   if (list.length === 0) return null;
                   return (
-                    <div key={cat.id}>
+                    <div key={cat.id} id={`category-${cat.id}`} data-category-section="" style={{ scrollMarginTop: "140px" }} className="pt-2">
                       <h3 style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: S.muted, margin: "0 0 12px", paddingLeft: 8, borderLeft: `2px solid ${S.accent}`, fontFamily: S.fontDisplay }}>{cat.name}</h3>
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
                         {list.map((it) => <RegularCard key={it.id} item={it} onAdd={cartAdd} onInc={cartInc} onDec={cartDec} />)}
@@ -345,11 +396,11 @@ export function MenuBoard({
                     </div>
                   );
                 })}
-                {activeCat === "all" && (() => {
+                {(() => {
                   const uncategorised = byCat.get(null) ?? [];
                   if (uncategorised.length === 0) return null;
                   return (
-                    <div key="__uncategorised">
+                    <div key="__uncategorised" id="category-uncategorised" data-category-section="" style={{ scrollMarginTop: "140px" }} className="pt-2">
                       <h3 style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: S.muted, margin: "0 0 12px", paddingLeft: 8, borderLeft: `2px solid ${S.accent}`, fontFamily: S.fontDisplay }}>Other</h3>
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
                         {uncategorised.map((it) => <RegularCard key={it.id} item={it} onAdd={cartAdd} onInc={cartInc} onDec={cartDec} />)}
@@ -363,45 +414,6 @@ export function MenuBoard({
         </div>
       </main>
 
-      {/* RIGHT: Desktop Cart Sidebar */}
-      <aside style={{ display: isDesktop ? "flex" : "none", width: 320, flexShrink: 0, flexDirection: "column", border: `1px solid ${S.border}`, borderRadius: S.radius, background: S.cardBg, position: "sticky", top: "calc(56px + 16px)", height: "calc(100dvh - 56px - 32px)", alignSelf: "flex-start", margin: "16px 16px 16px 8px", boxShadow: "0 4px 20px rgba(0,0,0,0.04)", overflow: "hidden" }}>
-        <div style={{ padding: "20px 20px 12px", borderBottom: `1px solid ${S.border}` }}>
-          <h3 style={{ margin: 0, fontFamily: S.fontDisplay, fontSize: "1.5rem", fontWeight: 400, lineHeight: 1.12 }}>Your <span style={{ fontStyle: "italic" }}>order.</span></h3>
-          <p style={{ margin: "4px 0 0", fontSize: 14, color: S.muted }}>Paying to: {tenantName}</p>
-        </div>
-        <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px" }}>
-          {cartCount === 0 ? (
-            <div style={{ padding: "32px 12px", textAlign: "center", color: S.muted, fontSize: 15, lineHeight: 1.5 }}>
-              <div style={{ fontSize: 34, opacity: 0.5, marginBottom: 8 }}>🛒</div>
-              <p style={{ margin: 0 }}>Your tray is empty.</p>
-              <p style={{ margin: "4px 0 0", fontSize: 13 }}>Add items from the menu.</p>
-            </div>
-          ) : (
-            lines.map((l) => (
-              <div key={l.menuItemId} style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "12px 0", borderBottom: `1px solid ${S.border}` }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ margin: "0 0 2px", fontSize: 15, fontWeight: 600, lineHeight: 1.3, fontFamily: S.fontDisplay }}>{l.name}</p>
-                  <p style={{ margin: 0, fontFamily: S.fontMono, fontSize: 12, color: S.muted }}>{formatRupees(l.pricePaise)} each</p>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                  <button aria-label="Decrease" onClick={() => cartDec(l.menuItemId)} style={{ width: 28, height: 28, borderRadius: 8, border: `1px solid ${S.border}`, cursor: "pointer", background: "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}><Minus size={12} /></button>
-                  <span style={{ fontFamily: S.fontMono, fontSize: 13, minWidth: 18, textAlign: "center" }}>{l.qty}</span>
-                  <button aria-label="Increase" onClick={() => cartInc(l.menuItemId)} style={{ width: 28, height: 28, borderRadius: 8, border: `1px solid ${S.border}`, cursor: "pointer", background: "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}><Plus size={12} /></button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-        {cartCount > 0 && (
-          <div style={{ padding: "16px 20px 20px", borderTop: `1px solid ${S.border}` }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
-              <span style={{ color: S.muted, fontSize: 15 }}>Total</span>
-              <span style={{ fontFamily: S.fontDisplay, fontSize: "1.35rem", fontWeight: 700, fontVariantNumeric: "tabular-nums", color: S.accent }}>{formatRupees(cartTotal)}</span>
-            </div>
-            <button onClick={() => clear()} style={{ width: "100%", padding: 12, marginTop: 8, borderRadius: S.radiusSm, fontSize: 15, color: S.muted, border: `1px solid ${S.border}`, background: "transparent", cursor: "pointer", fontFamily: S.fontDisplay }}>Clear cart</button>
-          </div>
-        )}
-      </aside>
 
       {/* Mobile Floating Browse Button */}
       <Drawer.Root open={isBrowseOpen} onOpenChange={setIsBrowseOpen}>

@@ -166,8 +166,9 @@ export default async function StudentMenuPage() {
     },
   ];
 
-  const categories = catsData && catsData.length > 0 ? catsData : mockCats;
-  const items = itemsData && itemsData.length > 0 ? itemsData : mockItems;
+  const isDemo = tenant.id === "d3b07384-d113-4e6b-a25e-e4a81e355fd5";
+  const categories = (catsData !== null && (!isDemo || catsData.length > 0)) ? catsData : mockCats;
+  const items = (itemsData !== null && (!isDemo || itemsData.length > 0)) ? itemsData : mockItems;
 
   const isClosed = statusData ? !statusData.is_open : false;
   const pausedUntil = statusData?.paused_until ?? null;

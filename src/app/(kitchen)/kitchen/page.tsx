@@ -28,7 +28,7 @@ type LineRow = {
   diet_snapshot: "veg" | "nonveg" | "egg";
   menu_item_id: string | null;
 };
-type MarqueeRow = { id: string; name: string; price_paise: number; diet: "veg" | "nonveg" | "egg" };
+type KitchenMenuItemRow = { id: string; name: string; price_paise: number; diet: "veg" | "nonveg" | "egg"; is_special: boolean; in_stock: boolean; category_id: string | null };
 
 export default async function KitchenPage() {
   // Use the standardized production-grade tenant context (fail-fast + rich logging).
@@ -50,7 +50,7 @@ export default async function KitchenPage() {
   today.setHours(0, 0, 0, 0);
   const todayIso = today.toISOString();
 
-  const [{ data: orders }, { data: marquee }] = await Promise.all([
+  const [{ data: orders }, { data: menuItems }] = await Promise.all([
     supabase
       .from("orders")
       .select(
@@ -64,13 +64,11 @@ export default async function KitchenPage() {
       .returns<OrderRow[]>(),
     supabase
       .from("menu_items")
-      .select("id, name, price_paise, diet")
+      .select("id, name, price_paise, diet, is_special, in_stock, category_id")
       .eq("tenant_id", tenant.id)
       .eq("status", "live")
-      .eq("in_stock", true)
       .order("sort_order")
-      .limit(24)
-      .returns<MarqueeRow[]>(),
+      .returns<KitchenMenuItemRow[]>(),
   ]);
 
   const orderIds = (orders ?? []).map((o) => o.id);
@@ -91,7 +89,7 @@ export default async function KitchenPage() {
       tenantSlug={tenant.slug}
       orders={orders ?? []}
       lines={filteredLines}
-      marquee={marquee ?? []}
+      menuItems={menuItems ?? []}
     />
   );
 }
