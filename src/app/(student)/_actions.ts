@@ -854,10 +854,17 @@ export async function initiateRefundForOrder(
     amount_paise: payment.amount_paise, refund_id: refundId,
   });
 
-  // Mark payment as refunded.
+  // P1-9 FIX: Store refund_id atomically with the status transition.
+  // The reconcile cron now queries WHERE refund_id IS NULL — so if this update
+  // succeeds, the cron will never retry the refund. If it fails, the next cron
+  // run sees no refund_id, retries Razorpay, but Razorpay deduplicates via
+  // the payment_id + amount, so no double-refund is possible.
   await admin
     .from("payments")
-    .update({ status: "refunded" as unknown as "initiated" })
+    .update({
+      status: "refunded" as unknown as "initiated",
+      refund_id: refundId,
+    } as any)
     .eq("id", payment.id)
     .eq("tenant_id", tenantId);
 

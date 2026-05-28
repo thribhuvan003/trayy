@@ -199,12 +199,16 @@ export async function POST(req: NextRequest) {
   if (cancelledOrders && cancelledOrders.length > 0) {
     const cancelledIds = cancelledOrders.map((o) => o.id);
 
-    // Find which of those have a still-captured payment (not yet refunded).
+    // P1-9 FIX: Query WHERE refund_id IS NULL in addition to status='captured'.
+    // If a previous run initiated the Razorpay refund but the DB update failed,
+    // the payment row stays 'captured' but refund_id is set — so we skip it.
+    // This prevents the infinite refund retry loop.
     const { data: capturedPayments } = await admin
       .from("payments")
       .select("order_id, tenant_id")
       .in("order_id", cancelledIds)
       .eq("status", "captured")
+      .is("refund_id", null)
       .returns<RefundCandidate[]>();
 
     for (const pay of capturedPayments ?? []) {
@@ -217,15 +221,117 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // ── P1-1: DLQ drain ────────────────────────────────────────────────────────
+  // Webhooks that arrived before the orders row existed land in webhook_dlq
+  // with processed_at = null. Re-process them here using safe_capture_payment
+  // or safe_fail_payment — same idempotent path as the live webhook.
+  // Cap at 50 per run so this never dominates the cron budget.
+
+  type DlqRow = {
+    id: string;
+    tenant_id: string | null;
+    razorpay_event: string;
+    razorpay_payment_id: string | null;
+    razorpay_order_id: string | null;
+    payload: Record<string, unknown>;
+  };
+
+  let dlqDrained = 0;
+  const { data: dlqRows } = await admin
+    .from("webhook_dlq" as any)
+    .select("id, tenant_id, razorpay_event, razorpay_payment_id, razorpay_order_id, payload")
+    .is("processed_at", null)
+    .order("created_at", { ascending: true })
+    .limit(50)
+    .returns<DlqRow[]>();
+
+  if (dlqRows && dlqRows.length > 0) {
+    for (const row of dlqRows) {
+      try {
+        // Resolve the order row via the stored notes (same as live webhook path)
+        const payload = row.payload as any;
+        const tenantSlug = payload?.payload?.payment?.entity?.notes?.tenant as string | undefined;
+        const tenantOrderId = payload?.payload?.payment?.entity?.notes?.order as string | undefined;
+        const paymentId = payload?.payload?.payment?.entity?.id as string | undefined;
+        const razorpayOrderId = payload?.payload?.payment?.entity?.order_id as string | undefined;
+        const amount = payload?.payload?.payment?.entity?.amount as number | undefined;
+        const event = row.razorpay_event;
+
+        if (!tenantOrderId || !razorpayOrderId) {
+          // Not enough context — mark as processed to stop retrying
+          await (admin as any).from("webhook_dlq").update({ processed_at: new Date().toISOString() }).eq("id", row.id);
+          continue;
+        }
+
+        const { data: orderRow } = await admin
+          .from("orders")
+          .select("id, tenant_id, status")
+          .eq("id", tenantOrderId)
+          .maybeSingle<{ id: string; tenant_id: string; status: string }>();
+
+        if (!orderRow) {
+          // Order still not found — leave for next run (may be permanent if order never landed)
+          continue;
+        }
+
+        const tenantAdmin = getAdminClient(orderRow.tenant_id);
+        const eventId = `${event}:${paymentId ?? "x"}:dlq_drain`;
+
+        if (event === "payment.captured" || event === "payment.authorized") {
+          await (tenantAdmin as any).rpc("safe_capture_payment", {
+            p_order_id: orderRow.id,
+            p_tenant_id: orderRow.tenant_id,
+            p_razorpay_pid: paymentId ?? null,
+            p_razorpay_oid: razorpayOrderId,
+            p_amount_paise: amount ?? 0,
+            p_raw_event_id: eventId,
+          });
+        } else if (event === "payment.failed") {
+          await (tenantAdmin as any).rpc("safe_fail_payment", {
+            p_order_id: orderRow.id,
+            p_tenant_id: orderRow.tenant_id,
+            p_razorpay_oid: razorpayOrderId,
+          });
+        }
+
+        // Mark as processed regardless of RPC result (idempotent; won't re-queue)
+        await (admin as any).from("webhook_dlq").update({ processed_at: new Date().toISOString() }).eq("id", row.id);
+        dlqDrained += 1;
+
+        logger.info("dlq entry drained", {
+          job: "reconcile-payments", dlq_id: row.id,
+          event, tenant_id: orderRow.tenant_id, order_id: orderRow.id,
+        });
+      } catch (dlqErr) {
+        logger.error("dlq drain entry failed", dlqErr, {
+          job: "reconcile-payments", dlq_id: row.id,
+        });
+      }
+    }
+
+    // Alert if DLQ depth is growing — indicates a systemic webhook problem
+    const { count: unprocessedCount } = await (admin as any)
+      .from("webhook_dlq")
+      .select("id", { count: "exact", head: true })
+      .is("processed_at", null);
+
+    if ((unprocessedCount ?? 0) > 3) {
+      logger.error("ALERT: webhook_dlq depth > 3 — check Razorpay webhook delivery", null, {
+        job: "reconcile-payments", unprocessed_dlq_depth: unprocessedCount,
+      });
+    }
+  }
+
   const duration = Date.now() - start;
 
   logger.info("reconcile cron completed", {
     job: "reconcile-payments",
     reconciled,
     refunded,
+    dlq_drained: dlqDrained,
     duration_ms: duration,
     candidates_processed: candidates?.length ?? 0,
   });
 
-  return NextResponse.json({ ok: true, reconciled, refunded, duration_ms: duration });
+  return NextResponse.json({ ok: true, reconciled, refunded, dlq_drained: dlqDrained, duration_ms: duration });
 }

@@ -325,9 +325,17 @@ export async function markItemSoldOut(
 
   if (!item) return { ok: false, error: "Item not found" };
 
+  // P1-8 FIX: When restocking (inStock = true), also reset stock_qty to null.
+  // If the item was auto-marked OOS when stock_qty hit 0, it would appear
+  // orderable in the student menu but fail at checkout (qty check sees 0).
+  // null = unlimited — the admin can set a precise qty from the admin menu page.
+  const updatePayload = inStock
+    ? { in_stock: true, stock_qty: null as unknown as number }
+    : { in_stock: false };
+
   const { error: updateErr } = await admin
     .from("menu_items")
-    .update({ in_stock: inStock })
+    .update(updatePayload)
     .eq("id", item.id)
     .eq("tenant_id", ctx.tenant.id);
 

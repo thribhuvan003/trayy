@@ -1,13 +1,25 @@
 import Link from "next/link";
-import { resolveTenant } from "@/lib/tenant";
 import { headers } from "next/headers";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { resolveTenant, getTenantSlugFromHeaders } from "@/lib/tenant";
+import { requireRole } from "@/lib/auth/get-user";
+
+export const dynamic = "force-dynamic";
 
 export default async function KitchenLayout({ children }: { children: React.ReactNode }) {
   const h = await headers();
-  const slug = h.get("x-tenant-slug") ?? "";
+  const slug = getTenantSlugFromHeaders(h);
   const tenant = await resolveTenant(slug);
   if (!tenant) notFound();
+
+  // P2-10: Server-side role guard — middleware already blocks at the edge,
+  // but a middleware bypass (e.g. direct API call) would serve HTML without this.
+  // This closes the page-content gap: unauthorized users get a redirect, not content.
+  const user = await requireRole(["kitchen_staff", "canteen_admin", "super_admin"]);
+  if (!user) {
+    redirect(`/c/${tenant.slug}/login?next=/c/${tenant.slug}/kitchen/staff-select`);
+  }
+
   return (
     <div
       data-portal="kitchen"
