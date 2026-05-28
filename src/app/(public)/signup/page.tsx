@@ -22,13 +22,13 @@ export default async function SignupPage({
       <div className="flex-1 flex items-center justify-center px-5 py-12">
         <div className="w-full max-w-md">
           <Link href="/" className="inline-flex items-center gap-2.5 font-display text-[19px] tracking-tight mb-10">
-            <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-ocean-500 text-white font-mono text-[12px] font-bold">T</span>
-            <span className="font-medium">Tray<span className="italic text-ocean-500">.</span></span>
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[color:var(--color-ocean-500)] text-white font-mono text-[12px] font-bold">T</span>
+            <span className="font-medium">Tray<span className="italic text-[color:var(--color-ocean-500)]">.</span></span>
           </Link>
           <h1 className="font-display text-[40px] leading-[1.05] tracking-tight font-medium">
             Start eating
             <br />
-            <span className="italic text-ocean-500">in eleven minutes.</span>
+            <span className="italic text-[color:var(--color-ocean-500)]">in eleven minutes.</span>
           </h1>
           <p className="text-[14px] text-[color:var(--color-ink)]/65 mt-3">
             Use your <b>{tenant?.college_name ?? "campus"}</b> email
@@ -39,7 +39,7 @@ export default async function SignupPage({
           </div>
           <p className="mt-8 text-[12.5px] text-[color:var(--color-ink)]/55">
             Already have an account?{" "}
-            <Link href={`/login?next=${encodeURIComponent(sp.next ?? "/")}`} className="text-ocean-500 hover:underline">
+            <Link href={`/login?next=${encodeURIComponent(sp.next ?? "/")}`} className="text-[color:var(--color-ocean-500)] hover:underline">
               Sign in
             </Link>
           </p>

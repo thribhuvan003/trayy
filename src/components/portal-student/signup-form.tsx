@@ -75,8 +75,8 @@ export function SignupForm({
 
   if (sent) {
     return (
-      <div className="rounded-2xl bg-ocean-500/8 border border-ocean-500/30 p-6 text-center">
-        <Mail size={32} strokeWidth={1.6} className="mx-auto text-ocean-500 mb-3" />
+      <div className="rounded-2xl bg-[color:var(--color-ocean-500)]/8 border border-[color:var(--color-ocean-500)]/30 p-6 text-center">
+        <Mail size={32} strokeWidth={1.6} className="mx-auto text-[color:var(--color-ocean-500)] mb-3" />
         <div className="font-medium">Confirm your email</div>
         <p className="text-[13px] text-[color:var(--color-ink)]/65 mt-1">
           We sent a link to <b className="text-[color:var(--color-ink)]">{email}</b>.
@@ -93,7 +93,7 @@ export function SignupForm({
           type="button"
           onClick={onGoogleSignIn}
           disabled={pending}
-          className="w-full h-12 rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-paper)] text-[14px] font-medium inline-flex items-center justify-center gap-2.5 hover:border-ocean-500/50 hover:bg-ocean-500/5 transition-colors"
+          className="w-full h-12 rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-paper)] text-[14px] font-medium inline-flex items-center justify-center gap-2.5 hover:border-[color:var(--color-ocean-500)]/50 hover:bg-[color:var(--color-ocean-500)]/5 transition-colors"
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
             <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
@@ -117,7 +117,7 @@ export function SignupForm({
         onChange={(e) => setName(e.target.value)}
         autoComplete="name"
         placeholder="Your name"
-        className="w-full h-12 px-4 rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-paper)] text-[14px] focus:outline-none focus:border-ocean-500"
+        className="w-full h-12 px-4 rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-paper)] text-[14px] focus:outline-none focus:border-[color:var(--color-ocean-500)]"
       />
       <input
         type="email"
@@ -126,7 +126,7 @@ export function SignupForm({
         onChange={(e) => setEmail(e.target.value)}
         autoComplete="email"
         placeholder={allowedDomain ? `you@${allowedDomain}` : "you@yourcollege.edu"}
-        className="w-full h-12 px-4 rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-paper)] text-[14px] focus:outline-none focus:border-ocean-500"
+        className="w-full h-12 px-4 rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-paper)] text-[14px] focus:outline-none focus:border-[color:var(--color-ocean-500)]"
       />
       <input
         type="password"
@@ -136,13 +136,13 @@ export function SignupForm({
         onChange={(e) => setPassword(e.target.value)}
         autoComplete="new-password"
         placeholder="Password (8+ characters)"
-        className="w-full h-12 px-4 rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-paper)] text-[14px] focus:outline-none focus:border-ocean-500"
+        className="w-full h-12 px-4 rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-paper)] text-[14px] focus:outline-none focus:border-[color:var(--color-ocean-500)]"
       />
       <button
         type="submit"
         disabled={pending}
         className={cn(
-          "h-12 rounded-xl bg-ocean-500 text-white text-[14px] font-medium inline-flex items-center justify-center gap-2 hover:bg-ocean-600 transition-colors",
+          "h-12 rounded-xl bg-[color:var(--color-ocean-500)] text-white text-[14px] font-medium inline-flex items-center justify-center gap-2 hover:bg-[color:var(--color-ocean-500)]/85 transition-colors",
           pending && "opacity-70 cursor-not-allowed"
         )}
       >

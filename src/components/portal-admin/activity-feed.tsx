@@ -13,7 +13,7 @@ type Log = {
 };
 
 const TONE: Record<string, string> = {
-  placed: "bg-ocean-500",
+  placed: "bg-[color:var(--admin-sky)]",
   preparing: "bg-amber-400",
   ready: "bg-lime",
   collected: "bg-emerald-400",

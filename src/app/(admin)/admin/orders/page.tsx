@@ -20,7 +20,7 @@ type Row = {
 
 const TONE: Record<string, string> = {
   pending_payment: "bg-amber-500/15 text-amber-400 border-amber-500/30",
-  placed: "bg-ocean-500/15 text-ocean-500 border-ocean-500/30",
+  placed: "bg-[color:var(--admin-sky-soft)] text-[color:var(--admin-sky)] border-[color:var(--admin-sky)]/30",
   preparing: "bg-amber-500/15 text-amber-400 border-amber-500/30",
   ready: "bg-lime/15 text-lime border-lime/30",
   collected: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
