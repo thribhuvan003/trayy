@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { getServerClient } from "@/lib/supabase/server";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { getCurrentUser } from "@/lib/auth/get-user";
 import { PayPanel } from "@/components/portal-student/pay-panel";
 import { requireTenantContext } from "@/lib/tenant";
@@ -9,8 +10,6 @@ export const revalidate = 0;
 
 export default async function PayPage({ params }: { params: Promise<{ orderId: string }> }) {
   const { orderId } = await params;
-  // Production-grade tenant context — the UPI VPA and QR for this order's canteen must be correct and isolated.
-  // Changes the owner makes to their UPI will be reflected here on next load (revalidation from admin settings).
   const { tenant } = await requireTenantContext();
 
   const user = await getCurrentUser();
@@ -49,9 +48,27 @@ export default async function PayPage({ params }: { params: Promise<{ orderId: s
     }[]>();
 
   if (!tenant.upi_vpa) {
-    // Redirect back to menu with a notice — invalid UPI means payment is impossible
     redirect(`/c/${tenant.slug}/menu?msg=no-upi`);
   }
+
+  // Fetch the Razorpay order ID linked to this payment so verifyPaymentNow
+  // can poll the gateway correctly. Fetched server-side so it never hits the client.
+  const adminClient = getAdminClient(tenant.id);
+  const { data: paymentRow } = await adminClient
+    .from("payments")
+    .select("razorpay_order_id")
+    .eq("order_id", orderId)
+    .eq("tenant_id", tenant.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle<{ razorpay_order_id: string | null }>();
+
+  // isSimMode: true when Razorpay live keys are absent — shows DEV simulate button.
+  // Computed server-side so it can't be spoofed from the client.
+  const isSimMode =
+    !process.env.RAZORPAY_KEY_ID ||
+    !process.env.RAZORPAY_KEY_SECRET ||
+    process.env.NEXT_PUBLIC_RAZORPAY_LIVE !== "true";
 
   return (
     <PayPanel
@@ -60,6 +77,9 @@ export default async function PayPage({ params }: { params: Promise<{ orderId: s
       tenantUpi={tenant.upi_vpa}
       order={order}
       lines={lines ?? []}
+      razorpayOrderId={paymentRow?.razorpay_order_id ?? null}
+      isSimMode={isSimMode}
+      userEmail={user.email}
     />
   );
 }
