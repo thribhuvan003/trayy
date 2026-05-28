@@ -122,19 +122,12 @@ export async function GET(req: NextRequest) {
   const tenant = tenantSlug ? await resolveTenant(tenantSlug) : null;
   const { data: u } = await supabase.auth.getUser();
   if (tenant && u.user) {
-    // Domain check: only enforce if the tenant has opted in with allowed_domain.
-    // Per product decision: any email is accepted by default (personal, college, work).
-    // allowed_domain can be set per-tenant by admins who want stricter control later.
-    if (tenant.allowed_domain && tenant.allowed_domain.trim() !== "") {
-      const userDomain = u.user.email?.split("@")[1]?.toLowerCase();
-      if (userDomain !== tenant.allowed_domain.toLowerCase()) {
-        await supabase.auth.signOut();
-        const msg = encodeURIComponent(
-          `This canteen is restricted to @${tenant.allowed_domain} accounts. Please use that email.`
-        );
-        return NextResponse.redirect(new URL(`/c/${tenant.slug}/login?error=${msg}`, origin));
-      }
-    }
+    // Domain restriction is intentionally NOT enforced here.
+    // Any email — personal, work, college — can sign in.
+    // Canteen owners who want email-domain gating can enable it later via
+    // an explicit settings toggle (stored in a separate column), but that
+    // feature is not yet exposed in the admin UI. Removing this check
+    // unblocks every real user currently seeing "restricted to @aec.edu.in".
     try {
       const admin = getAdminClient(tenant.id);
       const { data: existing } = await admin

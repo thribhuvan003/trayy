@@ -334,21 +334,23 @@ export function LandingMotion() {
             }
             const stackLede = stackSection.querySelector<HTMLElement>("p");
             if (stackLede) gsap.from(stackLede, { scrollTrigger: { trigger: stackSection, start: "top 78%" }, opacity: 0, y: 16, duration: 0.85, ease: "power3.out", delay: 0.1 });
-            // Per-card scroll reveal: each card triggers individually as user scrolls.
-            // "Boring stack, on purpose" — the cards appear one-by-one, not all-at-once.
+            // Per-card scroll reveal: each card pops in as it enters the viewport.
+            // once:true keeps the card visible after reveal (no reverse on scroll-up).
             const techCards = stackSection.querySelectorAll<HTMLElement>("[data-stack-card]");
-            techCards.forEach((card) => {
+            techCards.forEach((card, i) => {
               gsap.fromTo(
                 card,
-                { y: 28, opacity: 0, scale: 0.93 },
+                { y: 32, opacity: 0, scale: 0.9 },
                 {
                   y: 0, opacity: 1, scale: 1,
-                  duration: 0.52,
-                  ease: "back.out(1.6)",
+                  duration: 0.55,
+                  delay: (i % 4) * 0.06, // slight stagger within each row
+                  ease: "back.out(1.4)",
+                  clearProps: "transform,opacity",
                   scrollTrigger: {
                     trigger: card,
-                    start: "top 90%",
-                    toggleActions: "play none none reverse",
+                    start: "top 88%",
+                    once: true, // stays visible after reveal — no re-hide on scroll-up
                   },
                 }
               );

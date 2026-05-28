@@ -298,15 +298,35 @@ export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
               </div>
             </RevealItem>
             <RevealItem variant="fade">
-              <h2
-                className="leading-[0.88] tracking-[-0.04em]"
-                style={{ fontFamily: "var(--font-newsreader)", fontWeight: 600, fontSize: "clamp(3rem,7vw,7rem)" }}
-              >
-                Phone to plate,<br />
-                <em style={{ fontStyle: "italic", color: "var(--tray-clay)" }}>in eleven minutes.</em>
+              <h2 className="tracking-[-0.04em]">
+                <span
+                  className="block"
+                  style={{
+                    fontFamily: "var(--font-newsreader)",
+                    fontWeight: 600,
+                    fontSize: "clamp(3rem,7vw,7rem)",
+                    lineHeight: 0.9,
+                    color: "var(--tray-ink)",
+                  }}
+                >
+                  Phone to plate,
+                </span>
+                <span
+                  className="block mt-3"
+                  style={{
+                    fontFamily: "var(--font-newsreader)",
+                    fontWeight: 400,
+                    fontStyle: "italic",
+                    fontSize: "clamp(2.4rem,5.5vw,5.5rem)",
+                    lineHeight: 0.92,
+                    color: "var(--tray-clay)",
+                  }}
+                >
+                  in eleven minutes.
+                </span>
               </h2>
             </RevealItem>
-            <div className="mt-12 sm:mt-24 overflow-hidden w-full relative py-2">
+            <div className="mt-10 sm:mt-14 overflow-hidden w-full relative py-2">
               <div className="grid gap-6 sm:grid-cols-2 lg:flex lg:flex-row tl-flow-track-horizontal py-4">
                 {(
                   [
