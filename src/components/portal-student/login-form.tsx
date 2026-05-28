@@ -320,7 +320,7 @@ export function LoginForm({ next, slug = "", role = "student" }: { next: string;
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           autoComplete="email"
-          placeholder="you@yourcollege.edu"
+          placeholder="you@example.com"
           className="w-full h-12 px-4 rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-paper)] text-[14px] focus:outline-none focus:border-[color:var(--color-ocean-500)]"
         />
       </label>

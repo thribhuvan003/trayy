@@ -125,7 +125,7 @@ export function SignupForm({
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         autoComplete="email"
-        placeholder={allowedDomain ? `you@${allowedDomain}` : "you@yourcollege.edu"}
+        placeholder={allowedDomain ? `you@${allowedDomain}` : "you@example.com"}
         className="w-full h-12 px-4 rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-paper)] text-[14px] focus:outline-none focus:border-[color:var(--color-ocean-500)]"
       />
       <input

@@ -214,9 +214,10 @@ export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
           <motion.div className="mx-auto max-w-7xl">
             <RevealItem>
               <div className="mb-5 flex flex-wrap items-center gap-3">
-                <p className="text-xs uppercase tracking-[0.34em]"
-                  style={{ fontFamily: "var(--font-dm-mono)", color: "var(--tray-muted)" }}>
-                  03 / Realtime
+                <p className="flex items-center gap-[0.55em]" style={{ fontFamily: "var(--font-dm-mono)" }}>
+                  <span style={{ fontWeight: 800, fontSize: "0.82rem", letterSpacing: 0, color: "var(--tray-ink)", opacity: 0.55 }}>03</span>
+                  <span style={{ fontSize: "0.72rem", opacity: 0.3, color: "var(--tray-muted)" }}>/</span>
+                  <span className="uppercase tracking-[0.25em]" style={{ fontSize: "0.68rem", color: "var(--tray-muted)" }}>Realtime</span>
                 </p>
               </div>
             </RevealItem>
@@ -286,8 +287,10 @@ export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
           <motion.div className="mx-auto max-w-7xl">
             <RevealItem variant="soft">
               <div className="mb-4 flex flex-wrap items-center gap-3">
-                <p className="text-xs uppercase tracking-[0.3em]" style={{ fontFamily: "var(--font-dm-mono)", color: "var(--tray-muted)" }}>
-                  04 / How it works
+                <p className="flex items-center gap-[0.55em]" style={{ fontFamily: "var(--font-dm-mono)" }}>
+                  <span style={{ fontWeight: 800, fontSize: "0.82rem", letterSpacing: 0, color: "var(--tray-ink)", opacity: 0.55 }}>04</span>
+                  <span style={{ fontSize: "0.72rem", opacity: 0.3, color: "var(--tray-muted)" }}>/</span>
+                  <span className="uppercase tracking-[0.25em]" style={{ fontSize: "0.68rem", color: "var(--tray-muted)" }}>How it works</span>
                 </p>
               </div>
             </RevealItem>

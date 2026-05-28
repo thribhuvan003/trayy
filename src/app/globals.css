@@ -792,6 +792,23 @@ select option {
   will-change: clip-path;
 }
 
+/* Stack tech cards — start hidden so GSAP can reveal each one individually
+   as the user scrolls to it. The fromTo in landing-motion.tsx owns the
+   animation; this CSS just prevents the FOUC before GSAP initialises. */
+.tray-landing [data-stack-card] {
+  opacity: 0;
+  transform: translateY(28px) scale(0.93);
+  will-change: opacity, transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tray-landing [data-stack-card] {
+    opacity: 1;
+    transform: none;
+    will-change: auto;
+  }
+}
+
 .scroll-fade-mask {
   mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
   -webkit-mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
