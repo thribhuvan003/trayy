@@ -251,9 +251,28 @@ export function PayPanel({
             className="leading-tight tracking-[-0.03em] mb-2"
             style={{ fontFamily: "var(--font-bricolage)", fontWeight: 700, fontSize: "clamp(1.6rem, 5vw, 2.2rem)" }}
           >
-            Payment received.
+            Order placed!
           </h2>
-          <p className="text-[14px] opacity-55 mb-2">Your order is with the kitchen.</p>
+          <p className="text-[14px] opacity-65 mb-1">
+            Your order <span className="font-semibold">{order.short_code}</span> is in the kitchen.
+          </p>
+
+          {/* UPI history hint — helps students verify the payment in their UPI app */}
+          <div
+            className="mt-4 mb-4 rounded-xl px-4 py-3 text-left"
+            style={{ background: "rgba(22,163,74,0.07)", border: "1px solid rgba(22,163,74,0.18)" }}
+          >
+            <p className="text-[12px] font-semibold" style={{ color: "#15803d" }}>
+              Check your UPI app
+            </p>
+            <p className="text-[11.5px] mt-0.5" style={{ color: "#166534", opacity: 0.8 }}>
+              Open PhonePe, GPay, or Paytm → History. You'll see a{" "}
+              <span className="font-semibold">₹{(order.total_paise / 100).toFixed(0)} payment</span> to{" "}
+              <span className="font-semibold">{tenantName}</span> with note{" "}
+              <span className="font-mono font-semibold">{order.short_code}</span>.
+            </p>
+          </div>
+
           <div className="flex items-center justify-center gap-2 text-[12px] opacity-40">
             <Loader2 size={12} className="animate-spin" />
             Taking you to your order…

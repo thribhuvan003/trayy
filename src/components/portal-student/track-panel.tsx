@@ -408,6 +408,27 @@ export function TrackPanel({ tenantSlug, tenantName, order: initial, lines }: { 
           </span>
           <span className="font-display text-[20px] font-medium tabular">{formatRupees(order.total_paise)}</span>
         </div>
+
+        {/* UPI history hint — student can verify this in their PhonePe / GPay */}
+        {!isCancelled && order.status !== "payment_failed" && order.status !== "expired" && (
+          <div
+            className="mt-3 rounded-xl px-3 py-2.5 flex items-start gap-2"
+            style={{ background: "rgba(22,163,74,0.06)", border: "1px solid rgba(22,163,74,0.15)" }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="mt-0.5 shrink-0" style={{ color: "#16a34a" }}>
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/>
+            </svg>
+            <div>
+              <p className="text-[11.5px] font-semibold" style={{ color: "#15803d" }}>Find this payment in your UPI app</p>
+              <p className="text-[11px] mt-0.5" style={{ color: "#166534", opacity: 0.75 }}>
+                Open PhonePe / GPay → Transaction History → look for{" "}
+                <span className="font-semibold">₹{(order.total_paise / 100).toFixed(0)}</span> to{" "}
+                <span className="font-semibold">{tenantName}</span>.
+                Reference note: <span className="font-mono font-semibold">{order.short_code}</span>
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
