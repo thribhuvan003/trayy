@@ -167,8 +167,18 @@ export default async function StudentMenuPage() {
   ];
 
   const isDemo = tenant.id === "d3b07384-d113-4e6b-a25e-e4a81e355fd5";
-  const categories = (catsData !== null && (!isDemo || catsData.length > 0)) ? catsData : mockCats;
-  const items = (itemsData !== null && (!isDemo || itemsData.length > 0)) ? itemsData : mockItems;
+  // SECURITY: the mock menu is DEV-ONLY. A real tenant must NEVER be shown fake
+  // dishes — e.g. on a transient Supabase error the query returns null, and the
+  // old fallback served "Steamed Momo"/"Chicken Biryani" to real students who
+  // could then try to order food that doesn't exist. In production we fall back
+  // to an empty menu (handled by the empty state), never to mock data.
+  const allowMock = process.env.NODE_ENV !== "production";
+  const categories = (catsData !== null && (!isDemo || catsData.length > 0))
+    ? catsData
+    : (allowMock ? mockCats : (catsData ?? []));
+  const items = (itemsData !== null && (!isDemo || itemsData.length > 0))
+    ? itemsData
+    : (allowMock ? mockItems : (itemsData ?? []));
 
   const isClosed = statusData ? !statusData.is_open : false;
   const pausedUntil = statusData?.paused_until ?? null;
