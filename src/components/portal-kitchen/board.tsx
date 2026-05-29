@@ -235,6 +235,17 @@ export function KitchenBoard({
     }
   };
 
+  // ── Coalesced-refresh state ────────────────────────────────────────────────
+  // Under a lunch-rush flood (hundreds of order_events/min) the board MUST NOT
+  // fire one full 300-order refetch per event — that is what froze the queue.
+  // These refs let scheduleRefresh() collapse a burst into at most one refetch
+  // per MIN_REFRESH_MS window, with no overlapping in-flight fetches.
+  const MIN_REFRESH_MS = 400;
+  const lastRefreshAtRef = useRef(0);
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const refreshInFlightRef = useRef(false);
+  const refreshQueuedRef = useRef(false);
+
   // The refresh function defined FIRST for safe closure in the resilient realtime helpers below.
   // Behavior 100% identical to the original — only extracted for sharing with backoff logic.
   // Reuses seenOrderIdsRef, playBell, newOrderFlash exactly.
@@ -281,6 +292,43 @@ export function KitchenBoard({
     }
   };
 
+  // Runs refreshFn with an in-flight guard. If events arrive mid-fetch, one
+  // trailing refresh is queued so the board never misses the final state.
+  const runRefresh = async () => {
+    if (refreshInFlightRef.current) {
+      refreshQueuedRef.current = true;
+      return;
+    }
+    refreshInFlightRef.current = true;
+    lastRefreshAtRef.current = Date.now();
+    try {
+      await refreshFn();
+    } finally {
+      refreshInFlightRef.current = false;
+      if (refreshQueuedRef.current) {
+        refreshQueuedRef.current = false;
+        scheduleRefresh();
+      }
+    }
+  };
+
+  // Coalesces a burst of realtime events into at most one refetch per
+  // MIN_REFRESH_MS window. Leading-edge when idle (a lone order shows in <1s),
+  // trailing otherwise. This is the single most important guard against the
+  // board freezing when 1000 orders land at the lunch bell.
+  const scheduleRefresh = () => {
+    if (refreshTimerRef.current) return; // a run is already queued for this window
+    const wait = Math.max(0, MIN_REFRESH_MS - (Date.now() - lastRefreshAtRef.current));
+    if (wait === 0 && !refreshInFlightRef.current) {
+      void runRefresh();
+    } else {
+      refreshTimerRef.current = setTimeout(() => {
+        refreshTimerRef.current = null;
+        void runRefresh();
+      }, wait);
+    }
+  };
+
   // Resilient realtime with exponential backoff + jitter (900ms base, capped 30s).
   // Reuses EXACTLY the same order_events INSERT subscription, refresh logic,
   // seenOrderIdsRef, 20s poll + visibilitychange, playBell, and emit-driven flow.
@@ -320,7 +368,7 @@ export function KitchenBoard({
             setUnverifiedUpiOrders((prev) => { const next = new Set(prev); next.delete(ev.order_id!); return next; });
           }
 
-          void refreshFn();
+          scheduleRefresh();
           if (connStateRef.current !== "online") {
             setConnState("online");
             setReconnectAttempt(0);
@@ -409,7 +457,7 @@ export function KitchenBoard({
     setupRealtime();
 
     const onVis = () => {
-      if (document.visibilityState === "visible") void refreshFn();
+      if (document.visibilityState === "visible") scheduleRefresh();
     };
     document.addEventListener("visibilitychange", onVis);
 
@@ -422,7 +470,7 @@ export function KitchenBoard({
 
     // The legendary 20s safety-net poll + visibility (kept 100% unchanged in spirit & load)
     const pollId = setInterval(() => {
-      if (document.visibilityState === "visible") void refreshFn();
+      if (document.visibilityState === "visible") scheduleRefresh();
     }, 20_000);
 
     return () => {
@@ -431,6 +479,7 @@ export function KitchenBoard({
         channelRef.current = null;
       }
       if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current);
+      if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
       document.removeEventListener("visibilitychange", onVis);
       window.removeEventListener("online", onNetOnline);
       clearInterval(pollId);
@@ -1264,7 +1313,7 @@ export function KitchenBoard({
           open={walkInOpen}
           onClose={() => setWalkInOpen(false)}
           onCreated={(shortCode) => {
-            void refreshFn();
+            scheduleRefresh();
             toast.success(`#${shortCode} placed — it's in the queue`);
           }}
         />
