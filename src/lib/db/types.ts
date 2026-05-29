@@ -712,6 +712,7 @@ export type Database = {
           name: string
           opens_at: string | null
           paused_until: string | null
+          payment_mode: string
           razorpay_key_id_enc: string | null
           razorpay_key_secret_enc: string | null
           slug: string
@@ -736,6 +737,7 @@ export type Database = {
           name: string
           opens_at?: string | null
           paused_until?: string | null
+          payment_mode?: string
           razorpay_key_id_enc?: string | null
           razorpay_key_secret_enc?: string | null
           slug: string
@@ -760,6 +762,7 @@ export type Database = {
           name?: string
           opens_at?: string | null
           paused_until?: string | null
+          payment_mode?: string
           razorpay_key_id_enc?: string | null
           razorpay_key_secret_enc?: string | null
           slug?: string

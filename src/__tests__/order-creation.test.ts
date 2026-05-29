@@ -399,7 +399,8 @@ describe("placeOrder — successful order creation", () => {
     mockShortCodeRpc = { data: "A001", error: null };
   });
 
-  it("returns ok:true with orderId and razorpayOrderId for a valid single-item cart", async () => {
+  it("direct_upi (default): returns ok:true with orderId and NO Razorpay order", async () => {
+    const { createRazorpayOrder } = await import("@/lib/payments/razorpay");
     const result = await placeOrder(
       [{ menuItemId: "item-uuid-001", qty: 2 }],
       "extra sugar please",
@@ -409,10 +410,29 @@ describe("placeOrder — successful order creation", () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.orderId).toBeTruthy();
-      expect(result.razorpayOrderId).toBeTruthy();
-      // In simulator mode (no live keys), simulated should be true
+      // Money goes straight to the canteen VPA — Razorpay is never involved,
+      // so there is no Razorpay order and nothing is "simulated".
+      expect(result.razorpayOrderId).toBeNull();
+      expect(result.simulated).toBe(false);
+    }
+    expect(createRazorpayOrder).not.toHaveBeenCalled();
+  });
+
+  it("razorpay mode: creates a Razorpay order and returns its id", async () => {
+    mockTenantsRow = { is_open: true, paused_until: null, payment_mode: "razorpay" };
+    const { createRazorpayOrder } = await import("@/lib/payments/razorpay");
+    const result = await placeOrder(
+      [{ menuItemId: "item-uuid-001", qty: 1 }],
+      "",
+      "takeaway"
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.razorpayOrderId).toBe("order_sim_test001");
       expect(result.simulated).toBe(true);
     }
+    expect(createRazorpayOrder).toHaveBeenCalledOnce();
   });
 
   it("returns ok:true for a multi-item cart", async () => {

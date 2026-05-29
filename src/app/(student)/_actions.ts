@@ -196,9 +196,9 @@ export async function placeOrder(
   // Verify canteen is accepting orders + check queue depth for overload warning
   const { data: tenantStatus } = await supabase
     .from("tenants")
-    .select("is_open, paused_until")
+    .select("is_open, paused_until, payment_mode")
     .eq("id", tenant.id)
-    .maybeSingle<{ is_open: boolean; paused_until: string | null }>();
+    .maybeSingle<{ is_open: boolean; paused_until: string | null; payment_mode: string }>();
 
   if (tenantStatus) {
     const isPaused = tenantStatus.paused_until && new Date(tenantStatus.paused_until) > new Date();
@@ -206,6 +206,11 @@ export async function placeOrder(
       return { ok: false, error: isPaused ? "Orders are paused — please try again shortly" : "This canteen is currently closed" };
     }
   }
+
+  // Authoritative per-tenant payment rail (see migration 0024). Defaults to
+  // direct_upi so a canteen that "just added a UPI ID" works out of the box.
+  const paymentMode: "direct_upi" | "razorpay" =
+    tenantStatus?.payment_mode === "razorpay" ? "razorpay" : "direct_upi";
 
   // Scenario 26: Soft queue-depth guard — warn student if kitchen is swamped.
   // Uses HEAD COUNT (no data returned) — fast index-only scan on (tenant_id, status).
@@ -428,32 +433,51 @@ export async function placeOrder(
     meta: { total_paise: total, items: validated.length, order_type: orderType },
   });
 
-  const rzpStart = Date.now();
-  const rzp = await createRazorpayOrder({
-    amountPaise: total,
-    receipt: order.short_code,
-    notes: { tenant: tenant.slug, order: order.id },
-  });
-  log.info("razorpay order created", {
-    razorpay_order_id: rzp.id,
-    simulated: rzp.simulated,
-    latency_ms: Date.now() - rzpStart,
-  });
+  // ── Payment-rail branch ──────────────────────────────────────────────────
+  // direct_upi: student pays the canteen's VPA directly. There is NOTHING for
+  // Razorpay to capture, so we never create a Razorpay order (that was the bug —
+  // orphan Razorpay orders that webhooks/reconcile waited on forever). The
+  // payment row carries a null razorpay_order_id; the reconcile cron already
+  // skips rows with no razorpay_order_id.
+  // razorpay: money flows through the gateway — create the order so the existing
+  // webhook / safe_capture_payment / reconcile machinery can capture it.
+  let razorpayOrderId: string | null = null;
+  let simulated = false;
+  if (paymentMode === "razorpay") {
+    const rzpStart = Date.now();
+    const rzp = await createRazorpayOrder({
+      amountPaise: total,
+      receipt: order.short_code,
+      notes: { tenant: tenant.slug, order: order.id },
+    });
+    razorpayOrderId = rzp.id;
+    simulated = rzp.simulated;
+    log.info("razorpay order created", {
+      razorpay_order_id: rzp.id,
+      simulated: rzp.simulated,
+      latency_ms: Date.now() - rzpStart,
+    });
+  } else {
+    log.info("direct_upi order — no Razorpay order created (pays canteen VPA directly)", {
+      order_id: order.id,
+    });
+  }
 
   await admin.from("payments").insert({
     tenant_id: tenant.id,
     order_id: order.id,
-    razorpay_order_id: rzp.id,
+    razorpay_order_id: razorpayOrderId,
     amount_paise: total,
     status: "initiated",
   });
 
-  log.info("placeOrder success — order created + razorpay order initiated", {
+  log.info("placeOrder success — order created", {
     order_id: order.id,
-    razorpay_order_id: rzp.id,
+    razorpay_order_id: razorpayOrderId ?? undefined,
+    payment_mode: paymentMode,
     total_paise: total,
     latency_ms: Date.now() - start,
-    simulated: rzp.simulated,
+    simulated,
   });
 
   // Persist the successful result so any replay of this idemKey gets the exact same response.
@@ -461,8 +485,8 @@ export async function placeOrder(
   const successResult: PlaceResult = {
     ok: true,
     orderId: order.id,
-    razorpayOrderId: rzp.id,
-    simulated: rzp.simulated,
+    razorpayOrderId,
+    simulated,
     queueWarning: kitchenBusy,
   };
 
@@ -565,8 +589,6 @@ type VerifyResult = { status: "paid" | "pending" | "failed" };
  * raw_event_id ('manual_verify_<razorpay_order_id>').
  */
 export async function verifyPaymentNow(orderId: string): Promise<VerifyResult> {
-  const { featureFlags } = await import("@/lib/env");
-
   // Production-grade tenant context for simulate (dev only).
   const { tenant } = await requireTenantContext();
 
@@ -594,6 +616,18 @@ export async function verifyPaymentNow(orderId: string): Promise<VerifyResult> {
     .eq("tenant_id", tenant.id)
     .maybeSingle<{ id: string; user_id: string | null; status: string; payment_expires_at: string | null }>();
   if (!orderRow || orderRow.user_id !== user.id) return { status: "pending" };
+
+  // Per-tenant payment rail (migration 0024). direct_upi is the default and the
+  // real production flow for canteens that just added a UPI ID; razorpay routes
+  // through the gateway. This replaces the old global featureFlags.razorpayLive
+  // switch that forced every tenant down the (broken) Razorpay-capture path.
+  const { data: tModeRow } = await admin
+    .from("tenants")
+    .select("payment_mode")
+    .eq("id", tenant.id)
+    .maybeSingle<{ payment_mode: string }>();
+  const paymentMode: "direct_upi" | "razorpay" =
+    tModeRow?.payment_mode === "razorpay" ? "razorpay" : "direct_upi";
 
   // Already past pending_payment — map to the right result so the UI gets a
   // truthful status. payment_failed/expired → "failed"; everything else → "paid".
@@ -663,37 +697,20 @@ export async function verifyPaymentNow(orderId: string): Promise<VerifyResult> {
   // We own the claim — proceed with the original logic (existing guards still apply)
   log.info("verifyPaymentNow proceeding with claim");
 
-  // ── Priority 1: UPI-direct mode (demo / no-Razorpay) ────────────────────────
-  // In production (razorpayLive=true), this branch is NEVER reached — Razorpay
-  // webhook handles capture. This branch only runs in demo/dev mode.
-  //
-  // Security hardening: instead of auto-marking 'placed' immediately, we mark
-  // the payment as 'pending_verification' so kitchen staff see an ⚠️ UNVERIFIED
-  // badge and can confirm against their UPI app before handing food over.
-  // This prevents free-food abuse while keeping the demo flow functional.
-  if (!featureFlags.razorpayLive) {
-    // P1-5 FIX: Require explicit admin opt-in via upi_trust_enabled on the tenant row.
-    // Default is false — a new canteen never gets the trust flow accidentally.
-    // The canteen admin must explicitly enable it in their settings.
-    const { data: tenantRow } = await admin
-      .from("tenants")
-      .select("upi_trust_enabled")
-      .eq("id", tenant.id)
-      .maybeSingle<{ upi_trust_enabled: boolean }>();
-
-    const isDemoMode = process.env.NODE_ENV !== "production" || !featureFlags.razorpayLive;
-    if (!tenantRow?.upi_trust_enabled && !isDemoMode) {
-      log.warn("UPI-trust path blocked — tenant has not opted in", { tenant_id: tenant.id });
-      await admin.from("idempotency_keys" as any).delete().eq("key", idemKey);
-      return { status: "failed" };
-    }
-
-    // Hard block in any production deployment with live keys (belt-and-suspenders)
-    if (process.env.NODE_ENV === "production" && process.env.NEXT_PUBLIC_RAZORPAY_LIVE === "true") {
-      log.error("UPI-trust path blocked in production — Razorpay must be configured", null);
-      return { status: "failed" };
-    }
-
+  // ── Direct-UPI rail (the default, real production flow) ─────────────────────
+  // Runs for every tenant on payment_mode='direct_upi'. The student paid the
+  // canteen's VPA directly, so there is no Razorpay capture to wait on. We move
+  // the order into the kitchen queue and badge it UNVERIFIED — staff confirm
+  // against their own UPI app/soundbox at the counter (the pickup OTP gates who
+  // collects). This is the honest substitute for programmatic capture, which is
+  // impossible for a peer-to-peer UPI transfer.
+  if (paymentMode === "direct_upi") {
+    // Direct-UPI — the supported production flow for "just add a UPI ID" canteens.
+    // The student paid the canteen's VPA directly, so the money is ALREADY in the
+    // canteen's bank. The server cannot verify a peer-to-peer UPI transfer, so we
+    // move the order into the kitchen queue flagged UNVERIFIED: the pickup OTP +
+    // the staff's own UPI-app/soundbox glance at the counter is the real
+    // verification. No Razorpay is involved on this rail.
     const { data: payRow } = await admin
       .from("payments")
       .select("razorpay_order_id, amount_paise")
@@ -846,6 +863,54 @@ export async function initiateRefundForOrder(
 
   if (!payment || payment.status !== "captured") {
     return { ok: false, error: "No captured payment found" };
+  }
+
+  // ── Direct-UPI: no gateway to refund through ─────────────────────────────────
+  // A direct_upi payment (razorpay_payment_id like `pay_upi_…`, or a dev sim
+  // `pay_sim_…`) moved peer-to-peer straight into the canteen's bank. Razorpay
+  // never touched it, so there is NOTHING to refund via the API — the canteen
+  // must send the money back from their own UPI app. We record the obligation as
+  // a `refund_owed` event (for the admin "refunds owed" view) and set a sentinel
+  // refund_id so the reconcile cron (WHERE refund_id IS NULL) never retries a
+  // refund that can never succeed. Without this, every cron run would hammer
+  // Razorpay with a doomed refund call and spam Sentry.
+  const isGatewayPayment =
+    !!payment.razorpay_payment_id &&
+    !payment.razorpay_payment_id.startsWith("pay_upi_") &&
+    !payment.razorpay_payment_id.startsWith("pay_sim_");
+
+  if (!isGatewayPayment) {
+    await admin
+      .from("payments")
+      .update({ refund_id: "manual_upi_refund_owed" } as any)
+      .eq("id", payment.id)
+      .eq("tenant_id", tenantId);
+
+    await (
+      admin as unknown as {
+        from: (t: string) => {
+          insert: (row: OrderEventInsertUntyped) => Promise<{ error: { message: string } | null }>;
+        };
+      }
+    )
+      .from("order_events")
+      .insert({
+        tenant_id: tenantId,
+        order_id: orderId,
+        event_type: "refund_owed",
+        payload: {
+          amount_paise: payment.amount_paise,
+          reason: "direct_upi_manual_refund",
+          source: "initiateRefundForOrder",
+        },
+      });
+
+    logger.warn("refund.manual_required — direct UPI, canteen must repay via UPI app", {
+      tenant_id: tenantId,
+      order_id: orderId,
+      amount_paise: payment.amount_paise,
+    });
+    return { ok: false, error: "manual_refund_required" };
   }
 
   if (!payment.razorpay_payment_id) {

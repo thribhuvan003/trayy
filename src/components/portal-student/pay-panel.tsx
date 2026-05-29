@@ -42,6 +42,7 @@ export function PayPanel({
   order,
   lines,
   isSimMode,
+  paymentMode = "direct_upi",
 }: {
   tenantSlug: string;
   tenantName: string;
@@ -49,6 +50,7 @@ export function PayPanel({
   order: Order;
   lines: Line[];
   isSimMode?: boolean;
+  paymentMode?: "direct_upi" | "razorpay";
 }) {
   const router = useRouter();
   const redirectedRef = useRef(false);
@@ -205,6 +207,19 @@ export function PayPanel({
   // ── Transition to monitoring when student opens UPI app ───────────────────
   const onOpenUpi = () => {
     setPhase("monitoring");
+    // Direct-UPI: tapping "pay" IS the trigger that drops the order into the
+    // kitchen queue — there is no server signal for a peer-to-peer UPI transfer,
+    // and no mandatory "I've Paid" button. verifyPaymentNow is idempotent (5s
+    // bucket + status guard), so this is safe to fire on every tap. The order
+    // enters the queue flagged UNVERIFIED; the counter OTP + the staff's UPI-app
+    // glance is the real verification.
+    if (paymentMode === "direct_upi") {
+      startVerify(async () => {
+        const r = await verifyPaymentNow(order.id);
+        if (r.status === "paid") handleDetected("placed");
+        else if (r.status === "failed") handleDetected("payment_failed");
+      });
+    }
   };
 
   // ── Manual fallback: server-side verification ─────────────────────────────
@@ -496,7 +511,11 @@ export function PayPanel({
               <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             <p className="text-[11px] opacity-40">
-              Secured by <span className="font-semibold">Razorpay</span> · No card data stored
+              {paymentMode === "razorpay" ? (
+                <>Secured by <span className="font-semibold">Razorpay</span> · No card data stored</>
+              ) : (
+                <>Paying directly to <span className="font-semibold">{tenantName}</span> · Collect with your OTP at the counter</>
+              )}
             </p>
           </div>
 

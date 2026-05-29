@@ -51,9 +51,19 @@ export default async function PayPage({ params }: { params: Promise<{ orderId: s
     redirect(`/c/${tenant.slug}/menu?msg=no-upi`);
   }
 
-  // isSimMode: true only when live Razorpay keys are absent.
-  // Uses featureFlags.razorpayLive (checks actual key presence server-side) so this
-  // cannot be spoofed by setting/omitting NEXT_PUBLIC_RAZORPAY_LIVE on Vercel.
+  // Per-tenant payment rail (migration 0024). Drives the pay UI: direct_upi shows
+  // the UPI QR and drops the order into the kitchen queue when the student taps to
+  // pay (no "I've Paid" button); razorpay would drive the gateway checkout.
+  const { data: tModeRow } = await supabase
+    .from("tenants")
+    .select("payment_mode")
+    .eq("id", tenant.id)
+    .maybeSingle<{ payment_mode: string }>();
+  const paymentMode: "direct_upi" | "razorpay" =
+    tModeRow?.payment_mode === "razorpay" ? "razorpay" : "direct_upi";
+
+  // isSimMode: dev-only simulate button (true only when live Razorpay keys are
+  // absent). Independent of payment_mode — it never shows in production.
   const isSimMode = !featureFlags.razorpayLive;
 
   return (
@@ -64,6 +74,7 @@ export default async function PayPage({ params }: { params: Promise<{ orderId: s
       order={order}
       lines={lines ?? []}
       isSimMode={isSimMode}
+      paymentMode={paymentMode}
     />
   );
 }
