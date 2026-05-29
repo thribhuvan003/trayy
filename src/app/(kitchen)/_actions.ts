@@ -271,7 +271,6 @@ export async function verifyAndCollect(
     latency_ms: Date.now() - start,
   });
 
-  revalidatePath(`/c/${ctx.tenant.slug}/kitchen`);
   return { ok: true };
 }
 
@@ -349,8 +348,7 @@ export async function markItemSoldOut(
     payload: { name: item.name, in_stock: inStock },
   });
 
-  revalidatePath(`/c/${ctx.tenant.slug}/menu`);
-  revalidatePath(`/c/${ctx.tenant.slug}/kitchen`);
+  revalidatePath(`/c/${ctx.tenant.slug}/menu`); // student menu needs fresh stock
   return { ok: true, itemId: item.id };
 }
 
@@ -501,7 +499,6 @@ export async function createWalkInOrder(opts: {
     latency_ms: Date.now() - start,
   });
 
-  revalidatePath(`/c/${ctx.tenant.slug}/kitchen`);
   revalidatePath(`/c/${ctx.tenant.slug}/admin/orders`);
   return { ok: true, orderId: order.id, shortCode: order.short_code };
 }
@@ -630,7 +627,6 @@ export async function rejectOrder(orderId: string, reason: string): Promise<Outc
     event_type: "rejected",
     payload: { actor: "kitchen", reason: reason.slice(0, 200) },
   });
-  revalidatePath(`/c/${ctx.tenant.slug}/kitchen`);
   return { ok: true };
 }
 
@@ -722,6 +718,5 @@ export async function revertStatus(
     payload: { actor: "kitchen", from: cur.status, to: toStatus, reason: "5s undo" },
   });
 
-  revalidatePath(`/c/${ctx.tenant.slug}/kitchen`);
   return { ok: true };
 }

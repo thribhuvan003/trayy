@@ -173,17 +173,16 @@ export function PayPanel({
     return () => clearInterval(id);
   }, [phase]);
 
-  // ── Show "I paid" button after 20s — anti-fraud gate ─────────────────────
-  // Runs in BOTH idle (desktop QR scan) and monitoring (mobile UPI app) phases.
-  // 20 seconds is enough time to complete a real UPI PIN entry.
-  // Previously only ran in monitoring phase — the idle phase had an IMMEDIATE
-  // button which was the fraud loophole: students clicked it without paying.
+  // ── Show "I paid" button after 20s — ONLY in monitoring phase ──────────────
+  // The button NEVER appears in idle phase. Idle = page loaded, UPI not opened.
+  // Monitoring = student explicitly tapped "Open UPI App" or "I scanned QR".
+  // Timer starts only when monitoring begins — a student waiting on the idle
+  // page for 20s sees nothing; they must first enter the UPI flow.
   useEffect(() => {
-    const isPayingPhase = phase === "idle" || phase === "monitoring";
-    if (isPayingPhase && !showFallback) {
+    if (phase === "monitoring" && !showFallback) {
       fallbackTimerRef.current = setTimeout(() => setShowFallback(true), 20_000);
     }
-    if (!isPayingPhase) setShowFallback(false);
+    if (phase !== "monitoring") setShowFallback(false);
     return () => { if (fallbackTimerRef.current) clearTimeout(fallbackTimerRef.current); };
   }, [phase, showFallback]);
 
@@ -455,27 +454,15 @@ export function PayPanel({
                 Paying directly to <span className="font-semibold opacity-85">{liveTenantUpi}</span>
               </div>
 
-              {/* After scanning QR on desktop: button only appears after 20s
-                  (same gate as the mobile monitoring path — prevents instant fraud) */}
-              {showFallback && (
-                <div className="mt-5 border-t border-[color:var(--color-line)] pt-5 w-full flex flex-col gap-2">
-                  <p className="text-[11.5px] text-center opacity-60">
-                    Paid via UPI? Confirm below so we can send your order to the kitchen.
-                  </p>
-                  <button
-                    onClick={onIvePaid}
-                    disabled={verifying}
-                    className="w-full h-12 text-[14px] font-bold rounded-xl text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-md hover:opacity-90 disabled:opacity-60"
-                    style={{ background: "var(--color-ocean-500, #e60000)" }}
-                  >
-                    {verifying ? (
-                      <><Loader2 size={16} className="animate-spin" /> Placing order…</>
-                    ) : (
-                      `I paid ₹${(order.total_paise / 100).toFixed(0)} — Place my order`
-                    )}
-                  </button>
-                </div>
-              )}
+              {/* Desktop: student scanned the QR on their phone.
+                  This button enters monitoring so the 20s timer starts.
+                  "I paid" only appears after 20s INSIDE monitoring — never here. */}
+              <button
+                onClick={onOpenUpi}
+                className="mt-4 hidden md:flex w-full h-10 items-center justify-center gap-2 rounded-xl border border-[color:var(--color-line)] text-[13px] text-[color:var(--color-ink)]/65 hover:text-[color:var(--color-ink)] transition-colors cursor-pointer"
+              >
+                Scanned QR on my phone — I&apos;m paying now
+              </button>
             </>
           )}
         </div>
