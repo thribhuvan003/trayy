@@ -18,33 +18,33 @@ export function KpiCard({
   /* stroke color for the sparkline */
   const sparkStroke =
     tone === "amber"
-      ? "#ffb22a"
+      ? "var(--admin-amber)"
       : tone === "rose"
-      ? "#ff6b6b"
+      ? "var(--admin-rose)"
       : tone === "mint"
-      ? "#3fe6a3"
-      : "#cdfa50";
+      ? "var(--admin-mint)"
+      : "var(--admin-lime)";
 
   /* delta pill colors */
   const deltaColor = deltaUp
-    ? { color: "#3fe6a3", background: "rgba(63,230,163,0.14)" }
-    : { color: "#ff6b6b", background: "rgba(255,107,107,0.14)" };
+    ? { color: "var(--admin-mint)", background: "rgba(63,230,163,0.14)" }
+    : { color: "var(--admin-rose)", background: "rgba(255,107,107,0.14)" };
 
   return (
     <div
       className="relative overflow-hidden flex flex-col gap-3.5 transition-colors"
       style={{
         padding: "18px 20px",
-        background: "#0f131b",
-        border: "1px solid rgba(255,255,255,0.07)",
+        background: "var(--admin-bg-card)",
+        border: "1px solid var(--admin-line)",
         borderRadius: 12,
         boxShadow: "3px 3px 0 rgba(238,241,247,0.08)",
       }}
       onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.13)";
+        (e.currentTarget as HTMLElement).style.borderColor = "var(--admin-line-2)";
       }}
       onMouseLeave={(e) => {
-        (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.07)";
+        (e.currentTarget as HTMLElement).style.borderColor = "var(--admin-line)";
       }}
     >
       {/* Top row: icon + delta */}
@@ -54,10 +54,10 @@ export function KpiCard({
           style={{
             height: 28,
             width: 28,
-            background: "rgba(255,255,255,0.05)",
+            background: "var(--admin-line)",
           }}
         >
-          <Icon size={13} strokeWidth={1.6} style={{ color: "#6d7689" }} />
+          <Icon size={13} strokeWidth={1.6} style={{ color: "var(--admin-ink-3)" }} />
         </div>
         {delta && (
           <span
@@ -79,7 +79,7 @@ export function KpiCard({
       {/* Label */}
       <div
         className="font-mono uppercase font-medium"
-        style={{ fontSize: 11, letterSpacing: "0.12em", color: "#6d7689" }}
+        style={{ fontSize: 11, letterSpacing: "0.12em", color: "var(--admin-ink-3)" }}
       >
         {label}
       </div>
@@ -91,7 +91,7 @@ export function KpiCard({
           fontSize: 38,
           fontWeight: 500,
           letterSpacing: "-0.03em",
-          color: "#eef1f7",
+          color: "var(--admin-ink)",
           fontVariantNumeric: "tabular-nums",
         }}
       >

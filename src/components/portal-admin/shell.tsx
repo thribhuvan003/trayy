@@ -30,8 +30,8 @@ function OrderingLinkBanner({ tenantSlug }: { tenantSlug: string }) {
   }
 
   return (
-    <div className="mx-2 mb-2 rounded-lg border border-[#cdfa50]/20 bg-[#cdfa50]/[0.06] px-3 py-2.5">
-      <div className="text-[10px] font-mono uppercase tracking-[0.12em] text-[#cdfa50]/70 mb-1.5">
+    <div className="mx-2 mb-2 rounded-lg border border-[var(--admin-lime)]/20 bg-[var(--admin-lime)]/[0.06] px-3 py-2.5">
+      <div className="text-[10px] font-mono uppercase tracking-[0.12em] text-[var(--admin-lime)]/70 mb-1.5">
         Student ordering link
       </div>
       <div className="flex items-center gap-1.5">
@@ -39,7 +39,7 @@ function OrderingLinkBanner({ tenantSlug }: { tenantSlug: string }) {
           href={`/c/${tenantSlug}/menu`}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex-1 min-w-0 text-[11px] font-mono text-[#aab3c5] hover:text-[#cdfa50] truncate transition-colors"
+          className="flex-1 min-w-0 text-[11px] font-mono text-[var(--admin-ink-2)] hover:text-[var(--admin-lime)] truncate transition-colors"
         >
           /c/{tenantSlug}/menu
         </a>
@@ -47,7 +47,7 @@ function OrderingLinkBanner({ tenantSlug }: { tenantSlug: string }) {
           type="button"
           onClick={copyLink}
           title="Copy link"
-          className="shrink-0 h-6 w-6 inline-flex items-center justify-center rounded text-[#6d7689] hover:text-[#cdfa50] hover:bg-[#cdfa50]/10 transition-colors"
+          className="shrink-0 h-6 w-6 inline-flex items-center justify-center rounded text-[var(--admin-ink-3)] hover:text-[var(--admin-lime)] hover:bg-[var(--admin-lime)]/10 transition-colors"
         >
           <Copy size={11} />
         </button>
@@ -56,7 +56,7 @@ function OrderingLinkBanner({ tenantSlug }: { tenantSlug: string }) {
           target="_blank"
           rel="noopener noreferrer"
           title="Open in new tab"
-          className="shrink-0 h-6 w-6 inline-flex items-center justify-center rounded text-[#6d7689] hover:text-[#cdfa50] hover:bg-[#cdfa50]/10 transition-colors"
+          className="shrink-0 h-6 w-6 inline-flex items-center justify-center rounded text-[var(--admin-ink-3)] hover:text-[var(--admin-lime)] hover:bg-[var(--admin-lime)]/10 transition-colors"
         >
           <ExternalLink size={11} />
         </a>
@@ -232,7 +232,7 @@ export function AdminShell({
               style={{
                 width: 30,
                 height: 30,
-                background: "linear-gradient(135deg, var(--admin-lime), #3fe6a3)",
+                background: "linear-gradient(135deg, var(--admin-lime), var(--admin-mint))",
                 color: "var(--admin-bg)",
               }}
             >
@@ -313,23 +313,23 @@ export function AdminShell({
         {/* Footer */}
         <footer
           className="hidden lg:block border-t mt-auto"
-          style={{ borderColor: "rgba(255,255,255,0.07)" }}
+          style={{ borderColor: "var(--admin-line)" }}
         >
           <div
             className="mx-auto max-w-7xl px-8 py-4 flex flex-wrap items-center justify-between gap-2 font-mono"
-            style={{ fontSize: 11, color: "#6d7689" }}
+            style={{ fontSize: 11, color: "var(--admin-ink-3)" }}
           >
             <span>
               Powered by{" "}
-              <Link href="/" className="font-medium transition-colors" style={{ color: "#aab3c5" }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#cdfa50"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#aab3c5"; }}
+              <Link href="/" className="font-medium transition-colors" style={{ color: "var(--admin-ink-2)" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--admin-lime)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--admin-ink-2)"; }}
               >Tray</Link>
               {" "}· Campus Edition · Payments by Razorpay
             </span>
             <span className="flex items-center gap-3">
-              <Link href="/legal/terms" className="transition-colors hover:text-[#aab3c5]">Terms</Link>
-              <Link href="/legal/privacy" className="transition-colors hover:text-[#aab3c5]">Privacy</Link>
+              <Link href="/legal/terms" className="transition-colors hover:text-[var(--admin-ink-2)]">Terms</Link>
+              <Link href="/legal/privacy" className="transition-colors hover:text-[var(--admin-ink-2)]">Privacy</Link>
             </span>
           </div>
         </footer>
@@ -338,8 +338,8 @@ export function AdminShell({
         <nav
           className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t backdrop-blur-xl"
           style={{
-            borderColor: "rgba(255,255,255,0.07)",
-            background: "rgba(11,14,20,0.95)",
+            borderColor: "var(--admin-line)",
+            background: "var(--admin-bg-2)",
           }}
         >
           <div className="grid grid-cols-5">
@@ -356,7 +356,7 @@ export function AdminShell({
                 className="flex flex-col items-center justify-center gap-0.5 py-2.5 font-mono uppercase tracking-wider"
                 style={{
                   fontSize: 12,
-                  color: pathname?.startsWith(n.match) ? "#cdfa50" : "#6d7689",
+                  color: pathname?.startsWith(n.match) ? "var(--admin-lime)" : "var(--admin-ink-3)",
                 }}
               >
                 <n.icon size={15} />

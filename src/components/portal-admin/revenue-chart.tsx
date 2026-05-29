@@ -38,8 +38,8 @@ export function RevenueChart({ days }: { days: { label: string; revenue: number 
         <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full" preserveAspectRatio="none">
           <defs>
             <linearGradient id="revGrad" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="#d2fb50" stopOpacity="0.35" />
-              <stop offset="100%" stopColor="#d2fb50" stopOpacity="0" />
+              <stop offset="0%" stopColor="var(--admin-lime)" stopOpacity="0.35" />
+              <stop offset="100%" stopColor="var(--admin-lime)" stopOpacity="0" />
             </linearGradient>
           </defs>
           {[0.25, 0.5, 0.75].map((p, i) => (
@@ -56,7 +56,7 @@ export function RevenueChart({ days }: { days: { label: string; revenue: number 
           <path d={area} fill="url(#revGrad)" />
           <motion.path
             d={line}
-            stroke="#d2fb50"
+            stroke="var(--admin-lime)"
             strokeWidth="1.75"
             fill="none"
             strokeLinecap="round"
@@ -71,8 +71,8 @@ export function RevenueChart({ days }: { days: { label: string; revenue: number 
               cx={p.x}
               cy={p.y}
               r={i === todayIdx ? 4 : 2.5}
-              fill={i === todayIdx ? "#0a0d12" : "#d2fb50"}
-              stroke={i === todayIdx ? "#d2fb50" : "transparent"}
+              fill={i === todayIdx ? "var(--admin-bg)" : "var(--admin-lime)"}
+              stroke={i === todayIdx ? "var(--admin-lime)" : "transparent"}
               strokeWidth={2}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -84,7 +84,7 @@ export function RevenueChart({ days }: { days: { label: string; revenue: number 
               key={i}
               x={pad.l + i * step}
               y={h - pad.b + 16}
-              fill="#646d80"
+              fill="var(--admin-ink-3)"
               fontSize="10"
               fontFamily="monospace"
               textAnchor="middle"
@@ -97,7 +97,7 @@ export function RevenueChart({ days }: { days: { label: string; revenue: number 
               <text
                 x={todayPt.x}
                 y={todayPt.y - 12}
-                fill="#d2fb50"
+                fill="var(--admin-lime)"
                 fontSize="10"
                 fontFamily="monospace"
                 textAnchor="middle"

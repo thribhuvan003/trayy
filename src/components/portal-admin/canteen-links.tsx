@@ -27,11 +27,11 @@ function CopyRow({ link }: { link: Link }) {
       style={{
         padding: "12px 16px",
         borderRadius: 10,
-        border: "1px solid rgba(255,255,255,0.07)",
-        background: "#0f131b",
+        border: "1px solid var(--admin-line)",
+        background: "var(--admin-bg-card)",
       }}
-      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.13)"; }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.07)"; }}
+      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--admin-line-2)"; }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--admin-line)"; }}
     >
       {/* icon */}
       <div
@@ -44,15 +44,15 @@ function CopyRow({ link }: { link: Link }) {
       {/* text */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="font-semibold" style={{ fontSize: 13, color: "#eef1f7" }}>{link.label}</span>
+          <span className="font-semibold" style={{ fontSize: 13, color: "var(--admin-ink)" }}>{link.label}</span>
           <span
             className="font-mono uppercase"
-            style={{ fontSize: 10, letterSpacing: "0.10em", color: "#6d7689" }}
+            style={{ fontSize: 10, letterSpacing: "0.10em", color: "var(--admin-ink-3)" }}
           >
             {link.who}
           </span>
         </div>
-        <p className="mt-0.5 truncate font-mono" style={{ fontSize: 11, color: "#6d7689" }}>{link.url}</p>
+        <p className="mt-0.5 truncate font-mono" style={{ fontSize: 11, color: "var(--admin-ink-3)" }}>{link.url}</p>
       </div>
 
       {/* actions */}
@@ -62,11 +62,11 @@ function CopyRow({ link }: { link: Link }) {
           onClick={copy}
           title="Copy link"
           className="flex items-center justify-center rounded-lg transition-colors"
-          style={{ height: 32, width: 32, color: "#6d7689" }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#171c26"; (e.currentTarget as HTMLElement).style.color = "#eef1f7"; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ""; (e.currentTarget as HTMLElement).style.color = "#6d7689"; }}
+          style={{ height: 32, width: 32, color: "var(--admin-ink-3)" }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--admin-bg-3)"; (e.currentTarget as HTMLElement).style.color = "var(--admin-ink)"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ""; (e.currentTarget as HTMLElement).style.color = "var(--admin-ink-3)"; }}
         >
-          {copied ? <Check size={14} style={{ color: "#3fe6a3" }} /> : <Copy size={14} />}
+          {copied ? <Check size={14} style={{ color: "var(--admin-mint)" }} /> : <Copy size={14} />}
         </button>
         <a
           href={link.url}
@@ -74,9 +74,9 @@ function CopyRow({ link }: { link: Link }) {
           rel="noreferrer"
           title="Open in new tab"
           className="flex items-center justify-center rounded-lg transition-colors"
-          style={{ height: 32, width: 32, color: "#6d7689" }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#171c26"; (e.currentTarget as HTMLElement).style.color = "#eef1f7"; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ""; (e.currentTarget as HTMLElement).style.color = "#6d7689"; }}
+          style={{ height: 32, width: 32, color: "var(--admin-ink-3)" }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--admin-bg-3)"; (e.currentTarget as HTMLElement).style.color = "var(--admin-ink)"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ""; (e.currentTarget as HTMLElement).style.color = "var(--admin-ink-3)"; }}
         >
           <ExternalLink size={14} />
         </a>
@@ -103,7 +103,7 @@ export function CanteenLinks({
       label: "Student ordering",
       description: "Share with students or customers",
       url: `${base}/c/${tenantSlug}/menu`,
-      icon: <ShoppingBag size={16} style={{ color: "#5cb1ff" }} />,
+      icon: <ShoppingBag size={16} style={{ color: "var(--admin-sky)" }} />,
       who: "Students · Customers",
       accentBg: "rgba(92,177,255,0.14)",
     },
@@ -111,7 +111,7 @@ export function CanteenLinks({
       label: "Kitchen board",
       description: "Open on the kitchen tablet",
       url: `${base}/c/${tenantSlug}/kitchen`,
-      icon: <MonitorSmartphone size={16} style={{ color: "#ff6b6b" }} />,
+      icon: <MonitorSmartphone size={16} style={{ color: "var(--admin-rose)" }} />,
       who: "Kitchen staff",
       accentBg: "rgba(255,107,107,0.14)",
     },
@@ -119,7 +119,7 @@ export function CanteenLinks({
       label: "Admin dashboard",
       description: "Your management console",
       url: `${base}/c/${tenantSlug}/admin/dashboard`,
-      icon: <LayoutDashboard size={16} style={{ color: "#cdfa50" }} />,
+      icon: <LayoutDashboard size={16} style={{ color: "var(--admin-lime)" }} />,
       who: "You · Canteen admin",
       accentBg: "rgba(205,250,80,0.12)",
     },
@@ -129,7 +129,7 @@ export function CanteenLinks({
             label: "College portal",
             description: "All canteens at this institution",
             url: `${base}/college/${collegeSlug}`,
-            icon: <School size={16} style={{ color: "#a78bfa" }} />,
+            icon: <School size={16} style={{ color: "var(--admin-violet)" }} />,
             who: "College director",
             accentBg: "rgba(167,139,250,0.14)",
           } satisfies Link,
@@ -142,16 +142,16 @@ export function CanteenLinks({
       className="mb-6 p-4"
       style={{
         borderRadius: 16,
-        border: "1px solid rgba(255,255,255,0.07)",
-        background: "rgba(15,19,27,0.60)",
+        border: "1px solid var(--admin-line)",
+        background: "var(--admin-bg-card)",
       }}
     >
       <div className="mb-3 flex items-center justify-between">
         <div>
-          <h2 className="font-semibold" style={{ fontSize: 13, color: "#eef1f7" }}>
+          <h2 className="font-semibold" style={{ fontSize: 13, color: "var(--admin-ink)" }}>
             {tenantName} — Your links
           </h2>
-          <p className="mt-0.5" style={{ fontSize: 11, color: "#6d7689" }}>
+          <p className="mt-0.5" style={{ fontSize: 11, color: "var(--admin-ink-3)" }}>
             Share the student link with your customers. Open the kitchen link on your tablet.
           </p>
         </div>

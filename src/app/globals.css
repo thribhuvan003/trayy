@@ -261,6 +261,51 @@
   --admin-violet-soft: rgba(124, 58, 237, 0.08);
 }
 
+/* ─── Admin DARK theme ───────────────────────────────────────────────────────
+   The bright block above is the default. This overrides every --admin-* token
+   (and the graphite scale it builds on) with the original dark palette when
+   html.dark is set, so the admin light/dark toggle actually switches EVERY
+   token-based element. Components must use these tokens (not hardcoded hex) for
+   the toggle to reach them. */
+html.dark [data-portal="admin"] {
+  --color-graphite-900: #0a0d12; /* dashboard background */
+  --color-graphite-800: #0f131a; /* sidebar background */
+  --color-graphite-700: #161b25; /* card background/hover */
+  --color-graphite-600: #1c2230; /* form elements / borders */
+  --color-graphite-500: #3f4756;
+  --color-graphite-400: #646d80; /* muted text */
+  --color-graphite-300: #a3acbd; /* body text */
+  --color-graphite-200: #e8ecf2; /* strong body / subheadings */
+  --color-graphite-100: #f4f6fa; /* primary text / headings */
+
+  --admin-bg:          var(--color-graphite-900);
+  --admin-bg-2:        var(--color-graphite-800);
+  --admin-bg-3:        var(--color-graphite-700);
+  --admin-bg-4:        var(--color-graphite-600);
+  --admin-bg-card:     #0f131b;
+  --admin-line:        rgba(255, 255, 255, 0.07);
+  --admin-line-2:      rgba(255, 255, 255, 0.13);
+  --admin-line-3:      rgba(255, 255, 255, 0.20);
+  --admin-ink:         var(--color-graphite-100);
+  --admin-ink-2:       var(--color-graphite-200);
+  --admin-ink-3:       var(--color-graphite-400);
+  --admin-ink-4:       var(--color-graphite-500);
+
+  --admin-lime:        #d2fb50; /* neon chartreuse pops on dark */
+  --admin-lime-2:      #b4dc3a;
+  --admin-lime-soft:   rgba(210, 251, 80, 0.12);
+  --admin-amber:       #ffae29;
+  --admin-amber-soft:  rgba(255, 174, 41, 0.12);
+  --admin-rose:        #ff6b6b;
+  --admin-rose-soft:   rgba(255, 107, 107, 0.12);
+  --admin-mint:        #3fe6a3;
+  --admin-mint-soft:   rgba(63, 230, 163, 0.12);
+  --admin-sky:         #5cb1ff;
+  --admin-sky-soft:    rgba(92, 177, 255, 0.12);
+  --admin-violet:      #a78bfa;
+  --admin-violet-soft: rgba(167, 139, 250, 0.12);
+}
+
 /* ─── Dark-mode token overrides ─── */
 html.dark {
   --color-paper: #0a0d12;
