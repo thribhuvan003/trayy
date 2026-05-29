@@ -64,10 +64,25 @@ export async function markPreparing(orderId: string): Promise<Outcome> {
   if (!rate.success) return { ok: false, error: "Too many actions — slow down" };
 
   const admin = getAdminClient(ctx.tenant.id);
+
+  // Pre-flight SELECT: needed for specific error messages on illegal transitions
+  // (e.g. "Cannot start an order in 'collected'") and for "not found" detection.
+  // The CAS UPDATE below ALSO guards against races — these two are complementary:
+  // SELECT gives clear errors, CAS prevents the TOCTOU window between them.
+  const { data: cur } = await admin
+    .from("orders")
+    .select("status")
+    .eq("id", orderId)
+    .eq("tenant_id", ctx.tenant.id)
+    .maybeSingle<{ status: string }>();
+  if (!cur) return { ok: false, error: "Order not found" };
+  if (cur.status !== "placed") {
+    return { ok: false, error: `Cannot start an order in "${cur.status}"` };
+  }
+
   const start = Date.now();
 
-  // CAS UPDATE — no pre-flight SELECT needed. If status != "placed" the update
-  // affects 0 rows and we return an error. Removes one sequential DB round-trip.
+  // CAS guard: only update if status is still "placed" (concurrent cancel race).
   const { data: casResult } = await admin.from("orders")
     .update({ status: "preparing" })
     .eq("id", orderId)
@@ -75,10 +90,10 @@ export async function markPreparing(orderId: string): Promise<Outcome> {
     .eq("status", "placed")
     .select("id");
   if (!casResult || casResult.length === 0) {
-    return { ok: false, error: "Order already moved — refresh the board" };
+    return { ok: false, error: "Order status changed concurrently — refresh the board" };
   }
 
-  // Fire audit/log/event writes in parallel — none block the success response.
+  // All audit/log/event writes fire in parallel — none block the response.
   void Promise.all([
     admin.from("order_status_logs").insert({
       tenant_id: ctx.tenant.id, order_id: orderId,
@@ -93,7 +108,6 @@ export async function markPreparing(orderId: string): Promise<Outcome> {
     logger.info("kitchen status transition", { tenant_id: ctx.tenant.id, order_id: orderId, from: "placed", to: "preparing", latency_ms: Date.now() - start });
   });
 
-  // No revalidatePath — kitchen board uses client Realtime, not SSR page cache.
   return { ok: true };
 }
 
