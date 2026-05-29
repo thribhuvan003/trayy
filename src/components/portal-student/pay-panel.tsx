@@ -11,12 +11,6 @@ import { upiQrPayload } from "@/lib/payments/upi";
 import { simulatePaymentCapture, verifyPaymentNow } from "@/app/(student)/_actions";
 import { getBrowserClient } from "@/lib/supabase/browser";
 
-// ── Phase state ────────────────────────────────────────────────────────────
-// idle       — QR visible, student hasn't opened UPI app yet
-// monitoring — student opened UPI app (or 3s elapsed), system is watching
-// confirming — student manually tapped "I've paid", server round-trip in progress
-// success    — payment detected, showing success flash before redirect
-// failed     — payment_failed status received
 type Phase = "idle" | "monitoring" | "confirming" | "success" | "failed";
 
 type Order = {
@@ -57,10 +51,8 @@ export function PayPanel({
   const [phase, setPhase] = useState<Phase>("idle");
   const [monitoringMsg, setMonitoringMsg] = useState("Waiting for your payment…");
   const [demoDismissed, setDemoDismissed] = useState(false);
-  const [showFallback, setShowFallback] = useState(false);
   const [verifying, startVerify] = useTransition();
   const [pending, start] = useTransition();
-  const fallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [remaining, setRemaining] = useState(() => {
     if (!order.payment_expires_at) return 900;
@@ -163,8 +155,8 @@ export function PayPanel({
     if (phase !== "monitoring") return;
     const messages = [
       "Waiting for your payment…",
-      "Checking with your bank…",
       "Almost there — UPI can take a few seconds…",
+      "Checking with your bank…",
       "Still watching for your payment…",
       "This usually takes under 30 seconds…",
     ];
@@ -175,17 +167,6 @@ export function PayPanel({
     }, 5000);
     return () => clearInterval(id);
   }, [phase]);
-
-  // ── Fallback button: show after 12s of monitoring with no detection ───────
-  // "I've already paid" appears as a small secondary option — not the hero.
-  useEffect(() => {
-    if (phase === "monitoring" && !showFallback) {
-      fallbackTimerRef.current = setTimeout(() => setShowFallback(true), 12000);
-    }
-    return () => {
-      if (fallbackTimerRef.current) clearTimeout(fallbackTimerRef.current);
-    };
-  }, [phase, showFallback]);
 
   // ── Auto-verify every 15s during monitoring ────────────────────────────────
   // Fallback for when the Razorpay webhook fails or is delayed: polls
@@ -233,10 +214,9 @@ export function PayPanel({
       } else if (r.status === "failed") {
         handleDetected("payment_failed");
       } else {
-        // Still pending — go back to monitoring with fallback visible
+        // Still pending — go back to monitoring
         setPhase("monitoring");
-        setShowFallback(true);
-        toast.info("Payment not confirmed yet — keep this page open");
+        toast.info("Payment not confirmed yet — make sure you completed the transaction.");
       }
     });
   };
@@ -358,29 +338,34 @@ export function PayPanel({
                   className="font-semibold text-[15px] tracking-tight mb-1"
                   style={{ fontFamily: "var(--font-bricolage)" }}
                 >
-                  {phase === "confirming" ? "Confirming payment…" : monitoringMsg}
+                  {phase === "confirming" ? "Placing order in queue…" : monitoringMsg}
                 </p>
                 <p className="text-[12px] opacity-50">
                   {phase === "confirming"
-                    ? "Checking with Razorpay…"
-                    : "You'll be taken to your order automatically."}
+                    ? "Updating kitchen & admin dashboard..."
+                    : "Once your UPI transfer is complete, we'll verify it automatically."}
                 </p>
               </div>
 
-              {/* Fallback — appears after 12s with no detection */}
-              {showFallback && phase === "monitoring" && (
-                <div className="mt-2 border-t border-[color:var(--color-line)] pt-4 w-full">
-                  <p className="text-[11.5px] opacity-50 mb-2">Paid but not auto-detected?</p>
-                  <button
-                    onClick={onIvePaid}
-                    disabled={verifying}
-                    className="text-[12.5px] font-medium underline-offset-2 hover:underline transition-all"
-                    style={{ color: "var(--color-ocean-500, #e60000)" }}
-                  >
-                    {verifying ? "Checking…" : "I've already paid — verify manually"}
-                  </button>
-                </div>
-              )}
+              {/* Primary verification button - always show instantly inside monitoring */}
+              <div className="mt-4 border-t border-[color:var(--color-line)] pt-5 w-full flex flex-col items-center">
+                <p className="text-[12px] opacity-70 mb-3 font-sans">Once your UPI transaction is complete:</p>
+                <button
+                  onClick={onIvePaid}
+                  disabled={verifying}
+                  className="w-full h-12 text-[14px] font-bold rounded-xl text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-md hover:opacity-90 disabled:opacity-60"
+                  style={{ background: "var(--color-ocean-500, #e60000)" }}
+                >
+                  {verifying ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Verifying with Server...
+                    </>
+                  ) : (
+                    "I have paid — Place Order"
+                  )}
+                </button>
+              </div>
             </div>
           ) : (
             <>
@@ -425,8 +410,27 @@ export function PayPanel({
                 </div>
               </details>
 
-              <div className="mt-4 text-[11.5px] opacity-45 text-center">
-                Paying to <span className="font-semibold opacity-75">{liveTenantUpi}</span>
+              <div className="mt-4 text-[11.5px] opacity-50 text-center">
+                Paying directly to <span className="font-semibold opacity-85">{liveTenantUpi}</span>
+              </div>
+
+              {/* Primary verification button for desktop scan & idle manual placement */}
+              <div className="mt-5 border-t border-[color:var(--color-line)] pt-5 w-full">
+                <button
+                  onClick={onIvePaid}
+                  disabled={verifying}
+                  className="w-full h-12 text-[14px] font-bold rounded-xl text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-md hover:opacity-90 disabled:opacity-60"
+                  style={{ background: "var(--color-ocean-500, #e60000)" }}
+                >
+                  {verifying ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Verifying with Server...
+                    </>
+                  ) : (
+                    "I have paid — Place Order"
+                  )}
+                </button>
               </div>
             </>
           )}
