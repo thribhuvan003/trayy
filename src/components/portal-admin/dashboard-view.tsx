@@ -81,6 +81,17 @@ export function DashboardView({
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Rush-hour flood guard for the admin money refetch (mirrors the kitchen board).
+  // refreshMoneyData pulls up to 1600 orders + today's items, so calling it once
+  // per order_status_logs INSERT during a 1000-order rush would hammer the DB and
+  // freeze the dashboard. scheduleMoneyRefresh (below) coalesces a burst into one
+  // refetch per window with an in-flight guard.
+  const MONEY_REFRESH_MS = 600;
+  const moneyRefreshTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const moneyRefreshInFlightRef = useRef(false);
+  const moneyRefreshQueuedRef = useRef(false);
+  const scheduleMoneyRefreshRef = useRef<() => void>(() => {});
+
   const prevPaidCountRef = useRef(
     initialTodayOrders.filter((o) => !["pending_payment", "rejected", "expired"].includes(o.status)).length
   );
@@ -181,6 +192,31 @@ export function DashboardView({
     }
   }, [tenantId]);
 
+  // Coalesce a burst of realtime events into ONE money refetch per MONEY_REFRESH_MS
+  // window. Trailing debounce + in-flight guard: a 1000-order rush triggers a couple
+  // of refetches/sec instead of one heavy 1600-row refetch per event.
+  const scheduleMoneyRefresh = useCallback(() => {
+    if (moneyRefreshTimerRef.current) return;
+    moneyRefreshTimerRef.current = setTimeout(async () => {
+      moneyRefreshTimerRef.current = null;
+      if (moneyRefreshInFlightRef.current) {
+        moneyRefreshQueuedRef.current = true;
+        return;
+      }
+      moneyRefreshInFlightRef.current = true;
+      try {
+        await refreshMoneyData();
+      } finally {
+        moneyRefreshInFlightRef.current = false;
+        if (moneyRefreshQueuedRef.current) {
+          moneyRefreshQueuedRef.current = false;
+          scheduleMoneyRefreshRef.current();
+        }
+      }
+    }, MONEY_REFRESH_MS);
+  }, [refreshMoneyData]);
+  scheduleMoneyRefreshRef.current = scheduleMoneyRefresh;
+
   // Resilient Realtime subscription for money data (modeled exactly on the proven kitchen board).
   // order_events / order_status_logs INSERT for this tenant triggers refreshMoneyData.
   // Exponential backoff + jitter, visibilitychange, 20s poll fallback, truthful high-contrast banner.
@@ -207,7 +243,7 @@ export function DashboardView({
           filter: `tenant_id=eq.${tenantId}`,
         },
         () => {
-          void refreshMoneyData();
+          scheduleMoneyRefresh();
           if (connStateRef.current !== "online") {
             setConnState("online");
             connStateRef.current = "online";
@@ -251,14 +287,14 @@ export function DashboardView({
     if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
     pollIntervalRef.current = setInterval(() => {
       if (document.visibilityState === "visible") {
-        void refreshMoneyData();
+        scheduleMoneyRefresh();
       }
     }, 20000);
 
     // Visibilitychange handler (exact kitchen pattern).
     const onVisibility = () => {
       if (document.visibilityState === "visible") {
-        void refreshMoneyData();
+        scheduleMoneyRefresh();
         if (connStateRef.current !== "online") {
           reconnectAttemptRef.current = 0;
           setReconnectAttempt(0);
@@ -274,8 +310,12 @@ export function DashboardView({
         clearInterval(pollIntervalRef.current);
         pollIntervalRef.current = null;
       }
+      if (moneyRefreshTimerRef.current) {
+        clearTimeout(moneyRefreshTimerRef.current);
+        moneyRefreshTimerRef.current = null;
+      }
     };
-  }, [tenantId, refreshMoneyData]);
+  }, [tenantId, scheduleMoneyRefresh]);
 
   useEffect(() => {
     const cleanup = setupRealtime();
