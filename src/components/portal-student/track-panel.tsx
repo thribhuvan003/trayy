@@ -251,13 +251,28 @@ export function TrackPanel({ tenantSlug, tenantName, order: initial, lines }: { 
             <div className="text-[11px] font-mono uppercase tracking-wider text-white/75 mb-2">
               Your pickup code · show at counter
             </div>
+            {/* Each digit in its own equal-width box so they're perfectly evenly spaced
+                regardless of the digit's natural width in the display font. */}
             <div
-              className="tabular leading-none text-[clamp(80px,16vw,140px)] tracking-[0.06em] cursor-pointer select-all"
-              style={{ fontFamily: "var(--font-bebas, Impact, sans-serif)" }}
+              className="flex gap-2 sm:gap-3 cursor-pointer select-none"
               title="Tap to copy"
               onClick={() => navigator.clipboard.writeText(otp).catch(() => null)}
             >
-              {otp.split("").join(" ")}
+              {otp.split("").map((digit, i) => (
+                <div
+                  key={i}
+                  className="flex-1 flex items-center justify-center rounded-2xl bg-white/15"
+                  style={{
+                    fontFamily: "var(--font-bebas, Impact, sans-serif)",
+                    fontSize: "clamp(52px, 14vw, 96px)",
+                    lineHeight: 1,
+                    paddingTop: 10,
+                    paddingBottom: 10,
+                  }}
+                >
+                  {digit}
+                </div>
+              ))}
             </div>
             <p className="text-[13px] text-white/80 mt-3">
               Show this code at the counter. You have 3 tries — if it doesn&rsquo;t work, show your order number #{order.short_code} to the staff.

@@ -495,15 +495,17 @@ export function PayPanel({
               {/* Phase: idle — Direct UPI only (hidden when Razorpay mode + idle) */}
               {paymentMode === "razorpay" ? null : <>
 
-              {/* Mobile: Open UPI App is the primary CTA */}
-              <a
-                href={upiUri}
-                onClick={onOpenUpi}
-                className="md:hidden w-full h-14 text-[15px] inline-flex items-center justify-center gap-2.5 rounded-2xl text-white font-semibold transition-all active:scale-[0.98] mb-3"
+              {/* Mobile: Open UPI App is the primary CTA.
+                  Uses a button + window.location instead of <a href> to avoid
+                  Chrome's phishing interstitial triggered by the @ in upi://... URLs. */}
+              <button
+                type="button"
+                onClick={() => { onOpenUpi(); window.location.href = upiUri; }}
+                className="md:hidden w-full h-14 text-[15px] inline-flex items-center justify-center gap-2.5 rounded-2xl text-white font-semibold transition-all active:scale-[0.98] mb-3 cursor-pointer"
                 style={{ background: "var(--color-ocean-500, #e60000)" }}
               >
                 <Smartphone size={18} /> Open UPI App to Pay
-              </a>
+              </button>
               <p className="md:hidden text-[11.5px] opacity-50 mb-5">Opens GPay · PhonePe · Paytm · any UPI app</p>
 
               {/* Desktop: QR is prominent */}
@@ -513,14 +515,14 @@ export function PayPanel({
               <div className="hidden md:block p-4 bg-white rounded-2xl shadow-[inset_0_0_0_1px_rgba(10,22,40,0.06)] mb-4">
                 <QRCode value={upiUri} size={192} bgColor="#ffffff" fgColor="#0a1628" />
               </div>
-              <a
-                href={upiUri}
-                onClick={onOpenUpi}
-                className="hidden md:inline-flex items-center gap-2 h-11 px-6 rounded-full text-white text-[13.5px] font-semibold transition-all hover:opacity-90 active:scale-[0.98]"
+              <button
+                type="button"
+                onClick={() => { onOpenUpi(); window.location.href = upiUri; }}
+                className="hidden md:inline-flex items-center gap-2 h-11 px-6 rounded-full text-white text-[13.5px] font-semibold transition-all hover:opacity-90 active:scale-[0.98] cursor-pointer"
                 style={{ background: "var(--color-ocean-500, #e60000)" }}
               >
                 <Smartphone size={15} /> Open UPI App
-              </a>
+              </button>
 
               {/* Mobile: QR in collapsed details */}
               <details className="md:hidden w-full text-left mt-1">

@@ -68,14 +68,19 @@ export function UpiVpaField({ currentVpa }: { currentVpa: string | null }) {
       </div>
 
       {status === "valid" && (
-        <p className="text-[11px] text-emerald-400">✓ Valid UPI format</p>
+        <div className="flex flex-col gap-1">
+          <p className="text-[11px] text-emerald-400">✓ Format looks correct</p>
+          <p className="text-[11px] text-amber-400">
+            ⚠ Format check only — we cannot verify the account exists at the bank. <strong>Send ₹1 to this UPI from a different phone</strong> to confirm it receives money before going live.
+          </p>
+        </div>
       )}
       {status === "invalid" && (
         <p className="text-[11px] text-rose-400">✗ {errorMsg}</p>
       )}
       {status === "idle" && (
         <p className="text-[11px] text-graphite-500">
-          Students pay <strong className="text-graphite-300">directly</strong> to this UPI — money goes instantly to your bank account. No middleman.
+          Students pay <strong className="text-graphite-300">directly</strong> to this UPI — money goes instantly to your bank. Always test with ₹1 first before going live.
         </p>
       )}
 
