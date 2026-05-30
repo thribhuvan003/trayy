@@ -49,7 +49,7 @@ export function AdminSelect({
   }, [open]);
 
   return (
-    <div className="relative" ref={ref}>
+    <div className={`relative ${open ? "z-50" : ""}`} ref={ref}>
       <input type="hidden" name={name} value={value} />
       <button
         type="button"
@@ -79,7 +79,7 @@ export function AdminSelect({
       {open && (
         <ul
           role="listbox"
-          className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-admin-line-2 bg-admin-bg-card p-1 shadow-lg shadow-black/5"
+          className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-admin-line-2 bg-admin-bg-card p-1 shadow-xl shadow-black/20"
         >
           {options.map((o) => {
             const active = o.value === value;
