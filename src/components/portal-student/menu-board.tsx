@@ -8,6 +8,7 @@ import { Minus, Plus } from "lucide-react";
 import type { MenuItem, MenuCategory } from "@/lib/db/types";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { cn, formatRupees } from "@/lib/utils";
+import { useRealtimeWithFallback, type PostgresFilter } from "@/lib/hooks/use-realtime-with-fallback";
 import { useCart } from "@/lib/cart/store";
 import { toast } from "sonner";
 import type { CurrentUser } from "@/lib/auth/get-user";
@@ -196,31 +197,51 @@ export function MenuBoard({
     }, 500);
   }, [router]);
 
-  useEffect(() => {
-    const sb = getBrowserClient();
-    // Server-side tenant filter — only THIS canteen's menu changes reach the
-    // client. Previously the subscription was unfiltered and every tenant's
-    // change hit the socket (filtered in JS). `items` is also dropped from the
-    // deps below so the channel no longer tears down + re-subscribes on every
-    // refresh — that resubscription churn was extra jank during service.
-    const menuCh = sb.channel(`realtime-menu-${tenantId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "menu_items", filter: `tenant_id=eq.${tenantId}` }, () => {
-        debouncedRefresh();
-      }).subscribe();
-    const tenantCh = sb.channel(`realtime-tenant-${tenantId}`)
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "tenants", filter: `id=eq.${tenantId}` }, () => debouncedRefresh()).subscribe();
-    return () => {
-      sb.removeChannel(menuCh);
-      sb.removeChannel(tenantCh);
-      if (refreshTimerRef.current) { clearTimeout(refreshTimerRef.current); refreshTimerRef.current = null; }
-    };
-  }, [tenantId, debouncedRefresh]);
+  // Stable filter arrays — defined outside render so the hook's dep array never
+  // changes. If we put these inside the component body they'd be new objects every
+  // render and trigger endless resubscriptions.
+  const menuFilters: PostgresFilter[] = useMemo(() => [
+    { event: "*", schema: "public", table: "menu_items", filter: `tenant_id=eq.${tenantId}` },
+  ], [tenantId]);
+  const tenantFilters: PostgresFilter[] = useMemo(() => [
+    { event: "UPDATE", schema: "public", table: "tenants", filter: `id=eq.${tenantId}` },
+  ], [tenantId]);
 
+  const menuStatus = useRealtimeWithFallback(
+    `realtime-menu-${tenantId}`,
+    menuFilters,
+    { onEvent: debouncedRefresh, onFallbackPoll: debouncedRefresh, pollIntervalMs: 30_000 }
+  );
+  const tenantStatus = useRealtimeWithFallback(
+    `realtime-tenant-${tenantId}`,
+    tenantFilters,
+    { onEvent: debouncedRefresh, onFallbackPoll: debouncedRefresh, pollIntervalMs: 30_000 }
+  );
+
+  // Aggregate: disconnected if either channel drops (most conservative).
+  const realtimeStatus =
+    menuStatus === "connected" && tenantStatus === "connected" ? "connected"
+    : menuStatus === "disconnected" || tenantStatus === "disconnected" ? "disconnected"
+    : "connecting";
+
+  // Tab visibility — only refresh via WebSocket path when already connected.
+  // When offline the polling fallback already covers wake-from-background.
   useEffect(() => {
-    const fn = () => { if (document.visibilityState === "visible") debouncedRefresh(); };
+    const fn = () => {
+      if (document.visibilityState === "visible" && realtimeStatus === "connected") {
+        debouncedRefresh();
+      }
+    };
     document.addEventListener("visibilitychange", fn);
     return () => document.removeEventListener("visibilitychange", fn);
-  }, [debouncedRefresh]);
+  }, [debouncedRefresh, realtimeStatus]);
+
+  // Cleanup debounce timer on unmount.
+  useEffect(() => {
+    return () => {
+      if (refreshTimerRef.current) { clearTimeout(refreshTimerRef.current); refreshTimerRef.current = null; }
+    };
+  }, []);
 
   const S = {
     text: "var(--color-ink)", muted: "var(--student-muted)", muted2: "var(--student-muted2)",
@@ -354,6 +375,12 @@ export function MenuBoard({
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: statusInfo.dotColor, display: "inline-block" }} />
               {statusInfo.text}
             </div>
+            {realtimeStatus !== "connected" && (
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 999, background: "rgba(245,158,11,.10)", border: "1px solid rgba(245,158,11,.25)", fontFamily: S.fontMono, fontSize: 10, letterSpacing: "0.08em", color: "#d97706", marginBottom: 6 }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#f59e0b", display: "inline-block" }} />
+                {realtimeStatus === "connecting" ? "RECONNECTING…" : "UPDATES PAUSED · REFRESHING EVERY 30s"}
+              </div>
+            )}
             <h1 style={{ fontFamily: S.fontDisplay, fontSize: "clamp(1.75rem, 8vw, 42px)", fontWeight: 500, lineHeight: 1.05, letterSpacing: "-0.035em", margin: "4px 0 0" }}>
               What&apos;s <span style={{ fontStyle: "italic", fontWeight: 400 }}>cooking{user ? `, ${user.displayName || user.email?.split("@")[0]}` : " today"}?</span>
             </h1>
