@@ -102,8 +102,13 @@ begin
     return 'amount_mismatch';
   end if;
 
+  -- razorpay_payment_id stays null: this is a direct-UPI capture, not a gateway
+  -- payment. Setting it to a non-null sentinel would (a) pollute the Razorpay-only
+  -- UNIQUE column and (b) make initiateRefundForOrder misclassify this as a
+  -- gateway payment and attempt a doomed Razorpay API refund. Idempotency is
+  -- carried entirely by raw_event_id.
   insert into payments (tenant_id, order_id, razorpay_order_id, razorpay_payment_id, amount_paise, status, raw_event_id)
-  values (p_tenant_id, p_order_id, null, p_raw_event_id, p_amount_paise, 'captured', p_raw_event_id)
+  values (p_tenant_id, p_order_id, null, null, p_amount_paise, 'captured', p_raw_event_id)
   on conflict (raw_event_id) do nothing;
 
   update orders
