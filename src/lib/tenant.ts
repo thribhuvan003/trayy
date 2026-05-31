@@ -162,19 +162,19 @@ export const resolveTenant = cache(async (slug: string): Promise<ResolvedTenant 
   const uncached = await fetchTenantUncached(normalized);
   if (uncached) return uncached;
 
-  // In development/preview, allow the "aditya" demo slug to work from the
+  // In development/preview, allow the "demo" slug to work from the
   // in-memory mock so local dev doesn't need a Supabase row.
-  if (process.env.NODE_ENV !== "production" && normalized === "aditya") {
+  if (process.env.NODE_ENV !== "production" && (normalized === "demo" || normalized === "aditya")) {
     return {
       id: "d3b07384-d113-4e6b-a25e-e4a81e355fd5",
-      slug: "aditya",
-      name: "Aditya Canteen",
-      college_name: "Aditya Engineering College",
-      college_slug: "aditya-college",
+      slug: "demo",
+      name: "Main Canteen",
+      college_name: "Campus University",
+      college_slug: "campus-university",
       hero_tagline: "High-speed student refueling",
       logo_url: null,
       allowed_domain: null,
-      upi_vpa: "aditya@upi",
+      upi_vpa: "demo@upi",
       building: "Main Block",
       zone: "Food Court",
       is_open: true,
@@ -186,8 +186,8 @@ export const resolveTenant = cache(async (slug: string): Promise<ResolvedTenant 
 
 const DEMO_CANTEENS: CollegeCanteen[] = [
   {
-    slug: "aditya",
-    name: "Aditya Canteen",
+    slug: "demo",
+    name: "Main Canteen",
     hero_tagline: "High-speed student refueling",
     building: "Main Block",
     zone: "Food Court",

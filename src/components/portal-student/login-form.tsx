@@ -132,7 +132,7 @@ export function LoginForm({ next, slug = "", role = "student" }: { next: string;
           ? "No canteen account found with this email. Click 'I have a canteen' below to set up your canteen."
           : role === "kitchen"
           ? "No kitchen staff account found with this email. Please contact your canteen admin to register your account."
-          : "Students: please search for your canteen on the homepage or use your college's canteen URL (e.g., /c/aditya/menu) to log in and order.";
+          : "Students: please search for your canteen on the homepage or use your college's canteen URL (e.g., /c/demo/menu) to log in and order.";
         currentUrl.searchParams.set("error", errMsg);
         window.location.href = currentUrl.toString();
         return;
