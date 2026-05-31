@@ -355,22 +355,17 @@ export async function placeOrder(
     }
   }
 
-  // Generate sequential short code in JS to bypass database RPC permission restrictions
-  let codeData = "T-2401";
-  const { data: lastOrders, error: lastOrdersErr } = await admin
-    .from("orders")
-    .select("short_code")
-    .eq("tenant_id", tenant.id)
-    .order("created_at", { ascending: false })
-    .limit(1);
-
-  if (!lastOrdersErr && lastOrders && lastOrders.length > 0) {
-    const lastCode = lastOrders[0].short_code;
-    const match = lastCode.match(/^T-(\d+)$/);
-    if (match) {
-      const nextNum = parseInt(match[1], 10) + 1;
-      codeData = `T-${String(nextNum).padStart(4, "0")}`;
-    }
+  // Atomic per-tenant sequence — race-safe under any concurrency.
+  // Postgres sequence nextval() is instantaneous and guaranteed unique;
+  // no two concurrent requests can ever receive the same short code.
+  const { data: codeData, error: codeErr } = await (admin as any).rpc(
+    "next_order_short_code",
+    { p_tenant: tenant.id }
+  );
+  if (codeErr || !codeData) {
+    await getAdminClient(tenant.id).from("idempotency_keys" as any).delete().eq("key", idemKey);
+    log.error("placeOrder: short code RPC failed", codeErr, { tenant_id: tenant.id });
+    return { ok: false, error: "Could not assign order code — please try again" };
   }
 
   // Direct-UPI auto-verify: give the order a unique final amount (total + 1..99 paise)

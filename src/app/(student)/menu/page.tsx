@@ -45,17 +45,17 @@ export default async function StudentMenuPage() {
   }
 
   const mockCats = [
-    { id: "cat-specials", tenant_id: tenant.id, name: "Specials", sort_order: 1, created_at: new Date().toISOString() },
-    { id: "cat-snacks", tenant_id: tenant.id, name: "Snacks", sort_order: 2, created_at: new Date().toISOString() },
-    { id: "cat-beverages", tenant_id: tenant.id, name: "Beverages", sort_order: 3, created_at: new Date().toISOString() },
-    { id: "cat-meals", tenant_id: tenant.id, name: "Meals", sort_order: 4, created_at: new Date().toISOString() },
+    { id: "cat-snacks", tenant_id: tenant.id, name: "Snacks", sort_order: 1, created_at: new Date().toISOString() },
+    { id: "cat-beverages", tenant_id: tenant.id, name: "Beverages", sort_order: 2, created_at: new Date().toISOString() },
+    { id: "cat-meals", tenant_id: tenant.id, name: "Meals", sort_order: 3, created_at: new Date().toISOString() },
   ];
 
   const mockItems = [
     {
       id: "item-momo",
       tenant_id: tenant.id,
-      category_id: "cat-specials",
+      category_id: null,
+      is_special: true,
       name: "Steamed Momo",
       description:
         "Delicate, thin-wrapped hot momos filled with fresh spring veggies and paneer. Served with fiery red chili dipping chutney.",
@@ -71,7 +71,8 @@ export default async function StudentMenuPage() {
     {
       id: "item-biryani",
       tenant_id: tenant.id,
-      category_id: "cat-specials",
+      category_id: null,
+      is_special: true,
       name: "Chicken Biryani",
       description:
         "Basmati rice slow-cooked on dum with aromatic spices, fresh mint, and tender bone-in chicken. Served with classic raita.",
