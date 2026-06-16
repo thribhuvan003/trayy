@@ -3,7 +3,7 @@ import {
   Inter, Fraunces, Manrope, JetBrains_Mono, Instrument_Serif,
   Newsreader, Geist, Geist_Mono, Space_Grotesk,
   Bebas_Neue, Cormorant_Garamond, Plus_Jakarta_Sans, Barlow_Condensed, DM_Serif_Display,
-  DM_Mono, Krona_One, Chewy, Bricolage_Grotesque,
+  DM_Mono, Krona_One, Bricolage_Grotesque,
 } from "next/font/google";
 import { headers } from "next/headers";
 import { Toaster } from "sonner";
@@ -109,12 +109,6 @@ const kronaOne = Krona_One({
   variable: "--font-krona-one",
   display: "swap",
 });
-const chewy = Chewy({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-chewy",
-  display: "swap",
-});
 const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
   variable: "--font-bricolage",
@@ -194,7 +188,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       lang="en"
       data-tenant-id={tenant?.id ?? ""}
       data-tenant-slug={tenant?.slug ?? ""}
-      className={`${inter.variable} ${fraunces.variable} ${manrope.variable} ${jetbrains.variable} ${instrumentSerif.variable} ${newsreader.variable} ${spaceGrotesk.variable} ${geist.variable} ${geistMono.variable} ${bebasNeue.variable} ${cormorant.variable} ${plusJakarta.variable} ${barlowCondensed.variable} ${dmSerif.variable} ${dmMono.variable} ${kronaOne.variable} ${chewy.variable} ${bricolage.variable}`}
+      className={`${inter.variable} ${fraunces.variable} ${manrope.variable} ${jetbrains.variable} ${instrumentSerif.variable} ${newsreader.variable} ${spaceGrotesk.variable} ${geist.variable} ${geistMono.variable} ${bebasNeue.variable} ${cormorant.variable} ${plusJakarta.variable} ${barlowCondensed.variable} ${dmSerif.variable} ${dmMono.variable} ${kronaOne.variable} ${bricolage.variable}`}
       suppressHydrationWarning
     >
       <head>

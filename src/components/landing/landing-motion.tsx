@@ -99,10 +99,13 @@ export function LandingMotion() {
           // ═══════════════════════════════════════════════════════════════
           // 1. HERO — clip-path curtain word reveal
           // ═══════════════════════════════════════════════════════════════
+          // NOTE: opacity is intentionally NOT animated here. The H1 is the LCP
+          // element and is painted visible on first frame via CSS (.tl-hero-rise).
+          // Animating opacity from 0 would re-hide it after paint and tank LCP,
+          // since this GSAP chain only runs after gsap/lenis load + intro event.
           gsap.from(".tray-landing .tl-h1 .tl-word", {
             clipPath: "inset(100% 0% 0% 0%)",
             y: 24,
-            opacity: 0,
             stagger: 0.09,
             duration: 1.05,
             ease: "power4.out",

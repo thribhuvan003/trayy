@@ -120,6 +120,24 @@
   0%   { opacity: 0; }
   100% { opacity: 1; }
 }
+/* Hero LCP entrance — CSS-only so the headline/subtitle paint on first frame
+   without waiting for framer/gsap to hydrate. Runs immediately, no JS gating. */
+@keyframes tl-hero-rise {
+  0%   { opacity: 0; transform: translateY(14px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.tl-hero-rise {
+  animation: tl-hero-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.tl-hero-rise-delay {
+  animation: tl-hero-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tl-hero-rise,
+  .tl-hero-rise-delay {
+    animation: none;
+  }
+}
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   15%       { transform: translateX(-8px); }

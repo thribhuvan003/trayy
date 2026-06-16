@@ -110,10 +110,10 @@ export function TrayHero() {
             </p>
           </motion.div>
 
-          {/* H1 */}
-          <motion.h1
-            variants={softFadeUp}
-            className="tl-h1 max-w-4xl uppercase"
+          {/* H1 — LCP element: plain DOM + CSS entrance so it paints on first
+              frame (not gated behind framer/gsap hydration). */}
+          <h1
+            className="tl-h1 tl-hero-rise max-w-4xl uppercase"
             style={{
               fontFamily: "var(--font-krona-one), sans-serif",
               fontWeight: 900,
@@ -129,17 +129,16 @@ export function TrayHero() {
             <span className="tl-word inline-block" style={{ fontFamily: "var(--font-newsreader), serif", fontStyle: "italic", textTransform: "none", color: "var(--tray-clay)", fontWeight: "normal" }}>
               colleges.
             </span>
-          </motion.h1>
+          </h1>
 
-          {/* Subtitle */}
-          <motion.p
-            variants={softFadeUp}
-            className="mt-6 max-w-lg text-base leading-[1.65] opacity-65"
+          {/* Subtitle — plain DOM + CSS entrance (see H1 note). */}
+          <p
+            className="tl-hero-rise-delay mt-6 max-w-lg text-base leading-[1.65] opacity-65"
             style={{ fontFamily: "var(--font-geist)" }}
           >
             Give students fast, cashless ordering while admins get real-time orders,
             analytics, and per-college billing. One system for every campus counter.
-          </motion.p>
+          </p>
 
           {/* Feature chips */}
           <motion.div variants={softFadeUp}>
