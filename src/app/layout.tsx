@@ -121,17 +121,51 @@ const bricolage = Bricolage_Grotesque({
   display: "swap",
 });
 
+const SITE_URL = process.env.APP_URL ?? "https://trayy.vercel.app";
+
 export const metadata: Metadata = {
-  title: "Tray — Campus food, without the queue.",
+  title: {
+    default: "Tray — Campus food, without the queue.",
+    template: "%s · Tray",
+  },
   description:
     "Students order from any canteen in their campus. Kitchens run live queues. Admins see orders, revenue, and handovers in real time.",
-  metadataBase: new URL(process.env.APP_URL ?? "http://localhost:3000"),
+  applicationName: "Tray",
+  metadataBase: new URL(SITE_URL),
+  alternates: { canonical: "/" },
+  keywords: [
+    "Tray",
+    "campus canteen ordering app",
+    "canteen ordering software",
+    "QR menu ordering",
+    "food court ordering system",
+    "canteen management software",
+    "online food ordering for colleges",
+    "skip the canteen queue",
+  ],
   openGraph: {
-    title: "Tray",
+    title: "Tray — Campus food, without the queue.",
     description: "One system, three doors. Run the canteen from one screen.",
+    url: SITE_URL,
+    siteName: "Tray",
+    locale: "en_US",
     type: "website",
   },
-  robots: { index: true, follow: true },
+  twitter: {
+    card: "summary_large_image",
+    title: "Tray — Campus food, without the queue.",
+    description: "One system, three doors. Run the canteen from one screen.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+  },
+  verification: {
+    google:
+      process.env.GOOGLE_SITE_VERIFICATION ??
+      "bdXPEujT8mmPWOU_WIdpaMTSjJYIKyEIoDM9XwTCxF8",
+  },
 };
 
 export const viewport: Viewport = {
@@ -167,6 +201,23 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <script dangerouslySetInnerHTML={{ __html: fouc }} />
       </head>
       <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "SoftwareApplication",
+              name: "Tray",
+              applicationCategory: "BusinessApplication",
+              operatingSystem: "Web",
+              url: SITE_URL,
+              description:
+                "Campus canteen ordering platform. Students order from any canteen, kitchens run live queues, and admins track orders, revenue, and handovers in real time.",
+              offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+              publisher: { "@type": "Organization", name: "Tray", url: SITE_URL },
+            }),
+          }}
+        />
         <AuthRescue />
         <Providers tenantId={tenant?.id ?? null}>
           {children}
