@@ -160,7 +160,20 @@ function InteractivePortalCard({ portal, idx, portalRefs }: InteractivePortalCar
     : {};
 
   return (
-    <div className="block h-full flex-1 cursor-pointer" onClick={() => window.open(portal.previewSrc, "_blank", "noopener,noreferrer")} role="link" tabIndex={0} style={{ textDecoration: "none" }}>
+    <div
+      className="block h-full flex-1 cursor-pointer"
+      onClick={() => window.open(portal.previewSrc, "_blank", "noopener,noreferrer")}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          window.open(portal.previewSrc, "_blank", "noopener,noreferrer");
+        }
+      }}
+      role="link"
+      tabIndex={0}
+      aria-label={`Open ${portal.title} demo`}
+      style={{ textDecoration: "none" }}
+    >
     <motion.article
       ref={cardRef}
       onMouseEnter={handleMouseEnter}
