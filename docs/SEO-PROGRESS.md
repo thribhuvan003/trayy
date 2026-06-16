@@ -17,7 +17,7 @@
 |------|---------------|
 | PageSpeed SEO | **100/100** ✅ |
 | PageSpeed Best Practices | 92 |
-| PageSpeed Accessibility | 96 (audit in progress to reach 100) |
+| PageSpeed Accessibility | 96 → contrast + keyboard fixes shipped (`cedea23`, `329fb69`), expect ~100. Re-test to confirm. |
 | PageSpeed Performance (mobile) | **52 → fix shipped, awaiting re-test.** Was LCP 13.0s; fix deployed in commit `df4c71f`. |
 | Google Search Console | Verified (HTML tag + file). Sitemap submitted. Awaiting first crawl/index. |
 
@@ -44,10 +44,16 @@
 
 ---
 
+### Commit `cedea23` + `329fb69` — accessibility (audit + fixes)
+- **Audit finding:** the 96→100 gap was dominated by `--tray-muted` `#78716C` (~4.27:1, just under AA 4.5:1) used on all small muted text (nav, footer, eyebrows, metric labels, ticker, portal meta).
+- **`cedea23`** — darkened `--tray-muted` → `#67615C` (~5.3:1). One line, imperceptible, clears the bulk of failures.
+- **`329fb69`** — portal cards were `<div role="link">` with onClick but no keyboard handler (WCAG 2.1.1 fail). Added Enter/Space onKeyDown + aria-label. `PiranhaPortalsSection.tsx:163`.
+- **Owner DECLINED** the visual/brand contrast tweaks (kept design intact): faint caption opacities (M4/L1/L2), darker small red text (H2), darker portal accents as small text (M3). These remain available if ever wanted — details in the audit (see agent log).
+
 ## Agent activity log
-- **vercel:performance-optimizer** (done) — implemented the LCP fix above. Could not run `pnpm build` (sandbox perms); I ran it after = exit 0.
-- **agent-skills:code-reviewer** (BLOCKED) — launched to review the LCP diff but returned 0 tokens due to session limit. Not re-run; I reviewed the diff manually instead. agentId `a29875a9ac30a7bd2` (can be resumed via SendMessage if desired).
-- **general-purpose / accessibility audit** (RUNNING as of last update) — read-only audit of landing-page contrast to find what's needed for a11y 100. agentId `aa53b9454559a7322`.
+- **vercel:performance-optimizer** (done) — implemented the LCP fix. Could not run `pnpm build` (sandbox perms); I ran it after = exit 0.
+- **agent-skills:code-reviewer** (BLOCKED) — launched to review the LCP diff but returned 0 tokens due to session limit. Reviewed manually instead. agentId `a29875a9ac30a7bd2` (resumable via SendMessage).
+- **general-purpose / accessibility audit** (done) — found the `--tray-muted` contrast issue + portal-card keyboard bug + a prioritized list of brand-sensitive contrast items the owner declined. agentId `aa53b9454559a7322` (resumable for the declined-item details).
 
 ---
 
