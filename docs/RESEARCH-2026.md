@@ -38,16 +38,16 @@ The center of gravity has moved **from the model to the harness around it.** Fro
 | **Autonomous loop** (`/goal`, `/loop`) | act→observe→decide until a *verifiable* stop condition; separate evaluator model checks each turn | task has an encodable success test (tests pass, diff matches) | only after you have evals |
 | **Subagents** | separate session via Task tool, own context/tools | cheap fan-out, isolate noisy/bounded sub-problems; use a cheaper model | sprawl → OOM/cost; cap the count |
 | **Agent Teams** (experimental) | teammates share findings, debate, self-coordinate | when agents need to challenge each other | higher |
-| **Council / debate** | many heterogeneous models → consensus synthesizer | high-stakes, error-cost > inference-cost | ~4×+ tokens; **contested benefit** |
+| **Council / debate** | many heterogeneous models → consensus synthesizer | high-stakes, error-cost > inference-cost | **4.2× tokens, −35.9% hallucination** (verified, arXiv 2604.02923); **contested benefit** |
 | **RFC/DAG pipeline** | fan-out/linear/supervisor/swarm; plan lives in a **file** | stable stages with clear dependencies | deterministic = controllable |
 | **Dynamic Workflows** (research preview) | Claude writes its *own* orchestration, spins up tens–hundreds of parallel subagents | tasks too big to hand-author a pipeline | plan-tier gated |
-- **Reality check:** subagent-heavy/parallel workflows reportedly burn **~7× tokens**. Parallelism isn't free → model-route (frontier only for hard problems).
+- **Reality check:** parallel multi-agent burns **~15× tokens** (Anthropic's own figure for its multi-agent research system; token usage explained ~80% of performance variance). Parallelism isn't free → model-route (frontier only for hard problems).
 - **"The Cost of Consensus" caveat:** research suggests *isolated self-correction often beats unguided debate*, and the synthesis step can hallucinate a consensus that doesn't exist. Skip council for routine work.
 
 ## 4. Evals / verification = the moat
 - Shift: "building agents → building **verifiable** agent systems." **Verification capacity is the bottleneck, not generation speed.**
 - Evaluate **harness + model together**; pair **rule-based judges** (deterministic: build exit codes, linters, fixture diffs, screenshots) with **LLM judges** (behavioral).
-- LLM-as-judge is **not set-and-forget**: needs **100+ labeled examples** + ongoing (weekly) recalibration (Hamel Husain). Start with error analysis on real traces.
+- LLM-as-judge is **not set-and-forget** (Hamel Husain, page-verified): *"start with around 30 examples and keep going until I do not see any new failure modes"*, aim for *">90% agreement"* with a human, and re-review *"at regular intervals and whenever something material changes"* — judgment, NOT a fixed count or fixed cadence. (Earlier "100+ examples/weekly" framing was wrong.) Start with error analysis on real traces.
 - Tools: **DeepEval** (pytest-compatible, CI/CD), Hamel's eval-skills plugin (`error-analysis`, `write-judge-prompt`, `validate-evaluator`…).
 - **Spec-driven development (SDD)** rising as the anti-drift method: executable, version-controlled spec → plan → atomic tasks → code. Flagship: **GitHub Spec Kit** (community-claimed ~90k stars).
 
@@ -70,6 +70,38 @@ The center of gravity has moved **from the model to the harness around it.** Fro
 - **Dynamic Workflows** (research preview ~June 2026): Claude authors its own orchestration, parallel subagents (up to ~16 concurrent / ~1000 per run).
 - **Agent SDK billing (official): from 2026-06-15**, SDK + `claude -p` usage on subscription plans draws from a **separate monthly Agent SDK credit** distinct from interactive limits.
 - **Fable 5** ("Mythos" tier above Opus, ~June 9 2026): 1M context, 128K output — *"big model smell: slow, expensive, capable"*; use only for hard problems.
+
+## 8. Verified tooling catalog (★ = gh-api confirmed 2026-06-16, independently re-checked)
+Every star/fork below was pulled from the live GitHub API and spot-verified by hand. None archived; all pushed recently unless flagged STALE.
+
+### MCP servers — install these next (net-new, not already installed)
+| Repo | ★ | forks | What it does |
+|---|---|---|---|
+| oraios/serena | 25,418 | 1,706 | Semantic code retrieval + LSP-grade editing. Strongest code-intel add. |
+| github/github-mcp-server | 30,722 | 4,399 | Official GitHub MCP (issues/PRs/repos/Actions). |
+| modelcontextprotocol/servers | 87,314 | 11,014 | Official servers — pull `memory` + `sequential-thinking`. |
+| getzep/graphiti | 27,490 | 2,750 | Temporal knowledge-graph memory (cross-session). |
+
+Install: `claude mcp add serena -- uvx --from git+https://github.com/oraios/serena serena start-mcp-server` · `claude mcp add github -- npx -y @github/github-mcp-server` · `claude mcp add memory -- npx -y @modelcontextprotocol/server-memory` · `claude mcp add sequential-thinking -- npx -y @modelcontextprotocol/server-sequential-thinking` (verify package names in each README).
+
+**Already installed (keep, don't re-add):** superpowers (229,427★), upstash/context7 (57,481★), microsoft/playwright-mcp (33,985★), exa.
+
+### Skill collections / installers — net-new, high-star
+| Repo | ★ | What it does |
+|---|---|---|
+| sickn33/antigravity-awesome-skills | 40,863 | 1,500+ installable cross-agent skills + CLI |
+| wshobson/agents | 36,825 | Mature subagent + skill set for eng workflows |
+| davila7/claude-code-templates | 28,100 | CLI to browse/install agents/commands/skills |
+| yusufkaraaslan/Skill_Seekers | 14,104 | Turn any docs site / repo / PDF into a Claude skill |
+| ComposioHQ/awesome-claude-skills | 64,795 | Discovery index (bookmark) |
+| anthropics/skills | 151,432 | Official skills (frontend-design, pdf/docx/xlsx/pptx, mcp-builder) — mostly already enabled |
+
+### Frontend / animation / 3D libraries (wire directly; no skill needed)
+shadcn-ui/ui (116,714★) · vercel/next.js (140,038★) · tailwindcss (95,563★) · radix-ui/primitives (18,981★) · mrdoob/three.js (113,082★) · juliangarnier/anime (69,929★) · motiondivision/motion (32,375★, = former Framer Motion) · pmndrs/react-three-fiber (31,103★) · greensock/GSAP (25,903★) · rive-app (interactive, actively maintained). **lottie-web (31,926★) is STALE** (last push 2025-09) → prefer Rive for new interactive work.
+
+### Honesty flags
+- Per-skill popularity on directory sites (claudeskills.info, agentskills.io) is **not measurable** — only backing-repo stars are. No standalone *frontend/animation skill* repo has meaningful adoption (top was 364★); use the installed `frontend-design` skill + the high-star libraries above.
+- Frameworks (LangGraph 34,916★ · CrewAI 53,687★ · AutoGen 59,002★ · Mastra 25,130★ · OpenCode 175,106★) are for building your *own* agent apps — not Claude Code add-ons. Mastra = best fit for your TS/Next.js stack.
 
 ---
 
