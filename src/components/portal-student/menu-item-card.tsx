@@ -4,6 +4,7 @@ import { Minus, Plus } from "lucide-react";
 import type { MenuItem } from "@/lib/db/types";
 import { formatRupees, cn } from "@/lib/utils";
 import { useCart } from "@/lib/cart/store";
+import { motion } from "framer-motion";
 
 export function MenuItemCard({ item }: { item: MenuItem }) {
   const line = useCart((s) => s.lines.find((l) => l.menuItemId === item.id));
@@ -12,101 +13,84 @@ export function MenuItemCard({ item }: { item: MenuItem }) {
   const dec = useCart((s) => s.decrement);
   const oos = !item.in_stock || item.status !== "live";
 
-  const dietRing =
-    item.diet === "veg"
-      ? "border-emerald-500"
-      : item.diet === "egg"
-      ? "border-amber-500"
-      : "border-rose-500";
-  const dietFill =
-    item.diet === "veg" ? "bg-emerald-500" : item.diet === "egg" ? "bg-amber-500" : "bg-rose-500";
-
   return (
-    <article
+    <motion.article
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
       className={cn(
-        "group relative rounded-2xl border bg-[color:var(--color-paper)] overflow-hidden flex flex-col transition-all",
-        oos ? "opacity-60 border-[color:var(--color-line)]" : "border-[color:var(--color-line)] hover:border-ocean-500/40 hover:shadow-[0_8px_24px_-12px_rgba(10,22,40,0.12)]"
+        "group relative flex flex-col bg-white rounded-[24px] p-6 border border-ink/5 shadow-premium hover:shadow-premium-lg transition-all duration-500",
+        oos && "opacity-60 grayscale"
       )}
     >
-      <div className="relative aspect-[4/3] bg-gradient-to-br from-ocean-50 to-cream-100 dark:from-ocean-500/10 dark:to-graphite-700">
+      <div className="relative aspect-[16/10] bg-paper rounded-[16px] mb-6 overflow-hidden">
         {item.image_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={item.image_url} alt={item.name} className="absolute inset-0 h-full w-full object-cover" />
+          <motion.img 
+            whileHover={{ scale: 1.05 }}
+            transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+            src={item.image_url} 
+            alt={item.name} 
+            className="absolute inset-0 h-full w-full object-cover" 
+          />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center font-display text-[44px] text-ocean-500/25 select-none leading-none">
-            {item.name.charAt(0).toUpperCase()}
+          <div className="absolute inset-0 flex items-center justify-center font-display text-[80px] text-ink/5 select-none italic">
+            {item.name.charAt(0)}
           </div>
         )}
-        <span
-          aria-label={item.diet}
-          className={cn(
-            "absolute top-2 left-2 inline-flex h-4 w-4 items-center justify-center border-2 rounded-sm bg-white",
-            dietRing
-          )}
-        >
-          <span className={cn("h-2 w-2 rounded-full", dietFill)} />
-        </span>
-        {oos && (
-          <span className="absolute top-2 right-2 text-[10px] font-mono uppercase tracking-wider bg-[color:var(--color-paper)]/90 text-[color:var(--color-ink)]/70 px-2 py-1 rounded-full">
-            Out of stock
+        
+        <div className="absolute top-3 left-3 flex gap-2">
+          <span className={cn(
+            "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider backdrop-blur-md border border-white/20",
+            item.diet === "veg" ? "bg-emerald-500/10 text-emerald-700" : "bg-rose-500/10 text-rose-700"
+          )}>
+            {item.diet}
           </span>
-        )}
+        </div>
       </div>
-      <div className="p-3.5 flex flex-col flex-1 gap-1.5">
-        <h3 className="text-[15px] font-medium leading-tight" style={{ fontFamily: "var(--font-jakarta, var(--font-manrope))" }}>{item.name}</h3>
+
+      <div className="flex flex-col flex-1">
+        <h3 className="font-display text-2xl leading-tight mb-2 tracking-tight group-hover:text-ocean transition-colors">
+          {item.name}
+        </h3>
+        
         {item.description && (
-          <p className="text-[12px] leading-[1.4] text-[color:var(--color-ink)]/55 line-clamp-2">
+          <p className="text-[14px] leading-relaxed text-dust line-clamp-2 mb-6 font-medium">
             {item.description}
           </p>
         )}
-        <div className="mt-auto pt-2 flex items-center justify-between">
-          <div
-            className="text-[22px] leading-none tracking-[0.01em] text-ocean-600 dark:text-ocean-400 tabular"
-            style={{ fontFamily: "var(--font-bebas, Impact, sans-serif)" }}
-          >
+        
+        <div className="mt-auto flex items-center justify-between">
+          <div className="text-xl font-semibold tracking-tight">
             {formatRupees(item.price_paise)}
           </div>
+          
           {line ? (
-            <div className="inline-flex items-center rounded-full bg-ocean-500 text-white">
+            <div className="flex items-center bg-ink/5 rounded-full p-1">
               <button
-                aria-label="Decrease"
                 onClick={() => dec(item.id)}
-                className="h-8 w-8 inline-flex items-center justify-center"
+                className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-white transition-colors"
               >
-                <Minus size={14} />
+                <Minus size={14} strokeWidth={2.5} />
               </button>
-              <span className="text-[13px] font-medium tabular w-5 text-center">{line.qty}</span>
+              <span className="w-8 text-center font-bold text-sm">{line.qty}</span>
               <button
-                aria-label="Increase"
                 onClick={() => inc(item.id)}
-                className="h-8 w-8 inline-flex items-center justify-center"
+                className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-white transition-colors"
               >
-                <Plus size={14} />
+                <Plus size={14} strokeWidth={2.5} />
               </button>
             </div>
           ) : (
             <button
               disabled={oos}
-              onClick={() =>
-                add({
-                  menuItemId: item.id,
-                  name: item.name,
-                  pricePaise: item.price_paise,
-                  diet: item.diet,
-                })
-              }
-              className={cn(
-                "inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-[12.5px] font-medium transition-colors",
-                oos
-                  ? "bg-[color:var(--color-line)] text-[color:var(--color-ink)]/40 cursor-not-allowed"
-                  : "bg-ocean-500 text-white hover:bg-ocean-600"
-              )}
+              onClick={() => add({ menuItemId: item.id, name: item.name, pricePaise: item.price_paise, diet: item.diet })}
+              className="h-10 px-6 rounded-full bg-ink text-white font-semibold text-sm hover:bg-ocean hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:pointer-events-none"
             >
-              <Plus size={14} /> Add
+              Add
             </button>
           )}
         </div>
       </div>
-    </article>
+    </motion.article>
   );
 }
