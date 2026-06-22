@@ -51,8 +51,6 @@ export function CartDrawer({ tenantSlug, tenantName }: { tenantSlug: string; ten
   const total = cartTotalPaise(lines);
   const empty = count === 0;
 
-  if (empty && !isDesktop) return null;
-
   const onCheckout = () => {
     if (orderType === "dine_in" && !tableLabel.trim()) {
       toast.error("Pick a table for dine-in");
@@ -83,53 +81,56 @@ export function CartDrawer({ tenantSlug, tenantName }: { tenantSlug: string; ten
     <div className="flex flex-col h-full bg-paper">
       <div className="p-8 flex items-center justify-between border-b border-ink/5">
         <div>
-          <h2 className="font-display text-4xl tracking-tight italic">Your <span>Tray</span></h2>
-          <p className="text-[11px] font-bold uppercase tracking-widest text-dust mt-1">
+          <h2 className="font-display text-4xl tracking-tight italic leading-none">Your <span>Tray</span></h2>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-dust mt-2">
             {tenantName} · {pickupEtaCartSubline()}
           </p>
         </div>
         {!isDesktop && (
-          <button onClick={() => setOpen(false)} className="p-2 hover:bg-ink/5 rounded-full transition-colors">
-            <X size={24} />
+          <button onClick={() => setOpen(false)} className="w-10 h-10 flex items-center justify-center bg-ink/5 rounded-full hover:bg-ink hover:text-white transition-colors">
+            <X size={20} />
           </button>
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-8 space-y-6">
+      <div className="flex-1 overflow-y-auto p-8 space-y-8">
         <AnimatePresence mode="popLayout">
           {empty ? (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-20 text-center">
-              <p className="font-display text-3xl text-ink/10 italic mb-4">Empty</p>
-              <Link href={`/c/${tenantSlug}/menu`} className="text-sm font-bold text-ocean uppercase tracking-widest">
+              <div className="w-20 h-20 bg-ink/5 rounded-full flex items-center justify-center mx-auto mb-6">
+                <ShoppingBag size={32} className="text-dust opacity-20" />
+              </div>
+              <p className="font-display text-2xl text-dust italic mb-4">Your tray is empty</p>
+              <button onClick={() => setOpen(false)} className="text-[10px] font-bold text-ocean uppercase tracking-widest hover:underline">
                 Browse Menu
-              </Link>
+              </button>
             </motion.div>
           ) : (
             lines.map((l) => (
               <motion.div 
                 key={l.menuItemId}
                 layout
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 className="flex items-center gap-4 group"
               >
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-display text-xl leading-tight truncate">{l.name}</h4>
-                  <p className="text-xs font-bold text-dust uppercase tracking-wider mt-1">
-                    {formatRupees(l.pricePaise)} × {l.qty}
+                  <h4 className="font-display text-xl leading-none truncate">{l.name}</h4>
+                  <p className="text-[10px] font-bold text-dust uppercase tracking-widest mt-1">
+                    {formatRupees(l.pricePaise)} each
                   </p>
                 </div>
                 <div className="flex items-center bg-ink/5 rounded-full p-1">
                   <button onClick={() => dec(l.menuItemId)} className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-white transition-colors">
-                    <Minus size={14} strokeWidth={2.5} />
+                    <Minus size={12} strokeWidth={3} />
                   </button>
-                  <span className="w-8 text-center font-bold text-sm">{l.qty}</span>
+                  <span className="w-8 text-center font-bold text-sm tabular-nums">{l.qty}</span>
                   <button onClick={() => inc(l.menuItemId)} className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-white transition-colors">
-                    <Plus size={14} strokeWidth={2.5} />
+                    <Plus size={12} strokeWidth={3} />
                   </button>
                 </div>
-                <button onClick={() => remove(l.menuItemId)} className="p-2 text-ink/20 hover:text-rose-500 transition-colors">
+                <button onClick={() => remove(l.menuItemId)} className="p-2 text-ink/10 hover:text-rose-500 transition-colors">
                   <Trash2 size={16} />
                 </button>
               </motion.div>
@@ -143,14 +144,14 @@ export function CartDrawer({ tenantSlug, tenantName }: { tenantSlug: string; ten
           <div className="grid grid-cols-2 gap-2 p-1 bg-ink/5 rounded-2xl">
             <button 
               onClick={() => setOrderType("takeaway")}
-              className={cn("h-11 flex items-center justify-center gap-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all", 
+              className={cn("h-11 flex items-center justify-center gap-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", 
               orderType === "takeaway" ? "bg-white text-ink shadow-sm" : "text-dust")}
             >
               <ShoppingBag size={14} /> Takeaway
             </button>
             <button 
               onClick={() => setOrderType("dine_in")}
-              className={cn("h-11 flex items-center justify-center gap-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all", 
+              className={cn("h-11 flex items-center justify-center gap-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all", 
               orderType === "dine_in" ? "bg-white text-ink shadow-sm" : "text-dust")}
             >
               <UtensilsCrossed size={14} /> Dine-in
@@ -163,26 +164,26 @@ export function CartDrawer({ tenantSlug, tenantName }: { tenantSlug: string; ten
                 value={tableLabel}
                 onChange={(e) => setTableLabel(e.target.value)}
                 placeholder="Table Number"
-                className="w-full h-12 px-4 rounded-xl bg-ink/5 border-none text-sm font-medium focus:ring-2 focus:ring-ocean/20 transition-all uppercase"
+                className="w-full h-12 px-4 rounded-xl bg-ink/5 border-none text-sm font-medium focus:ring-2 focus:ring-ocean/10 transition-all uppercase placeholder:normal-case"
               />
             )}
             <input
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Note for the kitchen"
-              className="w-full h-12 px-4 rounded-xl bg-ink/5 border-none text-sm font-medium focus:ring-2 focus:ring-ocean/20 transition-all"
+              placeholder="Any special requests?"
+              className="w-full h-12 px-4 rounded-xl bg-ink/5 border-none text-sm font-medium focus:ring-2 focus:ring-ocean/10 transition-all"
             />
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between pt-2">
             <div>
-              <p className="text-[10px] font-bold text-dust uppercase tracking-widest mb-1">Total Amount</p>
-              <div className="font-display text-4xl tracking-tighter italic">{formatRupees(total)}</div>
+              <p className="text-[10px] font-bold text-dust uppercase tracking-[0.2em] mb-1">Total Amount</p>
+              <div className="font-display text-5xl tracking-tighter italic leading-none">{formatRupees(total)}</div>
             </div>
             <button
               onClick={onCheckout}
               disabled={pending}
-              className="h-14 px-8 rounded-full bg-ink text-white font-bold text-sm hover:bg-ocean hover:scale-105 active:scale-95 transition-all shadow-premium disabled:opacity-50"
+              className="h-16 px-10 rounded-full bg-ink text-white font-bold text-sm hover:bg-ocean hover:scale-105 active:scale-95 transition-all shadow-premium disabled:opacity-50"
             >
               {pending ? "Processing..." : "Checkout →"}
             </button>
@@ -194,7 +195,7 @@ export function CartDrawer({ tenantSlug, tenantName }: { tenantSlug: string; ten
 
   if (isDesktop) {
     return (
-      <aside className="lg:sticky lg:top-24 lg:w-96 lg:h-[calc(100vh-8rem)] rounded-[32px] overflow-hidden border border-ink/5 shadow-premium mt-8">
+      <aside className="lg:sticky lg:top-24 lg:w-96 lg:h-[calc(100vh-8rem)] rounded-[40px] overflow-hidden border border-ink/5 shadow-premium mt-8">
         {cartBody}
       </aside>
     );
@@ -203,20 +204,23 @@ export function CartDrawer({ tenantSlug, tenantName }: { tenantSlug: string; ten
   return (
     <Drawer.Root open={open} onOpenChange={setOpen}>
       <Drawer.Trigger asChild>
-        <button className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 h-16 px-8 rounded-full bg-ink text-white flex items-center gap-4 shadow-premium-lg hover:scale-105 active:scale-95 transition-all">
+        <button className={cn(
+          "fixed bottom-8 left-1/2 -translate-x-1/2 z-40 h-16 px-8 rounded-full bg-ink text-white flex items-center gap-4 shadow-premium-lg hover:scale-105 active:scale-95 transition-all",
+          empty && "hidden"
+        )}>
           <div className="relative">
             <ShoppingCart size={20} />
-            <span className="absolute -top-2 -right-2 w-5 h-5 bg-ocean text-[10px] font-bold rounded-full flex items-center justify-center">
+            <span className="absolute -top-2 -right-2 w-5 h-5 bg-ocean text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-ink">
               {count}
             </span>
           </div>
           <span className="w-px h-6 bg-white/20" />
-          <span className="font-display text-2xl italic">{formatRupees(total)}</span>
+          <span className="font-display text-2xl italic leading-none">{formatRupees(total)}</span>
         </button>
       </Drawer.Trigger>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-sm" />
-        <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 h-[90vh] rounded-t-[40px] overflow-hidden outline-none">
+        <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 h-[90vh] rounded-t-[48px] overflow-hidden outline-none">
           {cartBody}
         </Drawer.Content>
       </Drawer.Portal>

@@ -3,10 +3,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Tray — Winter 2026 Student Portal</title>
+  <title>Tray — Premium Student Portal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital,wght@0,400;1,400&family=Geist:wght@100..900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/framer-motion@11.18.2/dist/framer-motion.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="./demo-canteens.js"></script>
   <style>
     :root {
       --paper: #FDFBF7;
@@ -18,248 +22,434 @@
       --ease: cubic-bezier(0.23, 1, 0.32, 1);
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       background: var(--paper);
       color: var(--ink);
       font-family: var(--font-sans);
-      line-height: 1.6;
-      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
     }
 
-    .container {
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 40px 24px;
-    }
-
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      margin-bottom: 64px;
-    }
-
-    .logo {
-      font-family: var(--font-display);
-      font-size: 2.5rem;
-      letter-spacing: -0.02em;
-    }
-
-    .logo span { font-style: italic; color: var(--dust); }
-
-    .nav-link {
-      font-size: 14px;
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--dust);
-      text-decoration: none;
-      transition: color 0.3s var(--ease);
-    }
-
-    .nav-link:hover { color: var(--ink); }
-
-    .section-title {
-      font-family: var(--font-display);
-      font-size: 3.5rem;
-      line-height: 1;
-      margin-bottom: 48px;
-      letter-spacing: -0.03em;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(12, 1fr);
-      gap: 32px;
-    }
-
-    .card {
-      grid-column: span 6;
-      background: white;
-      border: 1px solid rgba(26, 26, 25, 0.05);
-      padding: 32px;
-      border-radius: 24px;
+    .font-display { font-family: var(--font-display); }
+    
+    .shadow-premium {
       box-shadow: 0 10px 30px -10px rgba(26, 26, 25, 0.04);
-      transition: all 0.5s var(--ease);
-      display: flex;
-      flex-direction: column;
     }
-
-    .card:hover {
-      transform: translateY(-8px);
+    
+    .shadow-premium-lg {
       box-shadow: 0 20px 40px -15px rgba(26, 26, 25, 0.08);
-      border-color: rgba(26, 26, 25, 0.1);
     }
 
-    .card-image {
-      width: 100%;
-      aspect-ratio: 16/10;
-      background: #f5f5f5;
-      border-radius: 16px;
-      margin-bottom: 24px;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: var(--font-display);
-      font-size: 4rem;
-      color: rgba(26, 26, 25, 0.05);
+    .glass {
+      background: rgba(253, 251, 247, 0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }
 
-    .card h3 {
-      font-family: var(--font-display);
-      font-size: 2rem;
-      margin-bottom: 8px;
-      line-height: 1.2;
-    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(26, 26, 25, 0.05); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(26, 26, 25, 0.1); }
 
-    .card p {
-      font-size: 15px;
-      color: var(--dust);
-      margin-bottom: 24px;
-      max-width: 90%;
-    }
-
-    .price-tag {
-      font-size: 1.25rem;
-      font-weight: 600;
-      letter-spacing: -0.01em;
-    }
-
-    .btn-add {
-      margin-left: auto;
-      background: var(--ink);
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 99px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s var(--ease);
-    }
-
-    .btn-add:hover {
-      background: var(--ocean);
-      transform: scale(1.05);
-    }
-
-    /* Slider Mockup */
-    .slider-container {
-      grid-column: span 12;
-      background: var(--ink);
-      color: white;
-      padding: 48px;
-      border-radius: 32px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      margin-top: 32px;
-    }
-
-    .slider-container h4 {
-      font-family: var(--font-display);
-      font-size: 2.5rem;
-      margin-bottom: 12px;
-    }
-
-    .slider-container p {
-      opacity: 0.6;
-      margin-bottom: 32px;
-      font-size: 16px;
-    }
-
+    /* Payment Slider Styles */
     .slider-track {
-      width: 100%;
-      max-width: 360px;
+      background: rgba(26, 26, 25, 0.05);
       height: 64px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 99px;
+      border-radius: 32px;
       position: relative;
-      display: flex;
-      align-items: center;
-      padding: 0 6px;
-      backdrop-filter: blur(10px);
+      overflow: hidden;
     }
 
     .slider-handle {
-      width: 52px;
-      height: 52px;
-      background: white;
-      border-radius: 50%;
+      width: 56px;
+      height: 56px;
+      background: var(--ink);
+      border-radius: 28px;
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      cursor: grab;
+      z-index: 10;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--ink);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-      cursor: grab;
+      color: white;
+      transition: transform 0.1s linear;
+    }
+
+    .slider-handle:active { cursor: grabbing; }
+
+    .slider-progress {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      background: var(--ocean);
+      opacity: 0.1;
+      width: 0;
     }
 
     .slider-text {
       position: absolute;
       width: 100%;
-      text-align: center;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-size: 13px;
-      font-weight: 600;
-      text-transform: uppercase;
+      font-weight: 700;
       letter-spacing: 0.1em;
-      opacity: 0.4;
+      text-transform: uppercase;
+      color: var(--dust);
       pointer-events: none;
     }
 
-    @media (max-width: 768px) {
-      .card { grid-column: span 12; }
-      .section-title { font-size: 2.5rem; }
+    /* Animations */
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
     }
+
+    .animate-float { animation: float 6s ease-in-out infinite; }
+
+    [data-view] { display: none; }
+    [data-view].active { display: block; }
   </style>
 </head>
-<body>
-  <div class="container">
-    <header>
-      <div class="logo">Tray<span>.</span></div>
-      <nav>
-        <a href="#" class="nav-link">My Orders</a>
-      </nav>
-    </header>
-
-    <main>
-      <h2 class="section-title">Today's <em>Selection</em></h2>
+<body class="antialiased">
+  <!-- Top Bar -->
+  <header class="sticky top-0 z-40 glass border-b border-ink/5">
+    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-ink text-white rounded-xl flex items-center justify-center font-display text-2xl italic">T</div>
+        <div>
+          <h1 class="font-display text-2xl tracking-tight leading-none">Tray<span class="text-dust">.</span></h1>
+          <p id="canteenName" class="text-[9px] font-bold uppercase tracking-[0.2em] text-dust leading-none mt-1">Aditya Engineering</p>
+        </div>
+      </div>
       
-      <div class="grid">
-        <div class="card">
-          <div class="card-image">P</div>
-          <h3>Paneer Butter Masala</h3>
-          <p>A classic North Indian delicacy. Rich, creamy tomato gravy with soft cottage cheese cubes.</p>
-          <div style="display: flex; align-items: center;">
-            <span class="price-tag">₹180</span>
-            <button class="btn-add">Add to Tray</button>
+      <div class="flex items-center gap-3">
+        <button id="btnOrders" class="w-12 h-12 rounded-2xl bg-ink/5 flex items-center justify-center hover:bg-ink hover:text-white transition-all">
+          <i data-lucide="history" class="w-5 h-5"></i>
+        </button>
+        <button id="btnCart" class="relative w-12 h-12 rounded-2xl bg-ink/5 flex items-center justify-center hover:bg-ink hover:text-white transition-all">
+          <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+          <span id="cartBadge" class="absolute -top-1 -right-1 w-5 h-5 bg-ocean text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-paper hidden">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 py-12">
+    <!-- View: Menu -->
+    <div data-view="menu" class="active">
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
+        <div>
+          <h2 class="font-display text-6xl md:text-8xl tracking-tighter italic leading-none mb-4">Today's <span>Selection</span></h2>
+          <p class="text-dust font-medium uppercase tracking-widest text-xs">Curated fresh for the Engineering Block</p>
+        </div>
+        
+        <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+          <button class="cat-pill px-6 py-3 rounded-full bg-ink text-white text-xs font-bold uppercase tracking-widest transition-all">All</button>
+          <button class="cat-pill px-6 py-3 rounded-full bg-ink/5 text-dust text-xs font-bold uppercase tracking-widest hover:bg-ink/10 transition-all">Mains</button>
+          <button class="cat-pill px-6 py-3 rounded-full bg-ink/5 text-dust text-xs font-bold uppercase tracking-widest hover:bg-ink/10 transition-all">Snacks</button>
+          <button class="cat-pill px-6 py-3 rounded-full bg-ink/5 text-dust text-xs font-bold uppercase tracking-widest hover:bg-ink/10 transition-all">Drinks</button>
+        </div>
+      </div>
+
+      <div id="menuGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <!-- Menu Items Injected Here -->
+      </div>
+    </div>
+
+    <!-- View: Checkout (Slider) -->
+    <div data-view="checkout" class="max-w-xl mx-auto py-20 text-center">
+      <div class="mb-12">
+        <h2 class="font-display text-5xl tracking-tight italic mb-4">Ready to <span>feast?</span></h2>
+        <p class="text-dust">Confirm your order and we'll start cooking immediately.</p>
+      </div>
+
+      <div class="bg-white rounded-[40px] p-8 shadow-premium border border-ink/5 mb-12">
+        <div id="checkoutItems" class="space-y-6 mb-8 text-left">
+          <!-- Checkout items injected here -->
+        </div>
+        
+        <div class="flex items-center justify-between pt-6 border-t border-ink/5">
+          <span class="text-xs font-bold uppercase tracking-widest text-dust">Total Amount</span>
+          <span id="checkoutTotal" class="font-display text-4xl italic">₹0</span>
+        </div>
+      </div>
+
+      <div class="slider-track" id="paymentSlider">
+        <div class="slider-text">Slide to Pay</div>
+        <div class="slider-progress" id="sliderProgress"></div>
+        <div class="slider-handle" id="sliderHandle">
+          <i data-lucide="chevron-right" class="w-6 h-6"></i>
+        </div>
+      </div>
+      
+      <button id="btnBackToMenu" class="mt-8 text-xs font-bold uppercase tracking-widest text-dust hover:text-ink transition-colors">← Back to Menu</button>
+    </div>
+
+    <!-- View: Tracking -->
+    <div data-view="tracking" class="max-w-xl mx-auto py-20 text-center">
+      <div class="w-24 h-24 bg-ocean/10 text-ocean rounded-full flex items-center justify-center mx-auto mb-8 animate-pulse">
+        <i data-lucide="utensils" class="w-10 h-10"></i>
+      </div>
+      
+      <h2 class="font-display text-5xl tracking-tight italic mb-4">Cooking <span>Now</span></h2>
+      <p class="text-dust mb-12">Your order is being prepared with care. Estimated ready in 8 mins.</p>
+
+      <div class="space-y-8 text-left mb-12">
+        <div class="flex items-center gap-6">
+          <div class="w-10 h-10 rounded-full bg-ocean text-white flex items-center justify-center"><i data-lucide="check" class="w-5 h-5"></i></div>
+          <div>
+            <h4 class="font-bold text-sm">Order Confirmed</h4>
+            <p class="text-xs text-dust">Received at 12:42 PM</p>
           </div>
         </div>
-
-        <div class="card">
-          <div class="card-image">C</div>
-          <h3>Chicken Dum Biryani</h3>
-          <p>Slow-cooked aromatic basmati rice layered with succulent chicken and secret spices.</p>
-          <div style="display: flex; align-items: center;">
-            <span class="price-tag">₹220</span>
-            <button class="btn-add">Add to Tray</button>
+        <div class="flex items-center gap-6">
+          <div class="w-10 h-10 rounded-full bg-ink text-white flex items-center justify-center"><i data-lucide="flame" class="w-5 h-5"></i></div>
+          <div>
+            <h4 class="font-bold text-sm">Preparing</h4>
+            <p class="text-xs text-dust">Chef is on it</p>
           </div>
         </div>
-
-        <div class="slider-container">
-          <h4>Ready to feast?</h4>
-          <p>Your tray contains 2 items. Total: ₹400</p>
-          <div class="slider-track">
-            <div class="slider-text">Slide to Pay</div>
-            <div class="slider-handle">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </div>
+        <div class="flex items-center gap-6 opacity-30">
+          <div class="w-10 h-10 rounded-full bg-ink/10 flex items-center justify-center"><i data-lucide="shopping-bag" class="w-5 h-5"></i></div>
+          <div>
+            <h4 class="font-bold text-sm">Ready for Pickup</h4>
+            <p class="text-xs text-dust">We'll notify you</p>
           </div>
         </div>
       </div>
-    </main>
+      
+      <div class="bg-ink text-white rounded-[32px] p-8">
+        <p class="text-[10px] font-bold uppercase tracking-widest opacity-40 mb-2">Order Reference</p>
+        <p id="orderRef" class="font-display text-3xl italic">TR-8X92K</p>
+      </div>
+    </div>
+
+    <!-- View: OTP -->
+    <div data-view="otp" class="max-w-xl mx-auto py-20 text-center">
+      <div class="w-24 h-24 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mx-auto mb-8">
+        <i data-lucide="party-popper" class="w-10 h-10"></i>
+      </div>
+      
+      <h2 class="font-display text-5xl tracking-tight italic mb-4">It's <span>Ready!</span></h2>
+      <p class="text-dust mb-12">Head to the counter and show this code to collect your feast.</p>
+
+      <div class="flex justify-center gap-4 mb-12">
+        <div class="w-16 h-20 bg-white border border-ink/5 rounded-2xl flex items-center justify-center font-display text-5xl italic shadow-premium">4</div>
+        <div class="w-16 h-20 bg-white border border-ink/5 rounded-2xl flex items-center justify-center font-display text-5xl italic shadow-premium">8</div>
+        <div class="w-16 h-20 bg-white border border-ink/5 rounded-2xl flex items-center justify-center font-display text-5xl italic shadow-premium">2</div>
+        <div class="w-16 h-20 bg-white border border-ink/5 rounded-2xl flex items-center justify-center font-display text-5xl italic shadow-premium">1</div>
+      </div>
+      
+      <button id="btnFinish" class="h-16 px-12 rounded-full bg-ink text-white font-bold text-sm hover:bg-ocean hover:scale-105 active:scale-95 transition-all shadow-premium">Back to Menu</button>
+    </div>
+  </main>
+
+  <!-- Cart Bar (Mobile) -->
+  <div id="cartBar" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-48px)] max-w-md h-16 px-8 rounded-full bg-ink text-white flex items-center justify-between shadow-premium-lg hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer hidden">
+    <div class="flex items-center gap-4">
+      <div class="relative">
+        <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+        <span id="cartBarCount" class="absolute -top-2 -right-2 w-5 h-5 bg-ocean text-[10px] font-bold rounded-full flex items-center justify-center">0</span>
+      </div>
+      <span class="w-px h-6 bg-white/20"></span>
+      <span id="cartBarTotal" class="font-display text-2xl italic">₹0</span>
+    </div>
+    <span class="text-[10px] font-bold uppercase tracking-widest">Checkout →</span>
   </div>
+
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // State
+    let cart = [];
+    let currentCanteen = TD.CANTEENS['aditya'];
+
+    // DOM Elements
+    const views = document.querySelectorAll('[data-view]');
+    const menuGrid = document.getElementById('menuGrid');
+    const cartBadge = document.getElementById('cartBadge');
+    const cartBar = document.getElementById('cartBar');
+    const cartBarCount = document.getElementById('cartBarCount');
+    const cartBarTotal = document.getElementById('cartBarTotal');
+    
+    // View Switcher
+    function setView(viewId) {
+      views.forEach(v => {
+        v.classList.toggle('active', v.getAttribute('data-view') === viewId);
+      });
+      window.scrollTo(0, 0);
+      
+      if (viewId === 'checkout') renderCheckout();
+      if (viewId === 'menu') {
+        cartBar.classList.toggle('hidden', cart.length === 0);
+      } else {
+        cartBar.classList.add('hidden');
+      }
+    }
+
+    // Render Menu
+    function renderMenu() {
+      menuGrid.innerHTML = currentCanteen.menu.map(item => `
+        <div class="group bg-white rounded-[32px] p-6 shadow-premium border border-ink/5 hover:shadow-premium-lg hover:-translate-y-2 transition-all duration-500">
+          <div class="aspect-square bg-ink/5 rounded-2xl mb-6 flex items-center justify-center font-display text-6xl text-ink/5 group-hover:text-ink/10 transition-colors">
+            ${item.emoji || item.name[0]}
+          </div>
+          <div class="flex justify-between items-start mb-2">
+            <h3 class="font-display text-2xl tracking-tight leading-tight">${item.name}</h3>
+            <div class="w-2 h-2 rounded-full ${item.diet === 'veg' ? 'bg-green-500' : 'bg-red-500'} mt-2 shadow-sm"></div>
+          </div>
+          <p class="text-xs text-dust mb-6 line-clamp-2">${item.desc}</p>
+          <div class="flex items-center justify-between">
+            <span class="font-display text-2xl italic">₹${item.price}</span>
+            <button onclick="addToCart('${item.id}')" class="h-10 px-6 rounded-full bg-ink text-white text-[10px] font-bold uppercase tracking-widest hover:bg-ocean hover:scale-105 active:scale-95 transition-all">Add</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Cart Logic
+    function addToCart(itemId) {
+      const item = currentCanteen.menu.find(i => i.id === itemId);
+      const existing = cart.find(i => i.id === itemId);
+      if (existing) {
+        existing.qty++;
+      } else {
+        cart.push({ ...item, qty: 1 });
+      }
+      updateCartUI();
+      
+      // Animation feedback
+      const btn = event.target;
+      btn.innerText = 'Added!';
+      btn.classList.add('bg-ocean');
+      setTimeout(() => {
+        btn.innerText = 'Add';
+        btn.classList.remove('bg-ocean');
+      }, 1000);
+    }
+
+    function updateCartUI() {
+      const count = cart.reduce((acc, i) => acc + i.qty, 0);
+      const total = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
+      
+      cartBadge.innerText = count;
+      cartBadge.classList.toggle('hidden', count === 0);
+      
+      cartBarCount.innerText = count;
+      cartBarTotal.innerText = `₹${total}`;
+      if (document.querySelector('[data-view="menu"]').classList.contains('active')) {
+        cartBar.classList.toggle('hidden', count === 0);
+      }
+    }
+
+    function renderCheckout() {
+      const itemsContainer = document.getElementById('checkoutItems');
+      const totalContainer = document.getElementById('checkoutTotal');
+      const total = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
+      
+      itemsContainer.innerHTML = cart.map(item => `
+        <div class="flex items-center justify-between">
+          <div>
+            <h4 class="font-display text-xl leading-none">${item.name}</h4>
+            <p class="text-[10px] font-bold text-dust uppercase tracking-widest mt-1">₹${item.price} × ${item.qty}</p>
+          </div>
+          <span class="font-display text-xl italic">₹${item.price * item.qty}</span>
+        </div>
+      `).join('');
+      
+      totalContainer.innerText = `₹${total}`;
+    }
+
+    // Payment Slider Logic
+    const sliderHandle = document.getElementById('sliderHandle');
+    const sliderTrack = document.getElementById('paymentSlider');
+    const sliderProgress = document.getElementById('sliderProgress');
+    let isDragging = false;
+    let startX = 0;
+    let maxTranslate = 0;
+
+    function initSlider() {
+      maxTranslate = sliderTrack.offsetWidth - sliderHandle.offsetWidth - 8;
+      
+      const onStart = (e) => {
+        isDragging = true;
+        startX = (e.type === 'mousedown' ? e.clientX : e.touches[0].clientX);
+        sliderHandle.style.transition = 'none';
+      };
+
+      const onMove = (e) => {
+        if (!isDragging) return;
+        const currentX = (e.type === 'mousemove' ? e.clientX : e.touches[0].clientX);
+        let diff = currentX - startX;
+        diff = Math.max(0, Math.min(diff, maxTranslate));
+        
+        sliderHandle.style.transform = `translateX(${diff}px)`;
+        const progress = (diff / maxTranslate) * 100;
+        sliderProgress.style.width = `${progress}%`;
+        
+        if (progress > 95) {
+          isDragging = false;
+          completePayment();
+        }
+      };
+
+      const onEnd = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        sliderHandle.style.transition = 'transform 0.3s var(--ease)';
+        sliderHandle.style.transform = 'translateX(0)';
+        sliderProgress.style.transition = 'width 0.3s var(--ease)';
+        sliderProgress.style.width = '0';
+        setTimeout(() => {
+          sliderProgress.style.transition = 'none';
+        }, 300);
+      };
+
+      sliderHandle.addEventListener('mousedown', onStart);
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onEnd);
+      
+      sliderHandle.addEventListener('touchstart', onStart);
+      window.addEventListener('touchmove', onMove);
+      window.addEventListener('touchend', onEnd);
+    }
+
+    function completePayment() {
+      sliderHandle.style.transform = `translateX(${maxTranslate}px)`;
+      sliderProgress.style.width = '100%';
+      sliderProgress.style.background = 'var(--ocean)';
+      document.querySelector('.slider-text').innerText = 'Processing...';
+      
+      setTimeout(() => {
+        setView('tracking');
+        // Simulate progress
+        setTimeout(() => {
+          setView('otp');
+        }, 5000);
+      }, 1000);
+    }
+
+    // Events
+    document.getElementById('btnCart').onclick = () => setView('checkout');
+    cartBar.onclick = () => setView('checkout');
+    document.getElementById('btnBackToMenu').onclick = () => setView('menu');
+    document.getElementById('btnFinish').onclick = () => {
+      cart = [];
+      updateCartUI();
+      setView('menu');
+    };
+
+    // Initialize
+    renderMenu();
+    initSlider();
+    window.addEventListener('resize', initSlider);
+  </script>
 </body>
 </html>
