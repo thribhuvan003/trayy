@@ -4,7 +4,7 @@
 
 @theme {
   /* Type */
-  --font-sans: "Geist", "Inter", ui-sans-serif, system-ui;
+  --font-sans: "Bricolage Grotesque", "Geist", "Inter", ui-sans-serif, system-ui;
   --font-display: "Instrument Serif", serif;
   
   /* Premium Palette */
@@ -58,6 +58,6 @@
 }
 
 [data-portal="student"] {
-  --portal-font-sans: "Geist", sans-serif;
+  --portal-font-sans: "Bricolage Grotesque", sans-serif;
   --portal-font-display: "Instrument Serif", serif;
 }
