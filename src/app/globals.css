@@ -560,20 +560,100 @@ select option {
    ════════════════════════════════════════════════════════════════════ */
 
 :root {
-  --tray-bg:      #F4EFE6;
-  --tray-surface: #E8DFD0;
-  --tray-ink:     #1A1A19;
-  --tray-muted:   #67615C;
-  --tray-clay:    #E60000;
-  --tray-green:   #16A34A;
-  --tray-border:  rgba(26, 26, 25, 0.12);
-  --tray-cream:   #F4EFE6;
-  --tray-shadow:  rgba(26, 26, 25, 0.08);
+  --tray-bg:      #f4f0e6;
+  --tray-surface: #ebe6da;
+  --tray-surface-strong: #faf8f3;
+  --tray-ink:     #12151a;
+  --tray-muted:   #5c636b;
+  --tray-accent:  #1a5c45;
+  --tray-clay:    #9a4e28;
+  --tray-green:   #1a5c45;
+  --tray-border:  rgba(18, 21, 26, 0.1);
+  --tray-border-strong: rgba(18, 21, 26, 0.18);
+  --tray-cream:   #faf8f3;
+  --tray-shadow:  rgba(18, 21, 26, 0.06);
 
-  --font-display-cond: var(--font-fraunces), serif;
-  --font-editorial: var(--font-fraunces), serif;
-  --font-ui:        var(--font-barlow), system-ui, sans-serif;
-  --font-code:      var(--font-dm-mono), var(--font-jetbrains), ui-monospace, monospace;
+  --font-display-cond: var(--font-dm-serif), Georgia, serif;
+  --font-editorial: var(--font-dm-serif), Georgia, serif;
+  --font-ui:        var(--font-bricolage), system-ui, sans-serif;
+  --font-code:      var(--font-space-mono), ui-monospace, monospace;
+}
+
+/* Landing-only type stack — distinct from student portal */
+.tray-landing {
+  --font-hero-display: var(--font-dm-serif), Georgia, serif;
+  --font-hero-accent:  var(--font-cormorant), Georgia, serif;
+  --font-hero-ui:      var(--font-bricolage), system-ui, sans-serif;
+  --font-hero-mono:    var(--font-space-mono), ui-monospace, monospace;
+  --font-hero-punch:   var(--font-unbounded), system-ui, sans-serif;
+  --font-editorial:    var(--font-hero-display);
+  --font-ui:           var(--font-hero-ui);
+  --font-code:         var(--font-hero-mono);
+  --tray-nav-h:        4.25rem;
+  --tray-radius-sm:    4px;
+  --tray-radius-md:    6px;
+  --tray-underline:    var(--tray-clay);
+  --tray-ease-snap:    cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.font-cormorant { font-family: var(--font-cormorant), Georgia, serif; }
+.font-bricolage { font-family: var(--font-bricolage), system-ui, sans-serif; }
+
+.tl-nav-link {
+  position: relative;
+  font-family: var(--font-hero-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--tray-muted);
+  transition: color 200ms var(--tray-ease-snap);
+}
+.tl-nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  width: 100%;
+  height: 1px;
+  background: var(--tray-underline);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.22s var(--tray-ease-snap);
+}
+.tl-nav-link:hover { color: var(--tray-ink); }
+.tl-nav-link:hover::after { transform: scaleX(1); }
+
+.tl-cta-primary {
+  transition: transform 0.2s var(--tray-ease-snap), box-shadow 0.2s var(--tray-ease-snap);
+}
+.tl-cta-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 0 rgba(18, 21, 26, 0.12);
+}
+.tl-cta-primary:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+.tl-cta-secondary {
+  transition: background 0.2s var(--tray-ease-snap), transform 0.2s var(--tray-ease-snap);
+}
+.tl-cta-secondary:hover {
+  background: rgba(18, 21, 26, 0.04);
+}
+.tl-cta-secondary:active {
+  transform: translateY(1px);
+}
+
+@keyframes tl-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.tl-stats-marquee {
+  animation: tl-marquee 28s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tl-stats-marquee { animation: none; }
 }
 
 /* Student portal — Neobrutalist-Bento (Winter 2026 Cohort) */
@@ -658,8 +738,14 @@ select option {
 .tray-page {
   min-height: 100svh;
   background:
-    radial-gradient(circle at 15% 10%, rgba(230, 0, 0, 0.08), transparent 30rem),
-    radial-gradient(circle at 85% 20%, rgba(22, 163, 74, 0.06), transparent 28rem),
+    linear-gradient(180deg, rgba(26, 92, 69, 0.04) 0%, transparent 18rem),
+    repeating-linear-gradient(
+      90deg,
+      rgba(18, 21, 26, 0.018) 0,
+      rgba(18, 21, 26, 0.018) 1px,
+      transparent 1px,
+      transparent 72px
+    ),
     var(--tray-bg);
   color: var(--tray-ink);
 }
@@ -719,7 +805,7 @@ select option {
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 50%;
-  background-color: var(--tray-clay);
+  background-color: var(--tray-accent);
   transform: scale(0);
   transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
   transform-origin: center;
@@ -737,17 +823,6 @@ select option {
   opacity: 1;
 }
 
-.tray-ghost-word {
-  font-family: var(--font-editorial);
-  font-weight: 900;
-  color: var(--tray-muted);
-  opacity: 0.08;
-  user-select: none;
-  pointer-events: none;
-  letter-spacing: -0.07em;
-  line-height: 0.84;
-}
-
 /* ── Preloader FOUC/Hydration Flash Guard ── */
 .tray-landing-wrapper {
   opacity: 1;
@@ -763,17 +838,7 @@ select option {
   pointer-events: none !important;
 }
 
-/* ── Enhanced scroll animation support ──────────────────────────────── */
-
-#portals h2,
-#campus h2,
-#sync h2,
-#flow h2,
-#stack h2,
-#trust h2,
-#closing h2 {
-  will-change: transform;
-}
+/* ── Landing motion support ─────────────────────────────────────────── */
 
 [data-portal-card] {
   will-change: transform;
@@ -784,42 +849,13 @@ select option {
 
 [data-portal-card]:hover {
   box-shadow:
-    0 24px 64px rgba(26, 22, 20, 0.08),
-    0 8px 24px rgba(26, 22, 20, 0.04);
-}
-
-#flow .grid > div {
-  will-change: transform;
-  transition-property: background-color, color, border-color, box-shadow, transform;
-  transition-duration: 300ms;
-  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-#closing h2 {
-  will-change: letter-spacing, filter, opacity, transform;
-  transform-origin: 50% 50%;
-}
-
-.tl-divider-line {
-  will-change: width;
+    0 22px 56px rgba(31, 35, 40, 0.08),
+    0 8px 18px rgba(31, 35, 40, 0.04);
 }
 
 .tl-realtime-number {
   font-variant-numeric: tabular-nums;
   will-change: contents;
-}
-
-#stack .grid > div {
-  will-change: transform;
-  transform-style: preserve-3d;
-}
-
-#trust .grid > div {
-  will-change: clip-path, transform, opacity;
-}
-
-.tray-landing blockquote {
-  will-change: transform, opacity, filter;
 }
 
 .tray-landing [data-reveal] {
@@ -839,53 +875,9 @@ select option {
     transition: none;
   }
 
-  #portals h2,
-  #campus h2,
-  #sync h2,
-  #flow h2,
-  #stack h2,
-  #trust h2,
-  #closing h2,
-  [data-portal-card],
-  #flow .grid > div,
-  #stack .grid > div,
-  #trust .grid > div,
-  .tray-landing blockquote {
+  [data-portal-card] {
     will-change: auto;
   }
-}
-
-#campus .grid {
-  will-change: clip-path;
-}
-
-/* Stack tech cards — hidden until GSAP scroll-triggers each one.
-   The CSS prevents FOUC before GSAP initialises.
-   .tl-stack-revealed is added by GSAP onComplete so the card stays visible
-   after clearProps removes inline styles (without the class, CSS opacity:0
-   would re-hide the card the moment GSAP's inline override was cleared). */
-.tray-landing [data-stack-card] {
-  opacity: 0;
-  transform: translateY(28px) scale(0.93);
-  will-change: opacity, transform;
-}
-.tray-landing [data-stack-card].tl-stack-revealed {
-  opacity: 1;
-  transform: none;
-  will-change: auto;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .tray-landing [data-stack-card] {
-    opacity: 1;
-    transform: none;
-    will-change: auto;
-  }
-}
-
-.scroll-fade-mask {
-  mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
-  -webkit-mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
 }
 
 /* ────────────────────────────────────────────────────────────────────

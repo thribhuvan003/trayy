@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { SectionReveal, RevealItem } from "@/lib/motion/tray-framer";
 
@@ -8,38 +8,30 @@ const CANTEENS = [
   {
     id: 0,
     name: "Main Canteen",
-    icon: "🍽️",
+    mark: "MC",
     tag: "Ground floor · North block",
-    color: "#2E80EF",
-    badge: "ACTIVE",
-    bgLight: "rgba(46,128,239,0.06)",
+    badge: "Open",
   },
   {
     id: 1,
     name: "Hostel Mess",
-    icon: "🏠",
+    mark: "HM",
     tag: "Residential block",
-    color: "#B8531A",
-    badge: "ACTIVE",
-    bgLight: "rgba(184,83,26,0.06)",
+    badge: "Open",
   },
   {
     id: 2,
     name: "North Block",
-    icon: "🏛️",
+    mark: "NB",
     tag: "Academic wing",
-    color: "#16A34A",
-    badge: "ACTIVE",
-    bgLight: "rgba(22,163,74,0.06)",
+    badge: "Open",
   },
   {
     id: 3,
     name: "Night Canteen",
-    icon: "🌙",
-    tag: "Open till 11 pm",
-    color: "#D97706",
-    badge: "LATE NIGHT",
-    bgLight: "rgba(217,119,6,0.06)",
+    mark: "NC",
+    tag: "Till 11 pm",
+    badge: "Late",
   },
 ] as const;
 
@@ -49,36 +41,28 @@ const ROLES = [
     role: "Student",
     scope: "All active canteens",
     color: "#2E80EF",
-    bg: "rgba(46,128,239,0.03)",
-    border: "rgba(46,128,239,0.12)",
-    desc: "Browse every canteen on campus, order with UPI, track live prep status, and collect with a 4-digit OTP.",
+    desc: "Browse every open counter, pay by UPI, track prep, collect with a four-digit code.",
   },
   {
     id: 1,
     role: "Kitchen staff",
     scope: "Assigned canteen only",
     color: "#B8531A",
-    bg: "rgba(184,83,26,0.03)",
-    border: "rgba(184,83,26,0.12)",
-    desc: "Manage the live preparation queue. See and process tickets for their counter only, eliminating confusion.",
+    desc: "One live queue for their counter — no tickets from other outlets.",
   },
   {
     id: 2,
     role: "Canteen admin",
     scope: "One canteen — full control",
     color: "#16A34A",
-    bg: "rgba(22,163,74,0.03)",
-    border: "rgba(22,163,74,0.12)",
-    desc: "Configure menus, adjust pricing, manage counter staff, and audit live daily sales for their specific outlet.",
+    desc: "Menus, pricing, staff, and daily sales for a single outlet.",
   },
   {
     id: 3,
     role: "Campus admin",
     scope: "Whole campus — analytics",
     color: "#D97706",
-    bg: "rgba(217,119,6,0.03)",
-    border: "rgba(217,119,6,0.12)",
-    desc: "Cross-canteen reporting, total revenue rollup, campus-wide staff permissions, and central performance metrics.",
+    desc: "Cross-counter revenue, permissions, and performance in one view.",
   },
 ] as const;
 
@@ -96,17 +80,47 @@ const CANTEEN_ACCESS_MAP: Record<number, readonly number[]> = {
   3: [0, 3],
 } as const;
 
+type LinkPath = {
+  key: string;
+  d: string;
+  color: string;
+};
+
+function getAnchor(
+  el: HTMLElement,
+  container: HTMLElement,
+  side: "right" | "left",
+): { x: number; y: number } {
+  const rect = el.getBoundingClientRect();
+  const containerRect = container.getBoundingClientRect();
+  return {
+    x: side === "right" ? rect.right - containerRect.left : rect.left - containerRect.left,
+    y: rect.top - containerRect.top + rect.height / 2,
+  };
+}
+
+function buildCurve(
+  from: { x: number; y: number },
+  to: { x: number; y: number },
+): string {
+  const midX = (from.x + to.x) / 2;
+  return `M ${from.x} ${from.y} C ${midX} ${from.y}, ${midX} ${to.y}, ${to.x} ${to.y}`;
+}
+
 export function CampusModelSection({ campusName }: { campusName?: string | null }) {
   const [hoveredRole, setHoveredRole] = useState<number | null>(null);
   const [hoveredCanteen, setHoveredCanteen] = useState<number | null>(null);
+  const [linkPaths, setLinkPaths] = useState<LinkPath[]>([]);
+
+  const mapRef = useRef<HTMLDivElement>(null);
+  const canteenRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const roleRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const isAnyHovered = hoveredRole !== null || hoveredCanteen !== null;
 
   const isCanteenActive = (cIdx: number) => {
     if (hoveredCanteen === cIdx) return true;
-    if (hoveredRole !== null) {
-      return ROLE_ACCESS_MAP[hoveredRole].includes(cIdx);
-    }
+    if (hoveredRole !== null) return ROLE_ACCESS_MAP[hoveredRole].includes(cIdx);
     return !isAnyHovered;
   };
 
@@ -118,9 +132,7 @@ export function CampusModelSection({ campusName }: { campusName?: string | null 
 
   const isRoleActive = (rIdx: number) => {
     if (hoveredRole === rIdx) return true;
-    if (hoveredCanteen !== null) {
-      return CANTEEN_ACCESS_MAP[hoveredCanteen].includes(rIdx);
-    }
+    if (hoveredCanteen !== null) return CANTEEN_ACCESS_MAP[hoveredCanteen].includes(rIdx);
     return !isAnyHovered;
   };
 
@@ -130,131 +142,183 @@ export function CampusModelSection({ campusName }: { campusName?: string | null 
     return false;
   };
 
+  const recomputeLinks = useCallback(() => {
+    const container = mapRef.current;
+    if (!container || !isAnyHovered) {
+      setLinkPaths([]);
+      return;
+    }
+
+    const paths: LinkPath[] = [];
+
+    if (hoveredRole !== null) {
+      const roleEl = roleRefs.current[hoveredRole];
+      if (!roleEl) return;
+      const to = getAnchor(roleEl, container, "left");
+      ROLE_ACCESS_MAP[hoveredRole].forEach((cIdx) => {
+        const canteenEl = canteenRefs.current[cIdx];
+        if (!canteenEl) return;
+        const from = getAnchor(canteenEl, container, "right");
+        paths.push({
+          key: `c${cIdx}-r${hoveredRole}`,
+          d: buildCurve(from, to),
+          color: ROLES[hoveredRole].color,
+        });
+      });
+    } else if (hoveredCanteen !== null) {
+      const canteenEl = canteenRefs.current[hoveredCanteen];
+      if (!canteenEl) return;
+      const from = getAnchor(canteenEl, container, "right");
+      CANTEEN_ACCESS_MAP[hoveredCanteen].forEach((rIdx) => {
+        const roleEl = roleRefs.current[rIdx];
+        if (!roleEl) return;
+        const to = getAnchor(roleEl, container, "left");
+        paths.push({
+          key: `c${hoveredCanteen}-r${rIdx}`,
+          d: buildCurve(from, to),
+          color: ROLES[rIdx].color,
+        });
+      });
+    }
+
+    setLinkPaths(paths);
+  }, [hoveredCanteen, hoveredRole, isAnyHovered]);
+
+  useLayoutEffect(() => {
+    recomputeLinks();
+  }, [recomputeLinks]);
+
+  useLayoutEffect(() => {
+    const container = mapRef.current;
+    if (!container) return;
+
+    const observer = new ResizeObserver(() => recomputeLinks());
+    observer.observe(container);
+    window.addEventListener("resize", recomputeLinks);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", recomputeLinks);
+    };
+  }, [recomputeLinks]);
+
   return (
-    <SectionReveal as="div" id="campus" className="px-4 pt-16 pb-14 sm:px-8 sm:pt-24 sm:pb-20 lg:px-10 bg-[#FAF8F5] lg:min-h-screen lg:flex lg:flex-col lg:justify-center lg:py-24">
+    <SectionReveal as="div" id="campus" className="px-5 py-20 sm:px-8 lg:px-10 lg:py-28">
       <motion.div className="mx-auto max-w-7xl">
-        {/* Heading panel */}
-        <div className="max-w-4xl mb-8 sm:mb-16">
+        <div className="mb-14 max-w-3xl">
           <RevealItem>
-            <div className="mb-5 flex flex-wrap items-center gap-3">
-              <span className="font-code text-[0.72rem] font-bold uppercase tracking-[0.24em] text-neutral-400">
-                02 / Campus Edition
-              </span>
+            <div className="flex items-center gap-3">
+              <span className="h-px w-8 bg-[var(--tray-border-strong)]" aria-hidden />
+              <p className="font-code text-[0.68rem] tracking-[0.08em] text-[var(--tray-muted)]">
+                Campus model
+              </p>
             </div>
           </RevealItem>
 
           <RevealItem>
             <h2
-              className="leading-[0.85] tracking-[-0.03em] uppercase mb-8"
-              style={{
-                fontFamily: "var(--font-barlow)",
-                fontWeight: 900,
-                fontSize: "clamp(3rem, 7.5vw, 6.5rem)",
-                color: "var(--tray-ink, #1A1619)",
-              }}
+              className="mt-5 font-editorial text-[clamp(2.4rem,5vw,4rem)] font-normal leading-[1.02] tracking-[-0.03em] text-[var(--tray-ink)]"
+              style={{ textWrap: "balance" }}
             >
-              One campus. <br className="sm:hidden" />
-              <span
-                style={{
-                  fontFamily: "var(--font-fraunces)",
-                  fontStyle: "italic",
-                  textTransform: "none",
-                  fontWeight: 400,
-                  color: "var(--tray-clay, #B8531A)",
-                }}
-              >
-                Many counters.
-              </span>
+              One campus. Four roles.{" "}
+              <span className="italic text-[var(--tray-clay)]">No overlap.</span>
             </h2>
           </RevealItem>
 
           <RevealItem>
-            <p
-              className="max-w-2xl text-[1.1rem] leading-8 text-neutral-600"
-              style={{ fontFamily: "var(--font-geist)" }}
-            >
-              Every canteen on campus in one system. Students see everything.
-              Staff see only their counter. Admins manage their canteen.
-              No overlap, no confusion, no wrong orders.
+            <p className="mt-5 max-w-xl text-[0.98rem] leading-[1.65] text-[var(--tray-muted)]">
+              Students reach every open counter. Kitchen staff stay inside their queue. Admins
+              only see their scope — hover a counter or role to trace the link.
             </p>
           </RevealItem>
         </div>
 
-        {/* 2-Column Split Directory layout */}
-        <div className="grid gap-12 lg:grid-cols-[1fr_1.1fr] lg:items-start">
-          {/* Left Column: Campus Hub (Canteen Cards) */}
-          <div className="flex flex-col gap-6">
-            <div className="flex items-center justify-between pb-3 border-b border-[#e5e5d8]">
-              <span
-                className="text-[0.68rem] font-code font-bold uppercase tracking-[0.24em] text-neutral-400"
-                style={{ fontFamily: "var(--font-dm-mono)" }}
-              >
-                {campusName || "Aditya Engineering College"} · active canteens
+        <div
+          ref={mapRef}
+          className="relative grid gap-10 lg:grid-cols-[1fr_1.05fr] lg:gap-16"
+        >
+          <svg
+            className="pointer-events-none absolute inset-0 z-20 hidden h-full w-full lg:block"
+            aria-hidden
+          >
+            {linkPaths.map((path, i) => (
+              <motion.path
+                key={path.key}
+                d={path.d}
+                fill="none"
+                stroke={path.color}
+                strokeWidth={1.5}
+                strokeLinecap="round"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 0.85 }}
+                transition={{
+                  pathLength: { duration: 0.38, ease: [0.22, 1, 0.36, 1], delay: i * 0.04 },
+                  opacity: { duration: 0.2 },
+                }}
+              />
+            ))}
+          </svg>
+
+          <div className="flex flex-col gap-5">
+            <div className="flex items-baseline justify-between gap-4 border-b border-dashed border-[var(--tray-border)] pb-3">
+              <span className="font-code text-[0.68rem] tracking-[0.06em] text-[var(--tray-muted)]">
+                {campusName || "Aditya Engineering College"}
               </span>
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="font-code text-[0.62rem] tracking-[0.06em] text-[var(--tray-muted)]">
+                {CANTEENS.length} counters
+              </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {CANTEENS.map((c) => {
                 const active = isCanteenActive(c.id);
                 const dimmed = isCanteenDimmed(c.id);
+                const linkColor =
+                  hoveredRole !== null
+                    ? ROLES[hoveredRole].color
+                    : hoveredCanteen === c.id
+                      ? "var(--tray-ink)"
+                      : undefined;
 
                 return (
                   <motion.div
                     key={c.name}
+                    ref={(el) => {
+                      canteenRefs.current[c.id] = el;
+                    }}
                     onMouseEnter={() => setHoveredCanteen(c.id)}
                     onMouseLeave={() => setHoveredCanteen(null)}
                     animate={{
-                      y: active && isAnyHovered ? -6 : 0,
-                      scale: active && isAnyHovered ? 1.02 : 1,
-                      opacity: dimmed ? 0.35 : 1,
-                      borderColor: active && isAnyHovered ? c.color : "var(--tray-border, #e5e5d8)",
-                      boxShadow: active && isAnyHovered
-                        ? `0 16px 36px -12px ${c.color}28, 0 4px 12px rgba(0,0,0,0.02)`
-                        : "0 4px 12px rgba(26,22,25,0.01)",
+                      y: active && isAnyHovered ? -3 : 0,
+                      opacity: dimmed ? 0.32 : 1,
+                      borderColor:
+                        active && isAnyHovered
+                          ? (linkColor ?? "var(--tray-ink)")
+                          : "var(--tray-border)",
                     }}
-                    transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                    className="relative rounded-[2rem] border bg-white p-6 cursor-pointer select-none overflow-hidden group flex flex-col justify-between min-h-[170px]"
+                    transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                    className="relative flex min-h-[132px] cursor-pointer flex-col justify-between rounded-lg border bg-[var(--tray-surface-strong)] p-4 select-none"
                     style={{ borderStyle: "solid", borderWidth: "1px" }}
                   >
-                    <div
-                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                      style={{
-                        background: `radial-gradient(120px circle at 50% 120px, ${c.color}08, transparent 80%)`,
-                      }}
-                    />
-
-                    <div className="flex items-start justify-between z-10">
-                      <div
-                        className="flex h-12 w-12 items-center justify-center rounded-2xl text-2xl transition-transform duration-300 group-hover:scale-110"
-                        style={{ backgroundColor: c.bgLight }}
-                      >
-                        {c.icon}
+                    <div className="flex items-start justify-between">
+                      <div className="font-code text-[0.62rem] font-bold uppercase tracking-[0.14em] text-[var(--tray-clay)]">
+                        {c.mark}
                       </div>
                       <span
-                        className="rounded-full px-2.5 py-1 text-[0.55rem] font-code font-bold uppercase tracking-widest border"
+                        className="font-code text-[0.58rem] tracking-[0.08em] text-[var(--tray-muted)]"
                         style={{
-                          borderColor: active && isAnyHovered ? `${c.color}30` : "var(--tray-border, #e5e5d8)",
-                          color: active && isAnyHovered ? c.color : "var(--tray-muted, #737373)",
-                          backgroundColor: active && isAnyHovered ? `${c.color}08` : "transparent",
-                          transition: "all 0.3s ease",
+                          color: active && isAnyHovered ? (linkColor ?? "var(--tray-ink)") : undefined,
                         }}
                       >
                         {c.badge}
                       </span>
                     </div>
 
-                    <div className="mt-6 z-10">
-                      <h3
-                        className="text-lg font-bold tracking-tight text-[var(--tray-ink, #1A1619)]"
-                        style={{ fontFamily: "var(--font-jakarta)" }}
-                      >
+                    <div className="mt-4">
+                      <h3 className="font-ui text-[0.98rem] font-semibold tracking-tight text-[var(--tray-ink)]">
                         {c.name}
                       </h3>
-                      <p
-                        className="mt-1.5 text-[0.72rem] uppercase tracking-[0.12em] text-neutral-400 font-medium"
-                        style={{ fontFamily: "var(--font-dm-mono)" }}
-                      >
+                      <p className="mt-1 font-code text-[0.62rem] tracking-[0.04em] text-[var(--tray-muted)]">
                         {c.tag}
                       </p>
                     </div>
@@ -264,82 +328,80 @@ export function CampusModelSection({ campusName }: { campusName?: string | null 
             </div>
           </div>
 
-          {/* Right Column: Roles & Visibility */}
-          <div className="flex flex-col gap-6">
-            <div className="flex items-center pb-3 border-b border-[#e5e5d8]">
-              <span
-                className="text-[0.68rem] font-code font-bold uppercase tracking-[0.24em] text-neutral-400"
-                style={{ fontFamily: "var(--font-dm-mono)" }}
-              >
-                system role access mapping
+          <div className="flex flex-col gap-3">
+            <div className="border-b border-dashed border-[var(--tray-border)] pb-3">
+              <span className="font-code text-[0.68rem] tracking-[0.06em] text-[var(--tray-muted)]">
+                Role boundaries
               </span>
             </div>
 
-            <div className="flex flex-col gap-4">
-              {ROLES.map((r) => {
-                const active = isRoleActive(r.id);
-                const dimmed = isRoleDimmed(r.id);
+            {ROLES.map((r) => {
+              const active = isRoleActive(r.id);
+              const dimmed = isRoleDimmed(r.id);
 
-                return (
-                  <RevealItem key={r.role} variant="card">
-                    <motion.div
-                      onMouseEnter={() => setHoveredRole(r.id)}
-                      onMouseLeave={() => setHoveredRole(null)}
-                      animate={{
-                        x: active && isAnyHovered ? 8 : 0,
-                        opacity: dimmed ? 0.35 : 1,
-                        borderColor: active && isAnyHovered ? r.color : "rgba(229,229,216,0.5)",
-                        boxShadow: active && isAnyHovered
-                          ? `0 12px 28px -8px ${r.color}15`
-                          : "none",
-                        backgroundColor: active && isAnyHovered ? r.bg : "rgba(255, 255, 255, 0.4)",
+              return (
+                <RevealItem key={r.role} variant="card">
+                  <motion.div
+                    ref={(el) => {
+                      roleRefs.current[r.id] = el;
+                    }}
+                    onMouseEnter={() => setHoveredRole(r.id)}
+                    onMouseLeave={() => setHoveredRole(null)}
+                    animate={{
+                      x: active && isAnyHovered ? 4 : 0,
+                      opacity: dimmed ? 0.32 : 1,
+                      borderColor:
+                        active && isAnyHovered ? r.color : "var(--tray-border)",
+                      backgroundColor:
+                        active && isAnyHovered
+                          ? `color-mix(in srgb, ${r.color} 6%, var(--tray-surface-strong))`
+                          : "var(--tray-surface-strong)",
+                    }}
+                    transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                    className="relative cursor-pointer overflow-hidden rounded-lg border p-5 select-none"
+                    style={{ borderStyle: "solid", borderWidth: "1px" }}
+                  >
+                    <div
+                      className="absolute bottom-0 left-0 top-0 w-[3px]"
+                      style={{
+                        backgroundColor: r.color,
+                        opacity: active && isAnyHovered ? 1 : 0.18,
+                        transition: "opacity 0.25s ease",
                       }}
-                      transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                      className="rounded-[1.75rem] border p-6 cursor-pointer select-none relative overflow-hidden"
-                      style={{ borderStyle: "solid", borderWidth: "1px" }}
-                    >
-                      <div
-                        className="absolute left-0 top-0 bottom-0 w-[4px]"
-                        style={{
-                          backgroundColor: r.color,
-                          opacity: active ? 1 : 0.2,
-                          transition: "opacity 0.3s ease",
-                        }}
-                      />
+                    />
 
-                      <div className="flex flex-col gap-2.5 z-10 pl-2">
-                        <div className="flex items-center justify-between gap-3 flex-wrap">
-                          <span
-                            className="font-bold tracking-tight text-base"
-                            style={{ fontFamily: "var(--font-jakarta)", color: "var(--tray-ink, #1A1619)" }}
-                          >
-                            {r.role}
-                          </span>
-                          <span
-                            className="rounded-full px-3 py-1 text-[0.62rem] font-code font-bold uppercase tracking-[0.14em] border"
-                            style={{
-                              borderColor: r.border,
-                              color: r.color,
-                              backgroundColor: r.bg,
-                            }}
-                          >
-                            {r.scope}
-                          </span>
-                        </div>
-                        <p
-                          className="text-[0.88rem] leading-[1.6] text-neutral-600"
-                          style={{ fontFamily: "var(--font-geist)" }}
+                    <div className="flex flex-col gap-2 pl-2">
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <span className="font-ui text-[0.95rem] font-semibold tracking-tight text-[var(--tray-ink)]">
+                          {r.role}
+                        </span>
+                        <span
+                          className="font-code text-[0.6rem] tracking-[0.04em]"
+                          style={{
+                            color: active && isAnyHovered ? r.color : "var(--tray-muted)",
+                          }}
                         >
-                          {r.desc}
-                        </p>
+                          {r.scope}
+                        </span>
                       </div>
-                    </motion.div>
-                  </RevealItem>
-                );
-              })}
-            </div>
+                      <p className="text-[0.88rem] leading-[1.58] text-[var(--tray-muted)]">
+                        {r.desc}
+                      </p>
+                    </div>
+                  </motion.div>
+                </RevealItem>
+              );
+            })}
           </div>
         </div>
+
+        <RevealItem>
+          <p className="mt-8 font-code text-[0.62rem] tracking-[0.04em] text-[var(--tray-muted)] lg:mt-10">
+            {isAnyHovered
+              ? "Connected paths show who can reach which counter."
+              : "Hover any counter or role to draw the access map."}
+          </p>
+        </RevealItem>
       </motion.div>
     </SectionReveal>
   );

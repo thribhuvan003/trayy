@@ -1,118 +1,119 @@
 "use client";
 
-import { SectionReveal, RevealItem, HoverCard, tm } from "@/lib/motion/tray-framer";
-import { ShieldCheck, Landmark, Percent } from "lucide-react";
+import { RevealItem } from "@/lib/motion/tray-framer";
 import { motion } from "framer-motion";
 
+const trustItems = [
+  {
+    tag: "UPI",
+    accent: "var(--tray-accent)",
+    title: "Direct settlements",
+    desc: "Student payment hits the canteen merchant VPA. No platform wallet, no float sitting with Tray.",
+    foot: "merchant@upi · same receipt students see",
+  },
+  {
+    tag: "RLS",
+    accent: "var(--tray-accent)",
+    title: "Tenant isolation",
+    desc: "Menus, orders, and profiles are scoped per campus. Row-level security on every Postgres query.",
+    foot: "one college ≠ another college's data",
+  },
+  {
+    tag: "REV",
+    accent: "var(--tray-clay)",
+    title: "Zero order commission",
+    desc: "Tray is campus infrastructure, not a delivery aggregator. The canteen keeps what the student pays.",
+    foot: "no per-order platform fee",
+  },
+  {
+    tag: "OTP",
+    accent: "var(--tray-accent)",
+    title: "Verifiable pickup",
+    desc: "Four-digit code ties payment to handoff. Kitchen confirms; student shows code at counter.",
+    foot: "reduces wrong-order disputes",
+  },
+] as const;
+
+const ease = [0.22, 1, 0.36, 1] as const;
+
 export function TrustSection() {
-  const trustItems = [
-    {
-      icon: <Landmark className="h-6 w-6 text-[var(--tray-clay)]" />,
-      title: "Direct UPI Settlements",
-      tag: "Direct to Bank",
-      desc: "Payments are routed directly from student UPI to your canteen's merchant account via Razorpay. Zero holding periods, zero escrow delays, and zero middleman risk.",
-    },
-    {
-      icon: <ShieldCheck className="h-6 w-6 text-emerald-600" />,
-      title: "Bank-Grade Postgres RLS",
-      tag: "Secure Tenant Isolation",
-      desc: "Menu data, transaction records, and student profiles are strictly partitioned. Postgres Row Level Security (RLS) ensures total tenant isolation and absolute privacy.",
-    },
-    {
-      icon: <Percent className="h-6 w-6 text-amber-600" />,
-      title: "0% Order Commissions",
-      tag: "100% Canteen Revenue",
-      desc: "Unlike commercial delivery aggregators, Tray charges zero commission on orders. Keep every rupee of your revenue and run your business on your own terms.",
-    },
-  ] as const;
-
   return (
-    <section id="trust" className="px-5 py-20 sm:px-8 lg:px-10 border-b border-[var(--tray-border)] lg:min-h-screen lg:flex lg:flex-col lg:justify-center lg:py-24">
+    <section id="trust" className="px-5 py-20 sm:px-8 lg:px-10 lg:py-24">
       <div className="mx-auto max-w-7xl">
-        <RevealItem initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.2 }}>
-          <div className="mb-4 flex flex-wrap items-center gap-3">
-            <p className="font-code text-xs uppercase tracking-[0.3em] text-[var(--tray-muted)]">
-              Trust & Security
-            </p>
-          </div>
-        </RevealItem>
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,0.42fr)_minmax(0,1fr)] lg:gap-16 lg:items-start">
+          <aside className="lg:sticky lg:top-28 lg:self-start">
+            <RevealItem>
+              <p className="font-code text-[0.65rem] uppercase tracking-[0.16em] text-[var(--tray-muted)]">
+                Money & data
+              </p>
+            </RevealItem>
+            <RevealItem>
+              <h2 className="mt-3 max-w-[14ch] font-cormorant text-[clamp(2.2rem,4.5vw,3.5rem)] font-normal leading-[1.05] tracking-[-0.03em] text-[var(--tray-ink)]">
+                Built for auditors.
+                <span className="italic text-[var(--tray-accent)]"> Used by hungry students.</span>
+              </h2>
+            </RevealItem>
+            <RevealItem variant="soft">
+              <p className="mt-4 max-w-sm font-bricolage text-[0.96rem] leading-[1.65] text-[var(--tray-muted)]">
+                Deans ask where UPI lands. IT asks about tenant boundaries. Canteen managers ask about margins.
+              </p>
+            </RevealItem>
+            <RevealItem variant="soft">
+              <div className="mt-8 border border-dashed border-[var(--tray-border)] px-4 py-3.5">
+                <p className="font-code text-[0.68rem] leading-[1.7] uppercase tracking-[0.12em] text-[var(--tray-muted)]">
+                  Tray does not hold student funds.
+                  <br />
+                  Settlements go merchant → canteen UPI.
+                </p>
+              </div>
+            </RevealItem>
+          </aside>
 
-        <RevealItem initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.2 }}>
-          <h2
-            className="max-w-3xl leading-[0.9] tracking-[-0.04em]"
-            style={{
-              fontFamily: "var(--font-barlow)",
-              fontWeight: 900,
-              fontSize: "clamp(3rem, 7.5vw, 6.5rem)",
-              textTransform: "uppercase",
-            }}
+          <motion.ol
+            className="divide-y divide-[var(--tray-border)] border-y border-[var(--tray-border)]"
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.12 }}
+            variants={{ hidden: {}, show: { transition: { staggerChildren: 0.07 } } }}
           >
-            Built for trust,{" "}
-            <em className="not-italic" style={{ fontFamily: "var(--font-fraunces)", fontStyle: "italic", textTransform: "none", color: "var(--tray-clay)" }}>
-              backed by code.
-            </em>
-          </h2>
-        </RevealItem>
-
-        <RevealItem initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.2 }}>
-          <p className="mt-6 max-w-xl text-[1.05rem] leading-8 opacity-70"
-            style={{ fontFamily: "var(--font-geist)" }}>
-            Tray is designed as a secure, decentralized campus platform. You own your data, control your revenue flow, and run your operations with confidence.
-          </p>
-        </RevealItem>
-
-        <motion.div
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, amount: 0.15 }}
-          variants={{
-            hidden: {},
-            show: { transition: { staggerChildren: 0.5 } }
-          }}
-          className="mt-10 sm:mt-12 grid gap-5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3"
-        >
-          {trustItems.map((item) => (
-            <motion.div
-              key={item.title}
-              variants={{
-                hidden: { opacity: 0, y: 35, scale: 0.96 },
-                show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.8, ease: tm.ease } }
-              }}
-            >
-              <HoverCard
-                className="flex h-full flex-col justify-between rounded-[1.75rem] sm:rounded-[2.25rem] border p-6 sm:p-8 lg:p-9 transition-all"
-                style={{
-                  border: "1px solid var(--tray-border)",
-                  background: "rgba(255,255,255,0.48)",
+            {trustItems.map((item) => (
+              <motion.li
+                key={item.tag}
+                variants={{
+                  hidden: { opacity: 0, x: 16 },
+                  show: { opacity: 1, x: 0, transition: { duration: 0.38, ease } },
                 }}
+                className="group grid gap-4 py-7 sm:grid-cols-[4.5rem_1fr] sm:gap-6 sm:py-8"
               >
-                <div className="flex flex-col h-full">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--tray-surface)] border border-[var(--tray-border)] mb-6">
-                    {item.icon}
-                  </div>
-                  <span
-                    className="text-[0.72rem] font-semibold uppercase tracking-[0.15em] block mb-2"
-                    style={{ fontFamily: "var(--font-geist)", color: "var(--tray-clay)" }}
-                  >
-                    {item.tag}
-                  </span>
-                  <h3
-                    className="mb-4 text-[1.75rem] font-medium tracking-tight text-neutral-900 leading-[1.2]"
-                    style={{ fontFamily: "var(--font-fraunces)", fontStyle: "italic" }}
-                  >
+                <motion.span
+                  variants={{
+                    hidden: { opacity: 0, x: -8 },
+                    show: { opacity: 1, x: 0, transition: { duration: 0.28, delay: 0.05 } },
+                  }}
+                  className="font-code inline-flex h-fit w-fit rounded-sm border px-2 py-1 text-[0.62rem] font-bold uppercase tracking-[0.18em]"
+                  style={{
+                    borderColor: `color-mix(in srgb, ${item.accent} 35%, transparent)`,
+                    background: `color-mix(in srgb, ${item.accent} 6%, transparent)`,
+                    color: item.accent,
+                  }}
+                >
+                  {item.tag}
+                </motion.span>
+                <div className="border-l border-transparent pl-0 transition-colors group-hover:border-[var(--tray-border)] sm:border-l sm:pl-5">
+                  <h3 className="font-bricolage text-[1.05rem] font-semibold tracking-[-0.02em] text-[var(--tray-ink)]">
                     {item.title}
                   </h3>
-                  <p
-                    className="text-[0.88rem] leading-[1.65] text-neutral-600 opacity-80"
-                    style={{ fontFamily: "var(--font-geist)" }}
-                  >
+                  <p className="mt-2 max-w-xl text-[0.92rem] leading-[1.65] text-[var(--tray-muted)]">
                     {item.desc}
                   </p>
+                  <p className="mt-2 font-code text-[0.65rem] uppercase tracking-[0.12em] text-[var(--tray-clay)]">
+                    {item.foot}
+                  </p>
                 </div>
-              </HoverCard>
-            </motion.div>
-          ))}
-        </motion.div>
+              </motion.li>
+            ))}
+          </motion.ol>
+        </div>
       </div>
     </section>
   );

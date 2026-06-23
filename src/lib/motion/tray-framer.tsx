@@ -13,6 +13,7 @@ import {
   useReducedMotion,
   useScroll,
   useTransform,
+  useMotionValueEvent,
   AnimatePresence,
   type Variants,
   type HTMLMotionProps,
@@ -30,8 +31,8 @@ export const tm = {
 
 // ── Variant presets ───────────────────────────────────────────────────────────
 export const fadeUpVar: Variants = {
-  hidden: { opacity: 0, y: 24, filter: "blur(8px)" },
-  show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: tm.base, ease: tm.ease } },
+  hidden: { opacity: 0, y: 18 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.48, ease: tm.ease } },
 };
 
 export const softFadeUp: Variants = {
@@ -40,8 +41,8 @@ export const softFadeUp: Variants = {
 };
 
 export const cardReveal: Variants = {
-  hidden: { opacity: 0, y: 28, scale: 0.97 },
-  show: { opacity: 1, y: 0, scale: 1, transition: { duration: tm.base, ease: tm.ease } },
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.42, ease: tm.ease } },
 };
 
 export const maskLine: Variants = {
@@ -57,19 +58,22 @@ export const staggerContainer: Variants = {
 // ── SectionReveal — scroll-triggered stagger container ────────────────────────
 type MotionDivProps = HTMLMotionProps<"div"> & { children: ReactNode };
 
-export function SectionReveal({
-  children,
-  className,
-  amount = 0.18,
-  delay = 0,
-  as = "section",
-  ...props
-}: MotionDivProps & { amount?: number; delay?: number; as?: "section" | "div" | "footer" }) {
+type SectionRevealProps = MotionDivProps & {
+  amount?: number;
+  delay?: number;
+  as?: "section" | "div" | "footer";
+};
+
+export const SectionReveal = React.forwardRef<HTMLElement, SectionRevealProps>(function SectionReveal(
+  { children, className, amount = 0.18, delay = 0, as = "section", ...props },
+  ref,
+) {
   const Component =
     as === "footer" ? motion.footer : as === "div" ? motion.div : motion.section;
 
   return (
     <Component
+      ref={ref as React.Ref<HTMLDivElement>}
       initial="hidden"
       whileInView="show"
       viewport={{ once: true, amount }}
@@ -83,7 +87,7 @@ export function SectionReveal({
       {children}
     </Component>
   );
-}
+});
 
 // ── RevealItem — individual animated child ────────────────────────────────────
 export function RevealItem({
@@ -131,20 +135,20 @@ export function AnimatedNav({
   style,
 }: { children: ReactNode; className?: string; style?: React.CSSProperties }) {
   const { scrollY } = useScroll();
-  const bg = useTransform(scrollY, [0, 60], ["rgba(216,201,174,0.7)", "rgba(216,201,174,0.92)"]);
-  const borderO = useTransform(scrollY, [0, 60], [0, 1]);
+  const bg = useTransform(scrollY, [0, 48], ["#faf8f3", "#f4f0e6"]);
+  const borderO = useTransform(scrollY, [0, 48], [0, 1]);
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -12 }}
+      initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.55, ease: tm.ease }}
+      transition={{ duration: 0.28, ease: tm.ease }}
       style={{ backgroundColor: bg, ...style }}
       className={`relative ${className ?? ""}`}
     >
       <motion.div
         style={{ opacity: borderO }}
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-[rgba(26,22,20,0.12)]"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-[var(--tray-border-strong)]"
       />
       {children}
     </motion.div>
@@ -172,35 +176,26 @@ export function MotionCTA({
   const reduce = useReducedMotion();
 
   const content = (
-    <>
-      {variant === "primary" && !reduce && (
+    <span className="relative flex items-center gap-2">
+      {children}
+      {!reduce && (
         <motion.span
           aria-hidden
-          className="pointer-events-none absolute inset-0 -translate-x-full"
-          animate={{ x: ["-120%", "140%"] }}
-          transition={{ duration: 1.8, repeat: Infinity, repeatDelay: 1.4, ease: "linear" }}
-          style={{ background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.22),transparent)" }}
-        />
-      )}
-      <span className="relative flex items-center gap-2">
-        {children}
-        <motion.span
-          aria-hidden
-          className="inline-block"
-          variants={{ rest: { x: 0 }, hover: { x: 4 } }}
+          className="inline-block opacity-70"
+          variants={{ rest: { x: 0 }, hover: { x: 3 } }}
           transition={{ duration: tm.fast, ease: tm.ease }}
         >
           →
         </motion.span>
-      </span>
-    </>
+      )}
+    </span>
   );
 
   const motionProps = {
     initial: "rest",
     animate: "rest",
     whileHover: "hover",
-    whileTap: { scale: 0.96 },
+    whileTap: { y: 1 },
     transition: { duration: tm.fast, ease: tm.ease },
     className: `relative overflow-hidden ${className ?? ""}`,
     style,
@@ -247,98 +242,136 @@ export function CountUp({
   return <span ref={ref} className={className}>{prefix}{value}{suffix}</span>;
 }
 
-// ── Realtime pipeline visual ──────────────────────────────────────────────────
+// ── Realtime pipeline visual (scroll-scrubbed) ────────────────────────────────
 const SYNC_STEPS = [
-  { label: "Kitchen update", body: "New item or menu change saved" },
-  { label: "DB write", body: "Single source of truth updates" },
-  { label: "Realtime fanout", body: "WebSocket channel broadcasts" },
-  { label: "Every portal", body: "Student + kitchen + admin live" },
-];
+  { tag: "Kitchen", title: "Change saved", body: "New item, price edit, or sold-out toggle committed." },
+  { tag: "Database", title: "Row written", body: "Postgres holds the single source of truth." },
+  { tag: "Broadcast", title: "Channel fans out", body: "Supabase Realtime pushes to subscribed clients." },
+  { tag: "Portals", title: "Screens update", body: "Student menu, kitchen queue, and admin totals — no refresh." },
+] as const;
 
-export function SyncPipelineVisual({ className }: { className?: string }) {
-  const [active, setActive] = useState(0);
+export function SyncPipelineVisual({
+  className,
+  scrollRoot,
+}: {
+  className?: string;
+  scrollRoot?: React.RefObject<HTMLDivElement | null>;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
+  const [activeStep, setActiveStep] = useState(0);
+
+  const { scrollYProgress } = useScroll({
+    target: scrollRoot ?? containerRef,
+    offset: ["start 0.88", "end 0.12"],
+  });
+
+  const packetX = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
+  const trackFill = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
+
+  useMotionValueEvent(scrollYProgress, "change", (v) => {
+    if (reduce) return;
+    const step = Math.min(SYNC_STEPS.length - 1, Math.floor(v * SYNC_STEPS.length));
+    setActiveStep(step);
+  });
 
   useEffect(() => {
-    if (reduce) return;
-    const id = window.setInterval(() => setActive(c => (c + 1) % SYNC_STEPS.length), 2000);
-    return () => clearInterval(id);
+    if (reduce) setActiveStep(SYNC_STEPS.length - 1);
   }, [reduce]);
 
   return (
     <motion.div
+      ref={containerRef}
       variants={cardReveal}
-      className={`rounded-[2rem] border overflow-hidden p-6 sm:p-8 ${className ?? ""}`}
-      style={{ border: "2px solid var(--tray-border)", background: "rgba(255,255,255,0.65)", backdropFilter: "blur(16px)" }}
+      className={`rounded-lg border p-5 sm:p-7 ${className ?? ""}`}
+      style={{ border: "1px solid var(--tray-border)", background: "var(--tray-surface-strong)" }}
     >
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 sm:gap-6">
+      <div className="relative mb-10 hidden sm:block">
+        <div
+          className="absolute left-[6%] right-[6%] top-[7px] h-px"
+          style={{ background: "var(--tray-border)" }}
+        />
+        <motion.div
+          className="absolute left-[6%] top-[7px] h-px origin-left"
+          style={{ background: "var(--tray-clay)", width: trackFill }}
+        />
+        <motion.div
+          className="absolute top-[3px] h-[9px] w-[9px] -translate-x-1/2 rounded-sm"
+          style={{
+            left: packetX,
+            background: "var(--tray-clay)",
+            boxShadow: reduce ? "none" : "0 0 0 3px color-mix(in srgb, var(--tray-clay) 22%, transparent)",
+          }}
+        />
+        <div className="grid grid-cols-4">
+          {SYNC_STEPS.map((step, i) => {
+            const on = activeStep === i;
+            const passed = activeStep > i;
+            return (
+              <div key={step.tag} className="flex justify-center">
+                <motion.div
+                  animate={{
+                    scale: on ? 1.15 : 1,
+                    backgroundColor: on
+                      ? "var(--tray-clay)"
+                      : passed
+                        ? "color-mix(in srgb, var(--tray-clay) 28%, var(--tray-surface-strong))"
+                        : "var(--tray-surface)",
+                    borderColor: on ? "var(--tray-clay)" : "var(--tray-border)",
+                  }}
+                  transition={{ duration: 0.32, ease: tm.ease }}
+                  className="relative z-10 h-[15px] w-[15px] rounded-sm border"
+                />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-4 sm:gap-5">
         {SYNC_STEPS.map((step, i) => {
-          const on = active === i;
-          const passed = active >= i;
+          const on = activeStep === i;
+          const passed = activeStep > i;
           return (
             <motion.div
-              key={step.label}
+              key={step.tag}
               animate={{
-                scale: on ? 1.05 : 1,
-                opacity: passed ? 1 : 0.45,
-                borderColor: on
-                  ? "var(--tray-clay)"
-                  : passed
-                  ? "rgba(184,83,26,0.22)"
-                  : "rgba(87,87,87,0.12)",
-                boxShadow: on
-                  ? "0 12px 30px rgba(184,83,26,0.15)"
-                  : "0 0 0 rgba(0,0,0,0)",
+                opacity: on ? 1 : passed ? 0.78 : 0.42,
+                y: on ? -2 : 0,
               }}
-              transition={{ duration: 0.45, ease: tm.ease }}
-              className="relative rounded-[1.75rem] border-2 p-5 sm:p-6 flex flex-col justify-between min-h-[160px] transition-all"
-              style={{
-                background: on
-                  ? "linear-gradient(135deg, rgba(184,83,26,0.08), rgba(184,83,26,0.02))"
-                  : passed
-                  ? "rgba(255,255,255,0.50)"
-                  : "rgba(255,255,255,0.25)",
-              }}
+              transition={{ duration: 0.32, ease: tm.ease }}
+              className="flex flex-col gap-2 border-t border-[var(--tray-border)] pt-4 sm:border-t-0 sm:pt-0"
             >
-              <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-2 sm:hidden">
                 <motion.div
-                  animate={on ? { scale: [1, 1.15, 1], rotate: [0, 360, 360] } : undefined}
-                  transition={{ duration: 0.8, ease: tm.ease }}
-                  className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl text-base sm:text-lg font-black"
-                  style={{
-                    background: on ? "var(--tray-clay)" : passed ? "rgba(184,83,26,0.15)" : "rgba(87,87,87,0.06)",
-                    color: on ? "var(--tray-cream)" : passed ? "var(--tray-clay)" : "var(--tray-muted)",
-                    boxShadow: on ? "0 4px 12px rgba(184,83,26,0.3)" : "none"
+                  animate={{
+                    backgroundColor: on ? "var(--tray-clay)" : "var(--tray-surface)",
+                    borderColor: on ? "var(--tray-clay)" : "var(--tray-border)",
                   }}
-                >
-                  {i + 1}
-                </motion.div>
-                {on && (
-                  <span className="h-2 w-2 rounded-full bg-[var(--tray-clay)] animate-ping" />
-                )}
-              </div>
-              <div>
-                <p className="text-[1.1rem] sm:text-[1.2rem] tracking-tight leading-snug" style={{ fontFamily: "var(--font-fraunces)", fontStyle: "italic", color: "var(--tray-ink)" }}>
-                  {step.label}
-                </p>
-                <p className="mt-2 text-[0.8rem] sm:text-[0.85rem] leading-[1.5] font-sans opacity-70">
-                  {step.body}
+                  className="h-2.5 w-2.5 rounded-sm border"
+                />
+                <p className="font-code text-[0.62rem] tracking-[0.06em] text-[var(--tray-muted)]">
+                  {step.tag}
                 </p>
               </div>
+              <p className="hidden font-code text-[0.62rem] tracking-[0.06em] text-[var(--tray-muted)] sm:block">
+                {step.tag}
+              </p>
+              <p
+                className="font-ui text-[0.98rem] font-semibold leading-snug tracking-tight text-[var(--tray-ink)]"
+                style={{ color: on ? "var(--tray-ink)" : undefined }}
+              >
+                {step.title}
+              </p>
+              <p className="text-[0.82rem] leading-[1.55] text-[var(--tray-muted)]">{step.body}</p>
             </motion.div>
           );
         })}
       </div>
 
-      {/* Progress bar */}
-      <div className="mt-8 h-2 overflow-hidden rounded-full" style={{ background: "rgba(87,87,87,0.10)" }}>
-        <motion.div
-          className="h-full rounded-full"
-          style={{ background: "var(--tray-clay)" }}
-          animate={{ width: `${((active + 1) / SYNC_STEPS.length) * 100}%` }}
-          transition={{ duration: 0.45, ease: tm.ease }}
-        />
-      </div>
+      <p className="mt-7 font-code text-[0.6rem] tracking-[0.04em] text-[var(--tray-muted)]">
+        {reduce ? "All four stages complete." : "Scroll to move the update through the pipeline."}
+      </p>
     </motion.div>
   );
 }
@@ -366,8 +399,8 @@ export function OrderJourneyVisual({ className }: { className?: string }) {
   return (
     <motion.div
       variants={cardReveal}
-      className={`overflow-hidden rounded-[2rem] border ${className ?? ""}`}
-      style={{ border: "1px solid var(--tray-border)", background: "rgba(255,255,255,0.60)", backdropFilter: "blur(12px)" }}
+      className={`overflow-hidden rounded-xl border ${className ?? ""}`}
+      style={{ border: "1px solid var(--tray-border)", background: "var(--tray-cream)" }}
     >
       <div className="border-b p-7" style={{ borderColor: "var(--tray-border)" }}>
         <p className="text-[0.78rem] uppercase tracking-[0.28em]" style={{ fontFamily: "var(--font-dm-mono)", color: "var(--tray-muted)" }}>
@@ -417,26 +450,29 @@ export function OrderJourneyVisual({ className }: { className?: string }) {
         <AnimatePresence mode="wait">
           <motion.div
             key={current.state}
-            initial={{ opacity: 0, y: 10, filter: "blur(6px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            exit={{ opacity: 0, y: -8, filter: "blur(6px)" }}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.32, ease: tm.ease }}
             className={current.state === "READY" ? "p-8" : "p-6"}
           >
             {current.state === "READY" ? (
               <div className="flex flex-col items-center justify-center text-center relative overflow-hidden">
-                <span className="relative inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.88rem] font-bold tracking-[0.2em] uppercase text-[var(--tray-green)] bg-[var(--tray-green)]/[0.12] animate-bounce">
-                  <span className="h-2 w-2 rounded-full bg-[var(--tray-green)] animate-ping" />
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--tray-green)]/10 px-3 py-1 text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[var(--tray-green)]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[var(--tray-green)]" />
                   {current.label}
                 </span>
-                <div className="mt-4 font-mono font-black text-6xl tracking-widest text-[var(--tray-green)] animate-pulse">
-                  7 3 4 2
+                <div
+                  className="mt-4 text-5xl font-bold tracking-[0.28em] text-[var(--tray-green)]"
+                  style={{ fontFamily: "var(--font-hero-punch)" }}
+                >
+                  7342
                 </div>
-                <p className="mt-3 text-[1.25rem] font-bold text-[var(--tray-ink)] uppercase tracking-wider">
-                  Ready for collection!
+                <p className="mt-3 text-[1.05rem] font-semibold text-[var(--tray-ink)]">
+                  Show this at the counter
                 </p>
-                <p className="mt-1 text-[0.9rem] text-[var(--tray-muted)] font-medium">
-                  Show this OTP at the counter to claim your meal.
+                <p className="mt-1 text-[0.88rem] text-[var(--tray-muted)]">
+                  No shouting. No paper slip.
                 </p>
               </div>
             ) : (
@@ -510,7 +546,7 @@ export function ScrollProgress() {
   return (
     <motion.div
       className="fixed inset-x-0 top-0 z-[100] h-[2px] origin-left"
-      style={{ scaleX, background: "var(--tray-clay)" }}
+      style={{ scaleX, background: "var(--tray-accent)" }}
     />
   );
 }
