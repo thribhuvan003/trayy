@@ -1,10 +1,9 @@
 "use client";
 
 import { Minus, Plus } from "lucide-react";
+import type { MenuItem } from "@/lib/db/types";
 import { formatRupees, cn } from "@/lib/utils";
 import { useCart } from "@/lib/cart/store";
-import { motion, AnimatePresence } from "framer-motion";
-import type { MenuItem } from "@/lib/db/types";
 
 export function MenuItemCard({ item }: { item: MenuItem }) {
   const line = useCart((s) => s.lines.find((l) => l.menuItemId === item.id));
@@ -13,93 +12,107 @@ export function MenuItemCard({ item }: { item: MenuItem }) {
   const dec = useCart((s) => s.decrement);
   const oos = !item.in_stock || item.status !== "live";
 
-  const qty = line?.qty || 0;
+  const dietRing =
+    item.diet === "veg"
+      ? "border-emerald-500"
+      : item.diet === "egg"
+      ? "border-amber-500"
+      : "border-rose-500";
+  const dietFill =
+    item.diet === "veg" ? "bg-emerald-500" : item.diet === "egg" ? "bg-amber-500" : "bg-rose-500";
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      whileHover={{ y: -8 }}
-      transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+    <article
       className={cn(
-        "group bg-white rounded-[32px] p-6 shadow-premium border border-ink/5 hover:shadow-premium-lg transition-all duration-500",
-        oos && "opacity-60 grayscale pointer-events-none"
+        "group relative rounded-2xl overflow-hidden flex flex-col transition-all duration-100",
+        oos ? "opacity-60" : "hover:-translate-x-[2px] hover:-translate-y-[2px]"
       )}
+      style={{
+        background: "var(--student-card-bg, #fff)",
+        border: "var(--ns-border)",
+        boxShadow: oos ? "var(--ns-shadow-sm)" : "var(--ns-shadow)",
+      }}
     >
-      <div className="relative aspect-square bg-ink/5 rounded-2xl mb-6 overflow-hidden flex items-center justify-center font-display text-6xl text-ink/5 group-hover:text-ink/10 transition-colors">
+      <div className="relative aspect-[4/3] bg-gradient-to-br from-ocean-50 to-cream-100 dark:from-ocean-500/10 dark:to-graphite-700">
         {item.image_url ? (
-          <img 
-            src={item.image_url} 
-            alt={item.name} 
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-          />
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={item.image_url} alt={item.name} className="absolute inset-0 h-full w-full object-cover" />
         ) : (
-          <span className="italic">{item.name[0]}</span>
+          <div className="absolute inset-0 flex items-center justify-center font-display text-[44px] text-ocean-500/25 select-none leading-none">
+            {item.name.charAt(0).toUpperCase()}
+          </div>
         )}
-        
-        {item.diet && (
-          <div className={cn(
-            "absolute top-4 right-4 w-3 h-3 rounded-full shadow-sm border-2 border-white",
-            item.diet === "veg" ? "bg-green-500" : "bg-red-500"
-          )} />
-        )}
-      </div>
-
-      <div className="flex justify-between items-start mb-2">
-        <h3 className="font-display text-2xl tracking-tight leading-tight group-hover:italic transition-all">
-          {item.name}
-        </h3>
-      </div>
-      
-      <p className="text-[13px] font-medium text-dust mb-6 line-clamp-2 min-h-[2.5rem]">
-        {item.description || "Freshly prepared and served hot with love."}
-      </p>
-
-      <div className="flex items-center justify-between">
-        <span className="font-display text-2xl italic tracking-tight">
-          {formatRupees(item.price_paise)}
+        <span
+          aria-label={item.diet}
+          className={cn(
+            "absolute top-2 left-2 inline-flex h-4 w-4 items-center justify-center border-2 rounded-sm bg-white",
+            dietRing
+          )}
+        >
+          <span className={cn("h-2 w-2 rounded-full", dietFill)} />
         </span>
-
-        <div className="relative h-11 min-w-[110px]">
-          <AnimatePresence mode="wait">
-            {qty === 0 ? (
-              <motion.button
-                key="add"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                onClick={() => add({ menuItemId: item.id, name: item.name, pricePaise: item.price_paise, diet: item.diet })}
-                className="absolute inset-0 w-full rounded-full bg-ink text-white text-[10px] font-bold uppercase tracking-widest hover:bg-ocean hover:scale-105 active:scale-95 transition-all shadow-sm"
+        {oos && (
+          <span className="absolute top-2 right-2 text-[10px] font-mono uppercase tracking-wider bg-[color:var(--color-paper)]/90 text-[color:var(--color-ink)]/70 px-2 py-1 rounded-full">
+            Out of stock
+          </span>
+        )}
+      </div>
+      <div className="p-3.5 flex flex-col flex-1 gap-1.5">
+        <h3 className="text-[15px] font-bold leading-tight" style={{ fontFamily: "var(--font-title-ns)" }}>{item.name}</h3>
+        {item.description && (
+          <p className="text-[12px] leading-[1.4] text-[color:var(--color-ink)]/55 line-clamp-2">
+            {item.description}
+          </p>
+        )}
+        <div className="mt-auto pt-2 flex items-center justify-between">
+          <div
+            className="text-[19px] font-bold leading-none tracking-[0.01em] text-ocean-600 dark:text-ocean-400 tabular"
+            style={{ fontFamily: "var(--font-num-ns)" }}
+          >
+            {formatRupees(item.price_paise)}
+          </div>
+          {line ? (
+            <div className="inline-flex items-center rounded-lg bg-ocean-500 text-white" style={{ border: "2px solid #000" }}>
+              <button
+                aria-label="Decrease"
+                onClick={() => dec(item.id)}
+                className="h-8 w-8 inline-flex items-center justify-center"
               >
-                Add to Tray
-              </motion.button>
-            ) : (
-              <motion.div
-                key="qty"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="absolute inset-0 flex items-center justify-between bg-ink/5 rounded-full p-1"
+                <Minus size={14} />
+              </button>
+              <span className="text-[13px] font-medium tabular w-5 text-center">{line.qty}</span>
+              <button
+                aria-label="Increase"
+                onClick={() => inc(item.id)}
+                className="h-8 w-8 inline-flex items-center justify-center"
               >
-                <button 
-                  onClick={() => dec(item.id)}
-                  className="w-9 h-9 flex items-center justify-center rounded-full bg-white text-ink shadow-sm hover:scale-110 active:scale-90 transition-all"
-                >
-                  <Minus size={14} strokeWidth={2.5} />
-                </button>
-                <span className="font-bold text-sm tabular-nums">{qty}</span>
-                <button 
-                  onClick={() => inc(item.id)}
-                  className="w-9 h-9 flex items-center justify-center rounded-full bg-white text-ink shadow-sm hover:scale-110 active:scale-90 transition-all"
-                >
-                  <Plus size={14} strokeWidth={2.5} />
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                <Plus size={14} />
+              </button>
+            </div>
+          ) : (
+            <button
+              disabled={oos}
+              onClick={() =>
+                add({
+                  menuItemId: item.id,
+                  name: item.name,
+                  pricePaise: item.price_paise,
+                  diet: item.diet,
+                })
+              }
+              className={cn(
+                "inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12.5px] font-bold uppercase tracking-wide transition-all duration-100",
+                oos
+                  ? "bg-[color:var(--color-line)] text-white/60 cursor-not-allowed"
+                  : "ns-press bg-ocean-500 text-white"
+              )}
+              style={oos ? undefined : { fontFamily: "var(--font-title-ns)" }}
+            >
+              <Plus size={14} /> Add
+            </button>
+          )}
         </div>
       </div>
-    </motion.div>
+    </article>
   );
 }
