@@ -1,136 +1,144 @@
 "use client";
 
-import { useRef } from "react";
-import { useGSAP } from "@gsap/react";
-import {
-  numberCounter,
-  prefersReducedMotion,
-  registerTrayGsap,
-  tickerLoop,
-} from "@/lib/motion/tray-motion";
+import { motion } from "framer-motion";
+import { CountUp } from "@/lib/motion/tray-framer";
 
+const MARQUEE_ITEMS = [
+  "12:47 PM · QUEUE LIVE",
+  "UPI CONFIRMED · OTP READY",
+  "0% COMMISSION · DIRECT SETTLEMENT",
+  "300MS · MENU SYNC",
+  "NORTH BLOCK · MAIN CANTEEN",
+] as const;
 
-// Metrics: Fraunces Black for impact numbers + DM Mono uppercase labels.
-// Ticker: DM Mono — two rows, opposite directions.
-
-// ── Metrics ──────────────────────────────────────────────────────────────────
-
-export function MetricsStrip() {
-  const rootRef = useRef<HTMLElement>(null);
-
-  useGSAP(
-    () => {
-      registerTrayGsap();
-      if (prefersReducedMotion()) return;
-
-      rootRef.current?.querySelectorAll<HTMLElement>("[data-count]").forEach((el) => {
-        numberCounter(el, Number(el.dataset.count), {
-          suffix: el.dataset.suffix ?? "",
-          scrollTrigger: { trigger: rootRef.current, start: "top 78%" },
-        });
-      });
-    },
-    { scope: rootRef }
-  );
-
-  return (
-    <section ref={rootRef} className="px-5 py-10 sm:px-8 lg:px-10">
-      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-3 lg:grid-cols-4">
-        <Metric value={12} suffix="m" label="Saved per lunch" />
-        <Metric value={3}  label="Role portals" />
-        <Metric value={4}  label="Digit OTP pickup" />
-        <Metric value={1}  label="Source of truth" />
-      </div>
-    </section>
-  );
-}
-
-function Metric({ value, suffix, label }: { value: number; suffix?: string; label: string }) {
-  return (
-    <div
-      className="flex flex-col gap-3 rounded-[1.75rem] p-5 sm:p-6"
-      style={{ border: "1px solid var(--tray-border)", background: "rgba(255,255,255,0.52)" }}
-    >
-      {/* Fraunces Black for numbers */}
-      <div
-        className="leading-none tracking-[-0.06em]"
-        style={{
-          fontFamily: "var(--font-fraunces)",
-          fontWeight: 900,
-          fontSize: "clamp(2.8rem, 5vw, 4rem)",
-        }}
-      >
-        <span data-count={value} data-suffix={suffix ?? ""}>0</span>
-        {suffix && (
-          <em className="not-italic" style={{ color: "var(--tray-clay)", fontStyle: "italic" }}>
-            {suffix}
-          </em>
-        )}
-      </div>
-      {/* DM Mono for label */}
-      <p
-        className="text-[0.72rem] font-code font-semibold uppercase tracking-[0.18em]"
-        style={{ color: "var(--tray-muted)" }}
-      >
-        {label}
-      </p>
-    </div>
-  );
-}
-
-// ── Campus Ticker ─────────────────────────────────────────────────────────────
+const ease = [0.22, 1, 0.36, 1] as const;
 
 export function CampusTicker() {
-  const rootRef = useRef<HTMLElement>(null);
-
-  useGSAP(
-    () => {
-      // Centrally managed by landing-motion.tsx for Awwwards-tier scroll velocity and skew tracking
-    },
-    { scope: rootRef }
-  );
-
-  const row1 = ["Main Canteen", "Hostel Mess", "North Block", "Sports Café", "Library Counter", "Night Canteen"];
-  const row2 = ["Queue live", "UPI confirmed", "OTP verified", "Specials updated", "Realtime sync", "Campus scoped"];
-
-  return (
-    <section
-      ref={rootRef}
-      className="overflow-hidden py-5 tl-ticker"
-      style={{ borderTop: "1px solid var(--tray-border)", borderBottom: "1px solid var(--tray-border)" }}
+  const track = MARQUEE_ITEMS.map((item) => (
+    <span
+      key={item}
+      className="inline-flex shrink-0 items-center gap-2 font-code text-[0.6rem] uppercase tracking-[0.2em] text-[var(--tray-muted)]"
     >
-      <TickerRow items={row1} fontStyle="druk" />
-      <TickerRow items={row2} reverse fontStyle="mono" />
-    </section>
-  );
-}
+      <span className="h-1.5 w-1.5 rounded-full bg-[var(--tray-clay)]" />
+      {item}
+    </span>
+  ));
 
-function TickerRow({ items, reverse, fontStyle = "mono" }: { items: string[]; reverse?: boolean; fontStyle?: "druk" | "mono" }) {
-  const content = [...items, ...items];
   return (
-    <div data-ticker-wrapper className="tray-no-scrollbar overflow-hidden py-2">
-      <div
-        data-ticker-track
-        className={`flex w-max gap-8 whitespace-nowrap items-center ${reverse ? "animate-marquee-reverse" : "animate-marquee"}`}
-        style={{
-          fontFamily: fontStyle === "druk" ? "var(--font-bebas)" : "var(--font-code)",
-          fontSize: fontStyle === "druk" ? "clamp(1.4rem, 3.5vw, 2.8rem)" : "0.85rem",
-          letterSpacing: fontStyle === "druk" ? "0.06em" : "0.22em",
-          textTransform: "uppercase",
-          color: "var(--tray-muted)",
-          lineHeight: 1,
-        }}
+    <section aria-labelledby="stats-heading" className="relative border-y border-[var(--tray-border)]">
+      <motion.div
+        className="overflow-hidden border-b border-[var(--tray-border)] bg-[var(--tray-surface)]/40"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.4 }}
       >
-        {content.map((item, index) => (
-          <span key={`${item}-${index}`} className="inline-flex items-center gap-8">
-            {item}
-            <span
-              className="h-1.5 w-1.5 rounded-full"
-              style={{ background: "var(--tray-clay)" }}
+        <div className="tl-stats-marquee flex w-max items-center gap-10 py-2.5 sm:py-3" aria-hidden>
+          <span className="flex shrink-0 items-center gap-10 px-5 sm:px-8">{track}</span>
+          <span className="flex shrink-0 items-center gap-10">{track}</span>
+        </div>
+      </motion.div>
+
+      <div className="px-5 sm:px-8 lg:px-10">
+        <div className="mx-auto max-w-7xl py-12 sm:py-14">
+          <div className="grid gap-10 lg:grid-cols-[minmax(0,0.4fr)_1px_minmax(0,1fr)] lg:items-start lg:gap-12">
+            <header>
+              <p className="font-code text-[0.65rem] uppercase tracking-[0.16em] text-[var(--tray-muted)]">
+                Lunch window
+              </p>
+              <h2
+                id="stats-heading"
+                className="mt-3 font-cormorant text-[clamp(2rem,4vw,3.25rem)] font-normal leading-[1.02] tracking-[-0.02em] text-[var(--tray-ink)]"
+              >
+                What changes between
+                <span className="italic text-[var(--tray-accent)]"> 12:30 and 1:15.</span>
+              </h2>
+              <p className="mt-4 max-w-xs font-bricolage text-[0.94rem] leading-[1.6] text-[var(--tray-muted)]">
+                Peak-hour handoff on a real campus — not demo vanity metrics.
+              </p>
+              <p className="mt-6 font-code text-[0.62rem] uppercase tracking-[0.18em] text-[var(--tray-muted)]/70">
+                Last synced · live demo
+              </p>
+            </header>
+
+            <motion.div
+              className="hidden origin-top bg-[var(--tray-border)] lg:block"
+              initial={{ scaleY: 0 }}
+              whileInView={{ scaleY: 1 }}
+              viewport={{ once: true, amount: 0.5 }}
+              transition={{ duration: 0.5, ease }}
             />
-          </span>
-        ))}
+
+            <div>
+              <motion.article
+                className="border-l-2 border-[var(--tray-accent)] pl-5 sm:pl-6"
+                initial={{ opacity: 0, x: -12 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, amount: 0.4 }}
+                transition={{ duration: 0.48, ease }}
+              >
+                <p className="font-cormorant text-[clamp(4rem,11vw,6.5rem)] leading-[0.88] tracking-[-0.04em] text-[var(--tray-ink)]">
+                  <CountUp end={12} suffix="" duration={1100} />
+                  <span className="ml-1 font-code text-[clamp(1rem,2.5vw,1.35rem)] tracking-[0.08em] text-[var(--tray-muted)]">
+                    min
+                  </span>
+                </p>
+                <p className="mt-3 font-bricolage text-[1rem] font-semibold tracking-[-0.02em] text-[var(--tray-ink)]">
+                  back in the break
+                </p>
+                <p className="mt-1 font-code text-[0.68rem] uppercase tracking-[0.14em] text-[var(--tray-muted)]">
+                  vs standing in line at North block, peak day
+                </p>
+              </motion.article>
+
+              <motion.div
+                className="mt-8 grid gap-8 border-t border-dashed border-[var(--tray-border)] pt-8 sm:grid-cols-2 sm:gap-x-12"
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true, amount: 0.4 }}
+                variants={{
+                  hidden: {},
+                  show: { transition: { delayChildren: 0.35, staggerChildren: 0.1 } },
+                }}
+              >
+                <motion.article
+                  variants={{
+                    hidden: { opacity: 0, y: 10 },
+                    show: { opacity: 1, y: 0, transition: { duration: 0.38, ease } },
+                  }}
+                >
+                  <p className="font-cormorant text-[clamp(2.25rem,5vw,3rem)] leading-none tracking-[-0.03em] text-[var(--tray-ink)]">
+                    <CountUp end={300} suffix="" duration={900} />
+                    <span className="font-code text-[0.85rem] tracking-[0.1em] text-[var(--tray-muted)]">ms</span>
+                  </p>
+                  <p className="mt-2 font-bricolage text-[0.92rem] font-semibold text-[var(--tray-ink)]">menu sync</p>
+                  <p className="mt-1 font-code text-[0.65rem] uppercase tracking-[0.14em] text-[var(--tray-muted)]">
+                    kitchen write → every student screen
+                  </p>
+                </motion.article>
+
+                <motion.article
+                  variants={{
+                    hidden: { opacity: 0, y: 10 },
+                    show: { opacity: 1, y: 0, transition: { duration: 0.38, ease } },
+                  }}
+                >
+                  <p className="font-cormorant text-[clamp(2.25rem,5vw,3rem)] leading-none tracking-[-0.03em] text-[var(--tray-clay)]">
+                    <CountUp end={0} suffix="" duration={700} />
+                    <span className="font-code text-[0.85rem] tracking-[0.1em] text-[var(--tray-clay)]">%</span>
+                  </p>
+                  <p className="mt-2 font-bricolage text-[0.92rem] font-semibold text-[var(--tray-ink)]">
+                    order commission
+                  </p>
+                  <p className="mt-1 font-code text-[0.65rem] uppercase tracking-[0.14em] text-[var(--tray-muted)]">
+                    UPI goes to the canteen merchant
+                  </p>
+                </motion.article>
+              </motion.div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
