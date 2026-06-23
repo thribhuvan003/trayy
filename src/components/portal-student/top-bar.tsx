@@ -169,7 +169,7 @@ export function StudentTopBar({ tenant, siblings = [], user }: Props) {
 
   return (
     <header
-      className="sticky top-0 z-40 bg-[color:var(--color-paper)]/85 backdrop-blur-xl border-b border-[color:var(--color-line)]"
+      className="sticky top-0 z-40 bg-[color:var(--color-paper)] border-b-[3px] border-black"
       style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
     >
       <div className="w-full px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-2 sm:gap-3">
@@ -181,7 +181,7 @@ export function StudentTopBar({ tenant, siblings = [], user }: Props) {
         >
           <span
             className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-ocean-500 text-white text-[12px] transition group-hover:scale-105"
-            style={{ fontFamily: "var(--font-bricolage)", fontWeight: 900 }}
+            style={{ fontFamily: "var(--font-title-ns)", fontWeight: 900, border: "2px solid #000" }}
           >
             T
           </span>
@@ -211,7 +211,7 @@ export function StudentTopBar({ tenant, siblings = [], user }: Props) {
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search dishes…"
               aria-label="Search menu items"
-              className="w-full h-9 pl-8 pr-8 rounded-full border border-[color:var(--color-line)] bg-[color:var(--color-paper)] text-[13.5px] placeholder:text-[color:var(--color-ink)]/38 focus:outline-none focus:border-[color:var(--color-ocean-500)] transition-colors"
+              className="w-full h-9 pl-8 pr-8 rounded-lg border-2 border-black bg-[color:var(--color-paper)] text-[13.5px] placeholder:text-[color:var(--color-ink)]/38 focus:outline-none focus:border-[color:var(--color-ocean-500)] transition-colors"
             />
             {searchQuery && (
               <button
@@ -246,7 +246,7 @@ export function StudentTopBar({ tenant, siblings = [], user }: Props) {
           <button
             onClick={() => setIsOpen(true)}
             aria-label="Open tray"
-            className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--color-line)] hover:border-ocean-500 hover:text-ocean-500 transition-colors cursor-pointer"
+            className="relative inline-flex h-10 w-10 items-center justify-center rounded-lg border-2 border-black hover:border-ocean-500 hover:text-ocean-500 transition-colors cursor-pointer"
           >
             <ShoppingCart size={15} />
             {count > 0 && (
@@ -258,7 +258,7 @@ export function StudentTopBar({ tenant, siblings = [], user }: Props) {
           <Link
             href={`/c/${tenant.slug}/orders`}
             aria-label="My orders"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--color-line)] hover:border-ocean-500 hover:text-ocean-500 transition-colors"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border-2 border-black hover:border-ocean-500 hover:text-ocean-500 transition-colors"
           >
             <History size={15} />
           </Link>
@@ -267,7 +267,7 @@ export function StudentTopBar({ tenant, siblings = [], user }: Props) {
               onClick={handleSignOut}
               aria-label="Sign out"
               title={`Sign out (${user.email})`}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--color-line)] hover:border-rose-500 hover:text-rose-500 transition-colors"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border-2 border-black hover:border-rose-500 hover:text-rose-500 transition-colors"
             >
               <LogOut size={15} />
             </button>
@@ -275,7 +275,7 @@ export function StudentTopBar({ tenant, siblings = [], user }: Props) {
             <Link
               href={`/c/${tenant.slug}/login?next=/c/${tenant.slug}/menu`}
               aria-label="Account"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--color-line)] hover:border-ocean-500 hover:text-ocean-500 transition-colors"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border-2 border-black hover:border-ocean-500 hover:text-ocean-500 transition-colors"
             >
               <User size={15} />
             </Link>

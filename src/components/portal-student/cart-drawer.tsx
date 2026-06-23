@@ -274,15 +274,16 @@ export function CartDrawer({ tenantSlug, tenantName }: { tenantSlug: string; ten
               <div className="text-[11px] font-mono uppercase tracking-wider text-[color:var(--color-ink)]/55">
                 Total · pays to {tenantName}
               </div>
-              <div className="font-display text-[28px] font-medium tabular tracking-tight">{formatRupees(total)}</div>
+              <div className="text-[26px] font-bold tabular tracking-tight" style={{ fontFamily: "var(--font-num-ns)" }}>{formatRupees(total)}</div>
             </div>
             <button
               onClick={onCheckout}
               disabled={pending}
               className={cn(
-                "inline-flex items-center gap-2 h-12 px-6 rounded-full bg-ocean-500 text-white text-[14px] font-medium hover:bg-ocean-600 transition-colors",
-                pending && "opacity-70 cursor-not-allowed"
+                "inline-flex items-center gap-2 h-12 px-6 bg-ocean-500 text-white text-[14px] font-extrabold uppercase tracking-wide",
+                pending ? "opacity-70 cursor-not-allowed" : "ns-press"
               )}
+              style={{ fontFamily: "var(--font-title-ns)" }}
             >
               {pending ? "Placing order…" : "Place order →"}
             </button>
@@ -301,7 +302,7 @@ export function CartDrawer({ tenantSlug, tenantName }: { tenantSlug: string; ten
     return (
       <aside
         aria-label="Your cart"
-        className="lg:sticky lg:top-20 lg:w-80 lg:h-[calc(100vh-5rem)] lg:overflow-y-auto rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-paper)] flex flex-col mt-6"
+        className="ns-card lg:sticky lg:top-20 lg:w-80 lg:h-[calc(100vh-5rem)] lg:overflow-y-auto flex flex-col mt-6"
       >
         {cartBody}
       </aside>
@@ -314,7 +315,7 @@ export function CartDrawer({ tenantSlug, tenantName }: { tenantSlug: string; ten
       <Drawer.Trigger asChild>
         <button
           aria-label={`View cart — ${count} items, ${formatRupees(total)}`}
-          className="fixed bottom-5 left-1/2 -translate-x-1/2 z-30 inline-flex items-center gap-3 rounded-full bg-ocean-500 text-white px-5 h-12 shadow-[0_10px_30px_-10px_rgba(0,102,255,0.6)] hover:bg-ocean-600 transition-colors"
+          className="ns-press fixed bottom-5 left-1/2 -translate-x-1/2 z-30 inline-flex items-center gap-3 rounded-full bg-ocean-500 text-white px-5 h-12"
         >
           <span className="inline-flex items-center gap-1.5">
             <ShoppingCart size={15} />

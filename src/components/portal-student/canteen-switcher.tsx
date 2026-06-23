@@ -51,7 +51,7 @@ export function CanteenSwitcher({
   if (!selected) return null;
 
   return (
-    <div className="canteen-switcher-container relative flex items-center w-full h-10 bg-[color:var(--color-paper)] border border-[color:var(--color-line)] rounded-lg shadow-sm hover:shadow transition-shadow duration-200 px-3">
+    <div className="canteen-switcher-container relative flex items-center w-full h-10 bg-[color:var(--color-paper)] border-[3px] border-black rounded-xl shadow-[var(--ns-shadow-sm)] transition-shadow duration-200 px-3">
       {/* Left Section: Zomato-style Custom Curved Dropdown Trigger */}
       <div className="shrink-0 h-full flex items-center">
         <button
@@ -59,7 +59,7 @@ export function CanteenSwitcher({
           onClick={() => setOpen(!open)}
           className="flex items-center gap-1 cursor-pointer hover:opacity-85 text-left pr-2.5 outline-none select-none h-full shrink-0"
         >
-          <MapPin size={15} className="text-rose-500 shrink-0" />
+          <MapPin size={15} className="text-ocean-500 shrink-0" />
           <span className="text-[12.5px] sm:text-[13.5px] font-semibold text-[color:var(--color-ink)] truncate font-sans">
             {selected.name}
           </span>
@@ -88,7 +88,7 @@ export function CanteenSwitcher({
         {searchQuery && (
           <button
             onClick={() => handleSearchChange("")}
-            className="p-1 rounded-full hover:bg-[color:var(--color-line)] text-[color:var(--color-ink)]/45 hover:text-[color:var(--color-ink)] transition shrink-0"
+            className="p-1 rounded-full hover:bg-[color:var(--student-surface2)] text-[color:var(--color-ink)]/45 hover:text-[color:var(--color-ink)] transition shrink-0"
             aria-label="Clear search query"
           >
             <X size={12} />
@@ -98,7 +98,7 @@ export function CanteenSwitcher({
 
       {/* Dropdown Menu */}
       {open && canteens.length > 1 && (
-        <div className="absolute top-[108%] left-0 z-50 w-72 sm:w-80 bg-[color:var(--color-paper)] border border-[color:var(--color-line)] rounded-xl shadow-lg py-1.5 max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-150 outline-none">
+        <div className="absolute top-[112%] left-0 z-50 w-72 sm:w-80 bg-[color:var(--color-paper)] border-[3px] border-black rounded-xl shadow-[var(--ns-shadow)] py-1.5 max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-150 outline-none">
           {canteens.map((canteen) => {
             const active = canteen.id === selected.id;
             return (
@@ -111,13 +111,13 @@ export function CanteenSwitcher({
                 }}
                 className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors cursor-pointer outline-none ${
                   active
-                    ? "bg-rose-500/5 text-rose-600 dark:text-rose-400 font-semibold"
-                    : "text-[color:var(--color-ink)] hover:bg-[color:var(--color-line)]"
+                    ? "bg-[color:var(--student-accent-dim)] text-ocean-600 font-semibold"
+                    : "text-[color:var(--color-ink)] hover:bg-[color:var(--student-surface2)]"
                 }`}
               >
                 {/* Left: Active Checkmark indicator with fixed width */}
                 <div className="flex items-center justify-center w-4 shrink-0">
-                  {active && <Check size={14} className="text-rose-500" />}
+                  {active && <Check size={14} className="text-ocean-500" />}
                 </div>
 
                 {/* Center: Name & Location */}

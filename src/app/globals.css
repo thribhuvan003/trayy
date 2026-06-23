@@ -150,10 +150,17 @@
 
 /* ─── Portal overrides ─── */
 [data-portal="student"] {
-  --portal-font-sans:    var(--font-jakarta), var(--font-geist), ui-sans-serif, system-ui;
-  /* Elegant editorial serif for student headings (premium 2026 look). Body stays
-     clean sans (--portal-font-sans) — one serif + one sans, no font mixing. */
-  --portal-font-display: var(--font-instrument-serif), ui-serif, Georgia;
+  /* Neobrutalist Winter-2026 type system — distinctive per role, not AI-generic. */
+  --portal-font-sans:    var(--font-hanken), var(--font-jakarta), ui-sans-serif, system-ui;
+  --portal-font-display: var(--font-unbounded), ui-sans-serif, system-ui;
+  --portal-font-mono:    var(--font-space-mono), ui-monospace, Menlo, monospace;
+
+  /* Section-role font tokens (components reference these directly) */
+  --font-display-ns: var(--font-unbounded), ui-sans-serif, system-ui;   /* hero + section titles */
+  --font-title-ns:   var(--font-bricolage), ui-sans-serif, system-ui;   /* card titles, item names, CTA labels */
+  --font-body-ns:    var(--font-hanken), ui-sans-serif, system-ui;      /* body / descriptions / helper */
+  --font-num-ns:     var(--font-space-mono), ui-monospace, monospace;   /* prices, timers, OTP, totals */
+
   --color-primary:       var(--color-ocean-500);
   --scrollbar-thumb:       rgba(26, 26, 25, 0.18);
   --scrollbar-thumb-hover: rgba(26, 26, 25, 0.28);
@@ -374,6 +381,19 @@ html.dark [data-portal="student"][data-allow-dark="true"] {
   font-family: var(--font-sans) !important;
 }
 
+/* Student portal: the shared --font-sans indirection resolves at :root (→ Inter)
+   before the portal override applies, so bind the role fonts DIRECTLY here.
+   Headings/titles/prices set their own font inline and still win. */
+[data-portal="student"] {
+  font-family: var(--font-body-ns);
+}
+[data-portal="student"] input,
+[data-portal="student"] textarea,
+[data-portal="student"] select,
+[data-portal="student"] button {
+  font-family: var(--font-body-ns) !important;
+}
+
 /* Beautiful curved select styling for Admin Portal */
 [data-portal="admin"] select {
   appearance: none !important;
@@ -556,31 +576,82 @@ select option {
   --font-code:      var(--font-dm-mono), var(--font-jetbrains), ui-monospace, monospace;
 }
 
-/* Student portal — Theme H: Vintage Editorial Pulp */
+/* Student portal — Neobrutalist-Bento (Winter 2026 Cohort) */
 [data-portal="student"] {
-  --color-paper:     #F4EFE6;
-  --color-paper-dim: #E8DFD0;
-  --color-ink:       #1A1A19;
-  --color-line:      rgba(26, 26, 25, 0.12);
-  --color-line-strong: rgba(26, 26, 25, 0.24);
-  --color-ocean-50:  #fef2f2;
-  --color-ocean-100: #fee2e2;
-  --color-ocean-200: #fecaca;
-  --color-ocean-300: #fca5a5;
-  --color-ocean-400: #ef4444;
-  --color-ocean-500: #e60000;
-  --color-ocean-600: #dc2626;
-  --color-ocean-700: #b91c1c;
-  --color-ocean-900: #7f1d1d;
+  /* Neobrutalist primitives */
+  --ns-ink:        #000000;
+  --ns-paper:      #FDFBF7;            /* warm off-white canvas */
+  --ns-border:     3px solid #000000;
+  /* Softer offset shadows — light/medium, not pitch-black */
+  --ns-shadow-sm:  2px 2px 0 0 rgba(0,0,0,.14);
+  --ns-shadow:     3px 3px 0 0 rgba(0,0,0,.20);
+  --ns-shadow-lg:  5px 5px 0 0 rgba(0,0,0,.26);
+  /* Saturated cyber accents */
+  --ns-yellow: #FACC15;
+  --ns-cyan:   #22D3EE;
+  --ns-pink:   #F43F5E;
+  --ns-mint:   #4ADE80;
+  --ns-violet: #8B5CF6;
+  --ns-orange: #F97316;
 
-  --student-muted: rgba(26, 26, 25, 0.58);
-  --student-muted2: rgba(26, 26, 25, 0.38);
-  --student-accent-dim: rgba(230, 0, 0, 0.08);
-  --student-surface: rgba(26, 26, 25, 0.04);
-  --student-surface2: rgba(26, 26, 25, 0.07);
+  --color-paper:     #FDFBF7;
+  --color-paper-dim: #ffffff;
+  --color-ink:       #0a0a0a;
+  --color-line:      #000000;
+  --color-line-strong: #000000;
+  /* Accent ramp → "Cement Sky" — muted slate-blue, calm & premium */
+  --color-ocean-50:  #f1f4f7;
+  --color-ocean-100: #e3e9ef;
+  --color-ocean-200: #c3cfdb;
+  --color-ocean-300: #9bafc1;
+  --color-ocean-400: #6e8ca6;
+  --color-ocean-500: #4F6E8C;
+  --color-ocean-600: #415b75;
+  --color-ocean-700: #34495d;
+  --color-ocean-900: #222f3c;
+
+  --student-muted: rgba(10, 10, 10, 0.62);
+  --student-muted2: rgba(10, 10, 10, 0.42);
+  --student-accent-dim: rgba(79, 110, 140, 0.12);
+  --student-surface: rgba(10, 10, 10, 0.04);
+  --student-surface2: rgba(10, 10, 10, 0.07);
   --student-card-bg: #ffffff;
-  --student-special-card-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.65) 0%, rgba(230, 0, 0, 0.06) 100%);
-  --student-regular-card-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.1) 100%);
+  --student-special-card-bg: #FEF9C3;   /* flat cyber-yellow tint for specials */
+  --student-regular-card-bg: #ffffff;
+}
+
+/* ── Neobrutalist student utilities ──────────────────────────────── */
+/* Flat card: 3px black border + zero-blur offset shadow. */
+[data-portal="student"] .ns-card {
+  background: var(--student-card-bg, #fff);
+  border: var(--ns-border);
+  border-radius: 14px;
+  box-shadow: var(--ns-shadow);
+}
+/* Spring physical press — lifts on hover, slams into the shadow on press. */
+[data-portal="student"] .ns-press {
+  border: var(--ns-border);
+  border-radius: 12px;
+  box-shadow: var(--ns-shadow-sm);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+[data-portal="student"] .ns-press:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: var(--ns-shadow);
+}
+[data-portal="student"] .ns-press:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 0 #000;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-portal="student"] .ns-press {
+    transition: none;
+  }
+  [data-portal="student"] .ns-press:hover,
+  [data-portal="student"] .ns-press:active {
+    transform: none;
+    box-shadow: var(--ns-shadow-sm);
+  }
 }
 
 /* ── Landing page ambient background ─────────────────────────────── */

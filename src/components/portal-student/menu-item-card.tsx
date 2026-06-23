@@ -24,9 +24,14 @@ export function MenuItemCard({ item }: { item: MenuItem }) {
   return (
     <article
       className={cn(
-        "group relative rounded-2xl border bg-[color:var(--color-paper)] overflow-hidden flex flex-col transition-all",
-        oos ? "opacity-60 border-[color:var(--color-line)]" : "border-[color:var(--color-line)] hover:border-ocean-500/40 hover:shadow-[0_8px_24px_-12px_rgba(10,22,40,0.12)]"
+        "group relative rounded-2xl overflow-hidden flex flex-col transition-all duration-100",
+        oos ? "opacity-60" : "hover:-translate-x-[2px] hover:-translate-y-[2px]"
       )}
+      style={{
+        background: "var(--student-card-bg, #fff)",
+        border: "var(--ns-border)",
+        boxShadow: oos ? "var(--ns-shadow-sm)" : "var(--ns-shadow)",
+      }}
     >
       <div className="relative aspect-[4/3] bg-gradient-to-br from-ocean-50 to-cream-100 dark:from-ocean-500/10 dark:to-graphite-700">
         {item.image_url ? (
@@ -53,7 +58,7 @@ export function MenuItemCard({ item }: { item: MenuItem }) {
         )}
       </div>
       <div className="p-3.5 flex flex-col flex-1 gap-1.5">
-        <h3 className="text-[15px] font-medium leading-tight" style={{ fontFamily: "var(--font-jakarta, var(--font-manrope))" }}>{item.name}</h3>
+        <h3 className="text-[15px] font-bold leading-tight" style={{ fontFamily: "var(--font-title-ns)" }}>{item.name}</h3>
         {item.description && (
           <p className="text-[12px] leading-[1.4] text-[color:var(--color-ink)]/55 line-clamp-2">
             {item.description}
@@ -61,13 +66,13 @@ export function MenuItemCard({ item }: { item: MenuItem }) {
         )}
         <div className="mt-auto pt-2 flex items-center justify-between">
           <div
-            className="text-[22px] leading-none tracking-[0.01em] text-ocean-600 dark:text-ocean-400 tabular"
-            style={{ fontFamily: "var(--font-bebas, Impact, sans-serif)" }}
+            className="text-[19px] font-bold leading-none tracking-[0.01em] text-ocean-600 dark:text-ocean-400 tabular"
+            style={{ fontFamily: "var(--font-num-ns)" }}
           >
             {formatRupees(item.price_paise)}
           </div>
           {line ? (
-            <div className="inline-flex items-center rounded-full bg-ocean-500 text-white">
+            <div className="inline-flex items-center rounded-lg bg-ocean-500 text-white" style={{ border: "2px solid #000" }}>
               <button
                 aria-label="Decrease"
                 onClick={() => dec(item.id)}
@@ -96,11 +101,12 @@ export function MenuItemCard({ item }: { item: MenuItem }) {
                 })
               }
               className={cn(
-                "inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-[12.5px] font-medium transition-colors",
+                "inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12.5px] font-bold uppercase tracking-wide transition-all duration-100",
                 oos
-                  ? "bg-[color:var(--color-line)] text-[color:var(--color-ink)]/40 cursor-not-allowed"
-                  : "bg-ocean-500 text-white hover:bg-ocean-600"
+                  ? "bg-[color:var(--color-line)] text-white/60 cursor-not-allowed"
+                  : "ns-press bg-ocean-500 text-white"
               )}
+              style={oos ? undefined : { fontFamily: "var(--font-title-ns)" }}
             >
               <Plus size={14} /> Add
             </button>

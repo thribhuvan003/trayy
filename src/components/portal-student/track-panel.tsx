@@ -242,7 +242,7 @@ export function TrackPanel({ tenantSlug, tenantName, order: initial, lines }: { 
       )}
 
       {!isCancelled && isReady && otp && (
-        <div className="mb-6 rounded-3xl bg-ocean-500 text-white p-6 sm:p-8 relative overflow-hidden">
+        <div className="mb-6 rounded-2xl bg-ocean-500 text-white p-6 sm:p-8 relative overflow-hidden" style={{ border: "var(--ns-border)", boxShadow: "var(--ns-shadow-lg)" }}>
           <div
             aria-hidden
             className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.18),transparent_60%)]"
@@ -261,13 +261,15 @@ export function TrackPanel({ tenantSlug, tenantName, order: initial, lines }: { 
               {otp.split("").map((digit, i) => (
                 <div
                   key={i}
-                  className="flex-1 flex items-center justify-center rounded-2xl bg-white/15"
+                  className="flex-1 flex items-center justify-center rounded-xl bg-white/15"
                   style={{
-                    fontFamily: "var(--font-bebas, Impact, sans-serif)",
-                    fontSize: "clamp(52px, 14vw, 96px)",
+                    fontFamily: "var(--font-num-ns)",
+                    fontWeight: 700,
+                    fontSize: "clamp(44px, 12vw, 80px)",
                     lineHeight: 1,
                     paddingTop: 10,
                     paddingBottom: 10,
+                    border: "2px solid rgba(0,0,0,0.85)",
                   }}
                 >
                   {digit}
@@ -318,27 +320,25 @@ export function TrackPanel({ tenantSlug, tenantName, order: initial, lines }: { 
               <li
                 key={s.v}
                 className={cn(
-                  "rounded-2xl border p-4 flex flex-col gap-1",
-                  done
-                    ? "border-emerald-500/30 bg-emerald-500/5"
-                    : active
-                    ? "border-ocean-500 bg-ocean-50 dark:bg-ocean-500/10"
-                    : "border-[color:var(--color-line)]"
+                  "rounded-xl p-4 flex flex-col gap-1",
+                  done ? "bg-mint/20" : active ? "bg-ocean-50 dark:bg-ocean-500/10" : "bg-[color:var(--color-paper-dim)]"
                 )}
+                style={{ border: "var(--ns-border)", boxShadow: active ? "var(--ns-shadow-sm)" : "none" }}
               >
                 <div
                   className={cn(
-                    "inline-flex h-7 w-7 items-center justify-center rounded-full",
+                    "inline-flex h-7 w-7 items-center justify-center rounded-lg",
                     done
                       ? "bg-emerald-500 text-white"
                       : active
                       ? "bg-ocean-500 text-white animate-pulse"
                       : "bg-[color:var(--color-paper-dim)] text-[color:var(--color-ink)]/35"
                   )}
+                  style={{ border: "2px solid #000" }}
                 >
                   <Icon size={13} />
                 </div>
-                <div className="text-[13.5px] font-medium">{s.label}</div>
+                <div className="text-[13.5px] font-bold" style={{ fontFamily: "var(--font-title-ns)" }}>{s.label}</div>
               </li>
             );
           })}
@@ -380,7 +380,7 @@ export function TrackPanel({ tenantSlug, tenantName, order: initial, lines }: { 
         </div>
       )}
 
-      <div className="rounded-2xl border border-[color:var(--color-line)] p-5">
+      <div className="ns-card p-5">
         <div className="text-[11px] font-mono uppercase tracking-wider text-[color:var(--color-ink)]/55 mb-3">
           You ordered
         </div>
@@ -421,7 +421,7 @@ export function TrackPanel({ tenantSlug, tenantName, order: initial, lines }: { 
           <span className="text-[12px] font-mono uppercase tracking-wider text-[color:var(--color-ink)]/55">
             {isCancelled ? "Refund amount" : "Total paid"}
           </span>
-          <span className="font-display text-[20px] font-medium tabular">{formatRupees(order.total_paise)}</span>
+          <span className="text-[20px] font-bold tabular" style={{ fontFamily: "var(--font-num-ns)" }}>{formatRupees(order.total_paise)}</span>
         </div>
 
         {/* UPI history hint — student can verify this in their PhonePe / GPay */}

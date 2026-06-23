@@ -246,9 +246,11 @@ export function MenuBoard({
   const S = {
     text: "var(--color-ink)", muted: "var(--student-muted)", muted2: "var(--student-muted2)",
     accent: "var(--color-ocean-500)", accentDim: "var(--student-accent-dim)",
-    border: "var(--color-line)", surface: "var(--student-surface)", surface2: "var(--student-surface2)",
+    border: "#000", surface: "var(--student-surface)", surface2: "var(--student-surface2)",
     cardBg: "var(--student-card-bg)",
-    fontDisplay: "var(--font-bricolage, 'Bricolage Grotesque', system-ui, sans-serif)",
+    fontHeading: "var(--font-display-ns, 'Unbounded', system-ui, sans-serif)",
+    fontDisplay: "var(--font-title-ns, 'Bricolage Grotesque', system-ui, sans-serif)",
+    fontNum: "var(--font-num-ns, 'Space Mono', monospace)",
     fontMono: "var(--font-jetbrains, 'JetBrains Mono', monospace)",
     radius: 14, radiusSm: 10,
   } as const;
@@ -381,7 +383,7 @@ export function MenuBoard({
                 {realtimeStatus === "connecting" ? "RECONNECTING…" : "UPDATES PAUSED · REFRESHING EVERY 30s"}
               </div>
             )}
-            <h1 style={{ fontFamily: S.fontDisplay, fontSize: "clamp(1.75rem, 8vw, 42px)", fontWeight: 500, lineHeight: 1.05, letterSpacing: "-0.035em", margin: "4px 0 0" }}>
+            <h1 style={{ fontFamily: S.fontHeading, fontSize: "clamp(1.6rem, 7vw, 38px)", fontWeight: 700, lineHeight: 1.05, letterSpacing: "-0.02em", margin: "4px 0 0" }}>
               What&apos;s <span style={{ fontStyle: "italic", fontWeight: 400 }}>cooking{user ? `, ${user.displayName || user.email?.split("@")[0]}` : " today"}?</span>
             </h1>
           </div>
@@ -458,13 +460,13 @@ export function MenuBoard({
 
           {/* Mobile sticky category chips */}
           <div 
-            className="sticky top-[56px] z-20 py-3 mb-4 backdrop-blur-md bg-[color:var(--color-paper)]/85 border-b border-[color:var(--color-line)] -mx-4 px-4 sm:-mx-5 sm:px-5 flex gap-2 overflow-x-auto"
+            className="sticky top-[56px] z-20 py-3 mb-4 bg-[color:var(--color-paper)] border-b-[3px] border-black -mx-4 px-4 sm:-mx-5 sm:px-5 flex gap-2 overflow-x-auto"
             style={{ display: isDesktop ? "none" : "flex", scrollbarWidth: "none" }}
           >
             {[{ id: "all", name: "All items" }, ...injectedCategories].map((cat) => {
               const isActive = activeCat === cat.id;
               return (
-                <button key={cat.id} onClick={() => scrollToCategory(cat.id)} style={{ flexShrink: 0, padding: "8px 14px", borderRadius: 999, fontSize: 13, fontWeight: 600, border: isActive ? "1px solid transparent" : `1px solid ${S.border}`, color: isActive ? "#FAF8F5" : S.muted, background: isActive ? S.accent : S.surface, cursor: "pointer", transition: "all .2s", fontFamily: S.fontDisplay }}>
+                <button key={cat.id} onClick={() => scrollToCategory(cat.id)} style={{ flexShrink: 0, padding: "8px 14px", borderRadius: 999, fontSize: 13, fontWeight: 700, border: "2px solid #000", boxShadow: isActive ? "var(--ns-shadow-sm)" : "none", color: isActive ? "#fff" : S.text, background: isActive ? S.accent : "#fff", cursor: "pointer", transition: "all .15s", fontFamily: S.fontDisplay }}>
                   {cat.name}
                 </button>
               );
@@ -483,7 +485,7 @@ export function MenuBoard({
           {showSpecials && (
             <div id="category-specials" style={{ marginBottom: 32, scrollMarginTop: "140px" }} className="pt-2">
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
-                <h2 style={{ margin: 0, fontFamily: S.fontDisplay, fontSize: "clamp(1.5rem, 5vw, 1.95rem)", fontWeight: 400, letterSpacing: "-0.02em", lineHeight: 1.15 }}>Today&apos;s <span style={{ fontStyle: "italic" }}>specials.</span></h2>
+                <h2 style={{ margin: 0, fontFamily: S.fontHeading, fontSize: "clamp(1.35rem, 5vw, 1.8rem)", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.15 }}>Today&apos;s <span style={{ fontStyle: "italic" }}>specials.</span></h2>
                 <span style={{ fontFamily: S.fontMono, fontSize: 11, letterSpacing: "0.06em", color: "#0c8a43", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}>
                   <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#0c8a43", display: "inline-block" }} />LIVE FROM KITCHEN
                 </span>
@@ -498,7 +500,7 @@ export function MenuBoard({
           {visibleOtherCount > 0 && (
             <div className="flex flex-col gap-6">
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 4 }}>
-                <h2 style={{ margin: 0, fontFamily: S.fontDisplay, fontSize: "clamp(1.5rem, 5vw, 1.95rem)", fontWeight: 400, letterSpacing: "-0.02em", lineHeight: 1.15 }}>
+                <h2 style={{ margin: 0, fontFamily: S.fontHeading, fontSize: "clamp(1.35rem, 5vw, 1.8rem)", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.15 }}>
                   Menu
                 </h2>
                 <p style={{ margin: 0, fontFamily: S.fontMono, fontSize: 12, color: S.muted }}>{visibleOtherCount} item{visibleOtherCount === 1 ? "" : "s"}</p>
@@ -583,8 +585,8 @@ function SpecialCard({ item, onAdd, onInc, onDec }: { item: MenuItem; onAdd: Car
   const accent = "var(--color-ocean-500)";
   const border = "var(--color-line)";
   return (
-    <article style={{ flexShrink: 0, width: 220, background: "var(--student-special-card-bg)", border: `1px solid ${border}`, borderRadius: 14, padding: 18, display: "flex", flexDirection: "column", gap: 12, position: "relative", opacity: oos ? 0.6 : 1, cursor: oos ? "not-allowed" : "default" }}
-      className={oos ? "" : "hover:-translate-y-[3px] hover:shadow-[0_8px_24px_rgba(26,26,25,.08)]"}>
+    <article style={{ flexShrink: 0, width: 220, background: "var(--student-special-card-bg)", border: "3px solid #000", boxShadow: "var(--ns-shadow-sm)", borderRadius: 14, padding: 18, display: "flex", flexDirection: "column", gap: 12, position: "relative", opacity: oos ? 0.6 : 1, cursor: oos ? "not-allowed" : "default" }}
+      className={oos ? "" : "transition-all duration-100 hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[var(--ns-shadow)]"}>
       <span style={{ position: "absolute", top: 12, right: 12, background: "#b32b2b", color: "#fff", fontFamily: "monospace", fontSize: 9, letterSpacing: "0.08em", padding: "2px 6px", borderRadius: 4, fontWeight: 700, textTransform: "uppercase" }}>SPECIAL</span>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
         <div style={{ width: 56, height: 56, borderRadius: 12, background: item.image_url ? "transparent" : "var(--student-card-bg)", border: `1px solid ${border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, overflow: "hidden", flexShrink: 0 }}>
@@ -597,10 +599,11 @@ function SpecialCard({ item, onAdd, onInc, onDec }: { item: MenuItem; onAdd: Car
         {item.description && <p style={{ margin: 0, fontSize: 13, color: "var(--student-muted)", lineHeight: 1.45 }}>{item.description}</p>}
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "auto", paddingTop: 8 }}>
-        <span style={{ fontFamily: "var(--font-bricolage, system-ui)", fontSize: 15, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: accent }}>{formatRupees(item.price_paise)}</span>
+        <span style={{ fontFamily: "var(--font-num-ns)", fontSize: 15, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: accent }}>{formatRupees(item.price_paise)}</span>
         {line ? <QtyControl qty={line.qty} onDec={() => onDec(item.id)} onInc={() => onInc(item.id)} disabled={oos} btnSize={32} /> : (
           <button disabled={oos} onClick={() => { onAdd({ menuItemId: item.id, name: item.name, pricePaise: item.price_paise, diet: item.diet as "veg" | "nonveg" | "egg" }); toast.success(`Added ${item.name}!`); }}
-            style={{ padding: "6px 12px", borderRadius: S_RADIUS_SM, fontSize: 13, fontWeight: 600, background: "rgba(51,65,85,.08)", color: accent, border: `1px solid ${border}`, cursor: oos ? "not-allowed" : "pointer", opacity: oos ? 0.5 : 1, fontFamily: "var(--font-bricolage, system-ui)" }}>+ Add</button>
+            className={oos ? "" : "ns-press"}
+            style={{ padding: "7px 13px", fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".02em", background: oos ? "var(--color-line)" : accent, color: "#fff", cursor: oos ? "not-allowed" : "pointer", opacity: oos ? 0.5 : 1, fontFamily: "var(--font-title-ns)" }}>+ Add</button>
         )}
       </div>
     </article>
@@ -611,10 +614,9 @@ function RegularCard({ item, onAdd, onInc, onDec }: { item: MenuItem; onAdd: Car
   const line = useCart((s) => s.lines.find((l) => l.menuItemId === item.id));
   const oos = !item.in_stock || item.status !== "live";
   const accent = "var(--color-ocean-500)";
-  const border = "var(--color-line)";
   return (
-    <article style={{ display: "flex", gap: 14, padding: 16, borderRadius: 14, border: `1px solid ${border}`, background: "var(--student-regular-card-bg)", opacity: oos ? 0.6 : 1 }}
-      className={oos ? "" : "hover:-translate-y-[3px] hover:shadow-[0_8px_24px_rgba(26,26,25,.08)]"}>
+    <article style={{ display: "flex", gap: 14, padding: 16, borderRadius: 14, border: "3px solid #000", boxShadow: "var(--ns-shadow-sm)", background: "var(--student-regular-card-bg)", opacity: oos ? 0.6 : 1 }}
+      className={oos ? "" : "transition-all duration-100 hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[var(--ns-shadow)]"}>
       <div style={{ width: 72, height: 72, borderRadius: 12, flexShrink: 0, background: "var(--student-surface2)", display: "grid", placeItems: "center", fontSize: 30, border: "1px solid var(--color-line)", overflow: "hidden" }}>
         {item.image_url ? <img src={item.image_url} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : dietEmoji(item.diet)}
       </div>
@@ -625,10 +627,11 @@ function RegularCard({ item, onAdd, onInc, onDec }: { item: MenuItem; onAdd: Car
         </div>
         {item.description && <p style={{ margin: "4px 0 0", fontSize: 14, color: "var(--student-muted)", lineHeight: 1.45 }}>{item.description}</p>}
         <div style={{ marginTop: "auto", paddingTop: 12, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-          <span style={{ fontFamily: "var(--font-bricolage, system-ui)", fontSize: 15, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: accent }}>{formatRupees(item.price_paise)}</span>
+          <span style={{ fontFamily: "var(--font-num-ns)", fontSize: 15, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: accent }}>{formatRupees(item.price_paise)}</span>
           {line ? <QtyControl qty={line.qty} onDec={() => onDec(item.id)} onInc={() => onInc(item.id)} disabled={oos} btnSize={38} /> : (
             <button disabled={oos} onClick={() => { onAdd({ menuItemId: item.id, name: item.name, pricePaise: item.price_paise, diet: item.diet as "veg" | "nonveg" | "egg" }); toast.success(`Added ${item.name}!`); }}
-              style={{ padding: "8px 14px", borderRadius: S_RADIUS_SM, fontSize: 14, fontWeight: 600, background: "rgba(51,65,85,.08)", color: accent, border: `1px solid ${border}`, cursor: oos ? "not-allowed" : "pointer", opacity: oos ? 0.5 : 1, fontFamily: "var(--font-bricolage, system-ui)" }}>+ Add</button>
+              className={oos ? "" : "ns-press"}
+              style={{ padding: "8px 14px", fontSize: 14, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".02em", background: oos ? "var(--color-line)" : accent, color: "#fff", cursor: oos ? "not-allowed" : "pointer", opacity: oos ? 0.5 : 1, fontFamily: "var(--font-title-ns)" }}>+ Add</button>
           )}
         </div>
       </div>

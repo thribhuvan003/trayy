@@ -4,6 +4,7 @@ import {
   Newsreader, Geist, Geist_Mono, Space_Grotesk,
   Bebas_Neue, Cormorant_Garamond, Plus_Jakarta_Sans, Barlow_Condensed, DM_Serif_Display,
   DM_Mono, Krona_One, Bricolage_Grotesque,
+  Unbounded, Hanken_Grotesk, Space_Mono,
 } from "next/font/google";
 import { headers } from "next/headers";
 import { Toaster } from "sonner";
@@ -114,6 +115,23 @@ const bricolage = Bricolage_Grotesque({
   variable: "--font-bricolage",
   display: "swap",
 });
+// Neobrutalist student-portal art direction — distinctive, non-generic type.
+const unbounded = Unbounded({
+  subsets: ["latin"],
+  variable: "--font-unbounded",
+  display: "swap",
+});
+const hankenGrotesk = Hanken_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-hanken",
+  display: "swap",
+});
+const spaceMono = Space_Mono({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-space-mono",
+  display: "swap",
+});
 
 const SITE_URL = process.env.APP_URL ?? "https://trayy.vercel.app";
 
@@ -188,7 +206,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       lang="en"
       data-tenant-id={tenant?.id ?? ""}
       data-tenant-slug={tenant?.slug ?? ""}
-      className={`${inter.variable} ${fraunces.variable} ${manrope.variable} ${jetbrains.variable} ${instrumentSerif.variable} ${newsreader.variable} ${spaceGrotesk.variable} ${geist.variable} ${geistMono.variable} ${bebasNeue.variable} ${cormorant.variable} ${plusJakarta.variable} ${barlowCondensed.variable} ${dmSerif.variable} ${dmMono.variable} ${kronaOne.variable} ${bricolage.variable}`}
+      className={`${inter.variable} ${fraunces.variable} ${manrope.variable} ${jetbrains.variable} ${instrumentSerif.variable} ${newsreader.variable} ${spaceGrotesk.variable} ${geist.variable} ${geistMono.variable} ${bebasNeue.variable} ${cormorant.variable} ${plusJakarta.variable} ${barlowCondensed.variable} ${dmSerif.variable} ${dmMono.variable} ${kronaOne.variable} ${bricolage.variable} ${unbounded.variable} ${hankenGrotesk.variable} ${spaceMono.variable}`}
       suppressHydrationWarning
     >
       <head>

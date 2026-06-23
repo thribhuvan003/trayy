@@ -10,6 +10,7 @@ import { formatRupees, cn } from "@/lib/utils";
 import { upiQrPayload } from "@/lib/payments/upi";
 import { simulatePaymentCapture, verifyPaymentNow } from "@/app/(student)/_actions";
 import { getBrowserClient } from "@/lib/supabase/browser";
+import { DragToConfirm } from "./drag-to-confirm";
 
 type Phase = "idle" | "monitoring" | "confirming" | "success" | "failed";
 
@@ -295,7 +296,7 @@ export function PayPanel({
           </div>
           <h2
             className="leading-tight tracking-[-0.03em] mb-2"
-            style={{ fontFamily: "var(--font-bricolage)", fontWeight: 700, fontSize: "clamp(1.6rem, 5vw, 2.2rem)" }}
+            style={{ fontFamily: "var(--font-display-ns)", fontWeight: 700, fontSize: "clamp(1.6rem, 5vw, 2.2rem)" }}
           >
             Order placed!
           </h2>
@@ -341,7 +342,7 @@ export function PayPanel({
           </div>
           <h2
             className="leading-tight tracking-[-0.03em] mb-2"
-            style={{ fontFamily: "var(--font-bricolage)", fontWeight: 700, fontSize: "clamp(1.6rem, 5vw, 2.2rem)" }}
+            style={{ fontFamily: "var(--font-display-ns)", fontWeight: 700, fontSize: "clamp(1.6rem, 5vw, 2.2rem)" }}
           >
             Payment failed.
           </h2>
@@ -381,7 +382,7 @@ export function PayPanel({
         </div>
         <h1
           className="leading-tight tracking-[-0.03em]"
-          style={{ fontFamily: "var(--font-bricolage)", fontWeight: 700, fontSize: "clamp(1.75rem, 5vw, 2.5rem)" }}
+          style={{ fontFamily: "var(--font-display-ns)", fontWeight: 700, fontSize: "clamp(1.75rem, 5vw, 2.5rem)" }}
         >
           Pay{" "}
           <span style={{ color: "var(--color-ocean-500, #e60000)" }}>
@@ -394,7 +395,7 @@ export function PayPanel({
       <div className="grid md:grid-cols-[1.15fr_0.85fr] gap-5 items-start">
 
         {/* ── Left: Payment UI (Razorpay or Direct UPI) ─────────────────── */}
-        <div className="rounded-2xl border border-[color:var(--color-line)] bg-[color:var(--color-paper)] p-6 flex flex-col items-center text-center">
+        <div className="ns-card bg-[color:var(--color-paper)] p-6 flex flex-col items-center text-center">
 
           {/* ── RAZORPAY MODE — show Checkout button ── */}
           {paymentMode === "razorpay" && phase === "idle" && (
@@ -420,8 +421,8 @@ export function PayPanel({
               </div>
               <button
                 onClick={openRazorpayCheckout}
-                className="w-full h-13 text-[15px] font-bold rounded-2xl text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-md hover:opacity-90"
-                style={{ height: 52, background: "#0066ff" }}
+                className="ns-press w-full text-[15px] font-extrabold uppercase tracking-wide text-white flex items-center justify-center gap-2"
+                style={{ height: 52, background: "#0066ff", fontFamily: "var(--font-title-ns)" }}
               >
                 Pay {formatRupees(order.total_paise)}
               </button>
@@ -469,21 +470,13 @@ export function PayPanel({
                     Completed payment in your UPI app?<br />
                     <span className="text-[11px] opacity-60">Only confirm after seeing "Transaction Successful" in your UPI app.</span>
                   </p>
-                  <button
-                    onClick={onIvePaid}
+                  <DragToConfirm
+                    onConfirm={onIvePaid}
                     disabled={verifying}
-                    className="w-full h-12 text-[14px] font-bold rounded-xl text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-md hover:opacity-90 disabled:opacity-60"
-                    style={{ background: "var(--color-ocean-500, #e60000)" }}
-                  >
-                    {verifying ? (
-                      <>
-                        <Loader2 size={16} className="animate-spin" />
-                        Placing order…
-                      </>
-                    ) : (
-                      `I paid ₹${(order.total_paise / 100).toFixed(0)} — Place my order`
-                    )}
-                  </button>
+                    pending={verifying}
+                    label={`Slide — I paid ₹${(order.total_paise / 100).toFixed(0)}`}
+                    confirmedLabel="Placing order…"
+                  />
                   <p className="text-[11px] opacity-40 text-center">
                     Your order enters the kitchen unverified. Staff will confirm payment before preparing.
                   </p>
@@ -501,8 +494,8 @@ export function PayPanel({
               <button
                 type="button"
                 onClick={() => { onOpenUpi(); window.location.href = upiUri; }}
-                className="md:hidden w-full h-14 text-[15px] inline-flex items-center justify-center gap-2.5 rounded-2xl text-white font-semibold transition-all active:scale-[0.98] mb-3 cursor-pointer"
-                style={{ background: "var(--color-ocean-500, #e60000)" }}
+                className="ns-press md:hidden w-full h-14 text-[15px] inline-flex items-center justify-center gap-2.5 text-white font-extrabold uppercase tracking-wide mb-3 cursor-pointer"
+                style={{ background: "var(--color-ocean-500, #e60000)", fontFamily: "var(--font-title-ns)" }}
               >
                 <Smartphone size={18} /> Open UPI App to Pay
               </button>
@@ -518,8 +511,8 @@ export function PayPanel({
               <button
                 type="button"
                 onClick={() => { onOpenUpi(); window.location.href = upiUri; }}
-                className="hidden md:inline-flex items-center gap-2 h-11 px-6 rounded-full text-white text-[13.5px] font-semibold transition-all hover:opacity-90 active:scale-[0.98] cursor-pointer"
-                style={{ background: "var(--color-ocean-500, #e60000)" }}
+                className="ns-press hidden md:inline-flex items-center gap-2 h-11 px-6 text-white text-[13.5px] font-extrabold uppercase tracking-wide cursor-pointer"
+                style={{ background: "var(--color-ocean-500, #e60000)", fontFamily: "var(--font-title-ns)" }}
               >
                 <Smartphone size={15} /> Open UPI App
               </button>
@@ -560,10 +553,11 @@ export function PayPanel({
           {/* Payment timer — less scary, more subtle */}
           {!expired && (
             <div
-              className="rounded-2xl border px-5 py-4 flex items-center justify-between"
+              className="rounded-2xl px-5 py-4 flex items-center justify-between"
               style={{
-                border: remaining < 60 ? "1px solid rgba(245,158,11,0.4)" : "1px solid var(--color-line)",
-                background: remaining < 60 ? "rgba(245,158,11,0.05)" : "var(--color-paper-dim)",
+                border: "var(--ns-border)",
+                boxShadow: "var(--ns-shadow-sm)",
+                background: remaining < 60 ? "var(--ns-yellow)" : "var(--color-paper-dim)",
               }}
             >
               <p className="text-[12px] opacity-55">Payment window</p>
@@ -587,7 +581,7 @@ export function PayPanel({
           )}
 
           {/* Order summary */}
-          <div className="rounded-2xl border border-[color:var(--color-line)] p-5">
+          <div className="ns-card p-5">
             <div className="text-[10.5px] font-mono uppercase tracking-wider opacity-50 mb-3">
               Your order
             </div>
@@ -618,8 +612,8 @@ export function PayPanel({
             <div className="mt-4 pt-4 border-t border-[color:var(--color-line)] flex items-baseline justify-between">
               <span className="text-[10px] uppercase tracking-[0.18em] opacity-45">Total</span>
               <span
-                className="text-[28px] leading-none tabular"
-                style={{ fontFamily: "var(--font-bebas, Impact, sans-serif)", color: "var(--color-ocean-500, #e60000)" }}
+                className="text-[26px] font-bold leading-none tabular"
+                style={{ fontFamily: "var(--font-num-ns)", color: "var(--color-ocean-500, #e60000)" }}
               >
                 {formatRupees(order.total_paise)}
               </span>
