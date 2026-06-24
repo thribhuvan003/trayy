@@ -427,7 +427,7 @@ export function PiranhaPortalsSection() {
   return (
     <section
       ref={rootRef}
-      className="relative overflow-hidden px-5 py-24 sm:px-8 lg:px-10 lg:min-h-screen lg:flex lg:flex-col lg:justify-center lg:py-24"
+      className="relative overflow-hidden px-5 py-[var(--section-y)] sm:px-8 lg:px-10 lg:min-h-screen lg:flex lg:flex-col lg:justify-center lg:py-[var(--section-y-lg)]"
       style={{ background: "var(--tray-bg, #F4EFE6)", color: "var(--tray-ink, #1A1A19)" }}
     >
       {/* Dot-grid */}

@@ -132,6 +132,23 @@
 .tl-hero-rise-delay {
   animation: tl-hero-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
 }
+
+/* Editorial line-mask reveal — each headline line wipes up from its own clip.
+   Premium, restrained, fires once. Delays set inline per line. */
+.tl-line { display: block; overflow: hidden; padding-bottom: 0.16em; margin-bottom: -0.08em; }
+.tl-line-in {
+  display: inline-block;
+  transform: translateY(110%);
+  animation: tl-line-rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes tl-line-rise {
+  0%   { transform: translateY(110%); }
+  100% { transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tl-line-in { transform: none; animation: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .tl-hero-rise,
   .tl-hero-rise-delay {
@@ -579,13 +596,16 @@ select option {
   --font-code:      var(--font-space-mono), ui-monospace, monospace;
 }
 
-/* Landing-only type stack — distinct from student portal */
+/* Landing-only type stack — distinctive, designer-grade (Fontshare, self-hosted).
+   Clash Display (display + accent) · Switzer (UI/body) · Space Mono (labels).
+   Repointed page-wide for the landing; excluded sections inherit the family but
+   keep their own layout. */
 .tray-landing {
-  --font-hero-display: var(--font-dm-serif), Georgia, serif;
-  --font-hero-accent:  var(--font-cormorant), Georgia, serif;
-  --font-hero-ui:      var(--font-bricolage), system-ui, sans-serif;
+  --font-hero-display: var(--font-clash), system-ui, sans-serif;
+  --font-hero-accent:  var(--font-clash), system-ui, sans-serif;
+  --font-hero-ui:      var(--font-switzer), system-ui, sans-serif;
   --font-hero-mono:    var(--font-space-mono), ui-monospace, monospace;
-  --font-hero-punch:   var(--font-unbounded), system-ui, sans-serif;
+  --font-hero-punch:   var(--font-clash), system-ui, sans-serif;
   --font-editorial:    var(--font-hero-display);
   --font-ui:           var(--font-hero-ui);
   --font-code:         var(--font-hero-mono);
@@ -594,10 +614,22 @@ select option {
   --tray-radius-md:    6px;
   --tray-underline:    var(--tray-clay);
   --tray-ease-snap:    cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Uniform vertical rhythm — one scale for every section. */
+  --section-y:    3.25rem;
+  --section-y-lg: 5rem;
 }
 
+/* Landing-scoped: old utility names now resolve to the fresh Fontshare families. */
+.tray-landing .font-cormorant { font-family: var(--font-clash), system-ui, sans-serif; font-style: normal; }
+.tray-landing .font-bricolage { font-family: var(--font-switzer), system-ui, sans-serif; }
+/* Keep originals defined for any non-landing usage. */
 .font-cormorant { font-family: var(--font-cormorant), Georgia, serif; }
 .font-bricolage { font-family: var(--font-bricolage), system-ui, sans-serif; }
+
+/* Clash Display & Switzer ship no italic — render upright instead of a faux slant.
+   Emphasis is carried by the clay accent color, not slant. */
+.tray-landing .italic { font-style: normal; }
 
 .tl-nav-link {
   position: relative;

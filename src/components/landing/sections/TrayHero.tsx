@@ -5,7 +5,7 @@ import { MotionCTA, OrderJourneyVisual } from "@/lib/motion/tray-framer";
 
 const RECEIPT_ROWS = [
   { n: "01", text: "One login, every canteen on campus" },
-  { n: "02", text: "UPI in → kitchen queued → OTP out" },
+  { n: "02", text: "Pay by UPI → kitchen cooks → pickup by OTP" },
   { n: "03", text: "Built for 12:45, not delivery apps" },
 ] as const;
 
@@ -13,7 +13,7 @@ const rowEase = [0.22, 1, 0.36, 1] as const;
 
 export function TrayHero() {
   return (
-    <section className="relative isolate px-5 pb-16 pt-8 sm:px-8 sm:pt-12 lg:px-10 lg:pb-20 lg:pt-14">
+    <section className="relative isolate px-5 pb-[var(--section-y)] pt-12 sm:px-8 sm:pt-16 lg:px-10 lg:pb-[var(--section-y-lg)] lg:pt-20">
       <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] lg:items-start lg:gap-16">
         <div>
           <motion.p
@@ -25,25 +25,30 @@ export function TrayHero() {
             Campus canteen · UPI · OTP pickup
           </motion.p>
 
-          <motion.h1
-            className="tl-hero-rise max-w-[12ch] font-editorial text-[clamp(2.5rem,6.2vw,5.25rem)] font-normal leading-[0.94] tracking-[-0.02em] text-[var(--tray-ink)]"
+          <h1
+            className="max-w-[13ch] font-editorial text-[clamp(2.5rem,5.4vw,4.75rem)] font-medium leading-[0.97] tracking-[-0.02em] text-[var(--tray-ink)]"
             style={{ textWrap: "balance" }}
           >
-            Pay from your phone.
-            <br />
-            <span className="font-cormorant text-[1.02em] font-medium italic text-[var(--tray-clay)]">
-              Collect before the bell.
+            <span className="tl-line">
+              <span className="tl-line-in" style={{ animationDelay: "0.05s" }}>
+                Pay from your <span className="text-[var(--tray-clay)]">phone.</span>
+              </span>
             </span>
-          </motion.h1>
+            <span className="tl-line">
+              <span className="tl-line-in" style={{ animationDelay: "0.16s" }}>
+                Collect before the <span className="text-[var(--tray-clay)]">bell.</span>
+              </span>
+            </span>
+          </h1>
 
           <motion.p
-            className="tl-hero-rise-delay mt-6 max-w-[38ch] font-bricolage text-[0.9375rem] leading-[1.62] text-[var(--tray-muted)]"
+            className="tl-hero-rise-delay mt-6 max-w-[40ch] font-bricolage text-[1rem] leading-[1.65] text-[var(--tray-muted)]"
           >
-            One queue for every counter. Kitchen, student, and admin stay on the same order — through the lunch rush.
+            One queue for every counter. Kitchen, student, and admin stay on the same order — right through the lunch rush.
           </motion.p>
 
           <motion.ul
-            className="mt-8 divide-y divide-[var(--tray-border)] border-y border-[var(--tray-border)]"
+            className="mt-9 divide-y divide-[var(--tray-border)] border-y border-[var(--tray-border)]"
             initial="hidden"
             animate="show"
             variants={{
@@ -58,12 +63,12 @@ export function TrayHero() {
                   hidden: { opacity: 0, y: 10 },
                   show: { opacity: 1, y: 0, transition: { duration: 0.42, ease: rowEase } },
                 }}
-                className="flex gap-4 py-3"
+                className="flex items-baseline gap-4 py-3.5"
               >
-                <span className="w-6 shrink-0 font-code text-[0.625rem] tracking-[0.12em] text-[var(--tray-clay)]">
+                <span className="w-6 shrink-0 font-code text-[0.6875rem] font-medium tracking-[0.1em] text-[var(--tray-clay)]">
                   {row.n}
                 </span>
-                <span className="font-bricolage text-[0.875rem] leading-6 text-[var(--tray-ink)]/88">
+                <span className="font-bricolage text-[0.9375rem] leading-6 text-[var(--tray-ink)]/88">
                   {row.text}
                 </span>
               </motion.li>
@@ -99,7 +104,7 @@ export function TrayHero() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.36, delay: 0.34 }}
           >
-            See the three portals ↓
+            See the three live demos ↓
           </motion.a>
         </div>
 

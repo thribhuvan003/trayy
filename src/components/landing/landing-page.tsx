@@ -139,7 +139,7 @@ export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
           )}
 
           <div className="tl-nav-strip hidden border-t border-[var(--tray-border)] lg:block">
-            <p className="mx-auto max-w-7xl px-5 py-2 font-code text-[0.625rem] uppercase tracking-[0.14em] text-[var(--tray-muted)] sm:px-8 lg:px-10">
+            <p className="mx-auto max-w-7xl py-2 font-code text-[0.625rem] uppercase tracking-[0.14em] text-[var(--tray-muted)]">
               Campus canteen · UPI · OTP pickup · multi-counter
             </p>
           </div>

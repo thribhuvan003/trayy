@@ -203,7 +203,7 @@ export function CampusModelSection({ campusName }: { campusName?: string | null 
   }, [recomputeLinks]);
 
   return (
-    <SectionReveal as="div" id="campus" className="px-5 py-20 sm:px-8 lg:px-10 lg:py-28">
+    <SectionReveal as="div" id="campus" className="px-5 py-[var(--section-y)] sm:px-8 lg:px-10 lg:py-[var(--section-y-lg)]">
       <motion.div className="mx-auto max-w-7xl">
         <div className="mb-14 max-w-3xl">
           <RevealItem>

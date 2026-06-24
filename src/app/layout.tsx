@@ -6,7 +6,30 @@ import {
   DM_Mono, Krona_One, Bricolage_Grotesque,
   Unbounded, Hanken_Grotesk, Space_Mono,
 } from "next/font/google";
+import localFont from "next/font/local";
 import { headers } from "next/headers";
+
+// Self-hosted Fontshare faces — distinctive, designer-grade, not Google/AI defaults.
+const clashDisplay = localFont({
+  variable: "--font-clash",
+  display: "swap",
+  src: [
+    { path: "./fonts/ClashDisplay-400.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/ClashDisplay-500.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/ClashDisplay-600.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/ClashDisplay-700.woff2", weight: "700", style: "normal" },
+  ],
+});
+const switzer = localFont({
+  variable: "--font-switzer",
+  display: "swap",
+  src: [
+    { path: "./fonts/Switzer-400.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/Switzer-500.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/Switzer-600.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/Switzer-700.woff2", weight: "700", style: "normal" },
+  ],
+});
 import { Toaster } from "sonner";
 import { resolveTenant, getTenantSlugFromHeaders } from "@/lib/tenant";
 import { Providers } from "@/components/providers";
@@ -206,7 +229,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       lang="en"
       data-tenant-id={tenant?.id ?? ""}
       data-tenant-slug={tenant?.slug ?? ""}
-      className={`${inter.variable} ${fraunces.variable} ${manrope.variable} ${jetbrains.variable} ${instrumentSerif.variable} ${newsreader.variable} ${spaceGrotesk.variable} ${geist.variable} ${geistMono.variable} ${bebasNeue.variable} ${cormorant.variable} ${plusJakarta.variable} ${barlowCondensed.variable} ${dmSerif.variable} ${dmMono.variable} ${kronaOne.variable} ${bricolage.variable} ${unbounded.variable} ${hankenGrotesk.variable} ${spaceMono.variable}`}
+      className={`${clashDisplay.variable} ${switzer.variable} ${inter.variable} ${fraunces.variable} ${manrope.variable} ${jetbrains.variable} ${instrumentSerif.variable} ${newsreader.variable} ${spaceGrotesk.variable} ${geist.variable} ${geistMono.variable} ${bebasNeue.variable} ${cormorant.variable} ${plusJakarta.variable} ${barlowCondensed.variable} ${dmSerif.variable} ${dmMono.variable} ${kronaOne.variable} ${bricolage.variable} ${unbounded.variable} ${hankenGrotesk.variable} ${spaceMono.variable}`}
       suppressHydrationWarning
     >
       <head>
