@@ -14,6 +14,7 @@ import {
   prefersReducedMotion,
   registerTrayGsap,
 } from "@/lib/motion/tray-motion";
+import { HyperText } from "@/components/landing/HyperText";
 
 const portals = [
   {
@@ -387,24 +388,6 @@ export function PiranhaPortalsSection() {
       const root = rootRef.current;
       if (!root) return;
 
-      const heading = root.querySelector("[data-portals-heading]") as HTMLElement;
-
-      if (heading) {
-        gsap.fromTo(
-          heading.querySelectorAll(".split-word > span"),
-          { yPercent: 105, rotate: 1.5, opacity: 0 },
-          {
-            yPercent: 0,
-            rotate: 0,
-            opacity: 1,
-            duration: 1.05,
-            stagger: 0.04,
-            ease: "power4.out",
-            scrollTrigger: { trigger: heading, start: "top 80%" },
-          }
-        );
-      }
-
       const cards = root.querySelectorAll("[data-portal-card]");
       if (cards.length) {
         gsap.fromTo(
@@ -434,43 +417,76 @@ export function PiranhaPortalsSection() {
       <div className="pointer-events-none absolute inset-0 opacity-[0.06] [background-image:radial-gradient(circle_at_1px_1px,currentColor_1px,transparent_0)] [background-size:18px_18px]" />
 
       <div className="relative z-10 mx-auto max-w-7xl w-full flex flex-col gap-16">
-        {/* Heading panel */}
-        <div className="max-w-4xl">
-          <div className="mb-5 flex flex-wrap items-center gap-3">
-            <p className="text-[0.72rem] font-code font-medium uppercase tracking-[0.24em] opacity-40">
-              01 / The system
-            </p>
+        {/* Heading header — 2-col on lg: display heading left, copy + status right */}
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:items-end lg:gap-12">
+          {/* Left: eyebrow + display heading */}
+          <div className="lg:col-span-7">
+            <div className="mb-5 flex flex-wrap items-center gap-3">
+              <p className="text-[0.72rem] font-code font-medium uppercase tracking-[0.24em] opacity-40">
+                01 / The system
+              </p>
+            </div>
+
+            <h2
+              data-portals-heading
+              className="leading-[0.9] tracking-[-0.03em] uppercase flex flex-col gap-1"
+              style={{
+                fontFamily: "var(--font-hero-display)",
+                fontWeight: 700,
+                fontSize: "clamp(2.5rem, 6.5vw, 6.2rem)",
+                color: "var(--tray-ink, #1A1A19)",
+              }}
+            >
+              <HyperText
+                text="Three portals,"
+                variant="default"
+                delay={0}
+                className="inline-block"
+              />
+              <HyperText
+                text="one source of"
+                variant="default"
+                delay={120}
+                className="inline-block"
+              />
+              <HyperText
+                text="truth."
+                variant="default"
+                delay={240}
+                className="inline-block"
+              />
+            </h2>
           </div>
 
-          <h2
-            data-portals-heading
-            className="leading-[0.9] tracking-[-0.03em] uppercase flex flex-col gap-1"
-            style={{
-              fontFamily: "var(--font-barlow)",
-              fontWeight: 900,
-              fontSize: "clamp(2.5rem, 6.5vw, 6.2rem)",
-              color: "var(--tray-ink, #1A1A19)",
-            }}
-          >
-            <span className="split-word inline-block overflow-hidden">
-              <span className="inline-block">Three portals,</span>
-            </span>
-            <span className="split-word inline-block overflow-hidden">
-              <span className="inline-block">one source of</span>
-            </span>
-            <span className="split-word inline-block overflow-hidden">
-              <span className="inline-block">truth.</span>
-            </span>
-          </h2>
+          {/* Right: descriptive copy + mono status detail, bottom-aligned */}
+          <div className="flex flex-col gap-6 lg:col-span-5">
+            <p
+              className="text-[1.05rem] leading-8 opacity-70"
+              style={{ fontFamily: "var(--font-hero-ui)" }}
+            >
+              One database, three purpose-built views. What a student orders is what
+              the kitchen prepares, which is what the admin monitors. No lag, no
+              re-sync, no mystery — open any portal below.
+            </p>
 
-          <p
-            className="mt-7 max-w-3xl text-[1.1rem] leading-8 opacity-70"
-            style={{ fontFamily: "var(--font-geist)" }}
-          >
-            One database, three purpose-built views. What a student orders is what the
-            kitchen prepares, which is what the admin monitors. No lag, no re-sync,
-            no mystery. Open any portal below — fully live, no sign-up.
-          </p>
+            <div
+              className="flex items-center gap-2.5 border-t pt-4 text-[0.7rem] uppercase tracking-[0.16em]"
+              style={{
+                borderColor: "var(--tray-border, rgba(18,21,26,0.1))",
+                fontFamily: "var(--font-hero-mono)",
+                color: "var(--tray-muted, #5c636b)",
+              }}
+            >
+              <span
+                aria-hidden
+                className="text-[0.55rem] leading-none"
+                style={{ color: "var(--tray-clay, #9a4e28)" }}
+              >
+                ●
+              </span>
+              3 Live Portals · No Sign-Up
+            </div>
+          </div>
         </div>
 
         {/* 3-Column Portal Grid */}

@@ -89,6 +89,32 @@ export const SectionReveal = React.forwardRef<HTMLElement, SectionRevealProps>(f
   );
 });
 
+// ── SectionFx — connective section-to-section entrance ────────────────────────
+// Rises + fades a whole section into view as you scroll. Layered under each
+// section's own signature effect to make the page feel alive between sections.
+export function SectionFx({
+  children,
+  className,
+  amount = 0.18,
+}: {
+  children: ReactNode;
+  className?: string;
+  amount?: number;
+}) {
+  const reduced = useReducedMotion();
+  return (
+    <motion.div
+      className={className}
+      initial={reduced ? false : { opacity: 0, y: 40 }}
+      whileInView={reduced ? undefined : { opacity: 1, y: 0 }}
+      viewport={{ once: true, amount }}
+      transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
 // ── RevealItem — individual animated child ────────────────────────────────────
 export function RevealItem({
   children,

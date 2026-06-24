@@ -12,10 +12,14 @@ import { PiranhaPortalsSection } from "@/components/landing/sections/PiranhaPort
 import { SyncSection } from "@/components/landing/sections/SyncSection";
 import { TrayHero } from "@/components/landing/sections/TrayHero";
 import { TrustSection } from "@/components/landing/sections/TrustSection";
+import { motion } from "framer-motion";
 import {
   AnimatedNav,
   MotionCTA,
+  RevealItem,
   ScrollProgress,
+  SectionFx,
+  SectionReveal,
 } from "@/lib/motion/tray-framer";
 
 function BrandMark() {
@@ -148,49 +152,63 @@ export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
 
       <main id="main">
         <TrayHero />
-        <CampusTicker />
-        <PiranhaPortalsSection />
+        <SectionFx>
+          <CampusTicker />
+        </SectionFx>
+        <SectionFx>
+          <PiranhaPortalsSection />
+        </SectionFx>
         <CampusModelSection campusName={campusName} />
-        <TrustSection />
-        <SyncSection />
-        <ClosingSection />
+        <SectionFx>
+          <TrustSection />
+        </SectionFx>
+        <SectionFx>
+          <SyncSection />
+        </SectionFx>
+        <SectionFx>
+          <ClosingSection />
+        </SectionFx>
       </main>
 
       <footer className="relative overflow-hidden px-4 pb-8 pt-10 sm:px-8 sm:pt-12 lg:px-10">
-        <div
+        <motion.div
           className="pointer-events-none absolute bottom-8 right-0 select-none tl-footer-mark"
           style={{ overflow: "hidden" }}
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.4 }}
+          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
         >
           <span
             style={{
-              fontFamily: "var(--font-manrope)",
+              fontFamily: "var(--font-hero-display)",
               fontWeight: 700,
               fontSize: "clamp(8rem, 12vw, 12rem)",
               lineHeight: 0.8,
               letterSpacing: "-0.06em",
               color: "var(--tray-ink)",
-              opacity: 0.035,
+              opacity: 0.04,
               display: "block",
               paddingRight: "clamp(1.5rem, 4vw, 4rem)",
             }}
           >
             TRAY
           </span>
-        </div>
+        </motion.div>
 
         <div className="mx-auto max-w-7xl">
-          <div className="relative z-10 grid gap-10 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr]">
-            <div>
+          <SectionReveal as="div" className="relative z-10 grid gap-10 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr]">
+            <RevealItem>
               <BrandMark />
               <p
                 className="mt-5 max-w-sm text-[1.08rem] leading-7 text-[var(--tray-muted)]"
-                style={{ fontFamily: "var(--font-manrope)" }}
+                style={{ fontFamily: "var(--font-hero-ui)" }}
               >
                 Campus food operations for colleges that want faster handoff, cleaner billing, and fewer counter bottlenecks.
               </p>
-            </div>
+            </RevealItem>
 
-            <div>
+            <RevealItem>
               <p className="font-code mb-5 text-[0.85rem] font-bold uppercase tracking-[0.22em] text-[var(--tray-muted)]">Product</p>
               <ul className="flex flex-col gap-3 text-[1.05rem]">
                 {[
@@ -207,9 +225,9 @@ export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
                   </li>
                 ))}
               </ul>
-            </div>
+            </RevealItem>
 
-            <div>
+            <RevealItem>
               <p className="font-code mb-5 text-[0.85rem] font-bold uppercase tracking-[0.22em] text-[var(--tray-muted)]">Resources</p>
               <ul className="flex flex-col gap-3 text-[1.05rem]">
                 {[
@@ -225,9 +243,9 @@ export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
                   </li>
                 ))}
               </ul>
-            </div>
+            </RevealItem>
 
-            <div>
+            <RevealItem>
               <p className="font-code mb-5 text-[0.85rem] font-bold uppercase tracking-[0.22em] text-[var(--tray-muted)]">Contact</p>
               <a
                 href="https://github.com/thribhuvan003"
@@ -238,8 +256,8 @@ export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
                 <span className="tl-footer-link-circ" />
                 <span className="tl-footer-link-text">github.com/thribhuvan003</span>
               </a>
-            </div>
-          </div>
+            </RevealItem>
+          </SectionReveal>
 
           <div className="relative z-10 mt-10 flex flex-wrap items-center justify-between gap-4 sm:mt-16">
             <p className="text-[0.72rem] uppercase tracking-[0.2em] opacity-45" style={{ fontFamily: "var(--font-dm-mono)" }}>
