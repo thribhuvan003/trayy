@@ -1,8 +1,31 @@
 "use client";
 
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { SectionReveal, RevealItem } from "@/lib/motion/tray-framer";
+
+const HEADING_WORDS: { text: string; accent?: boolean }[] = [
+  { text: "One" },
+  { text: "campus." },
+  { text: "Four" },
+  { text: "roles." },
+  { text: "No", accent: true },
+  { text: "overlap.", accent: true },
+];
+
+const headingContainer = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.07 } },
+};
+
+const headingWord = {
+  hidden: { y: "115%", opacity: 0 },
+  show: {
+    y: "0%",
+    opacity: 1,
+    transition: { duration: 0.58, ease: [0.16, 1, 0.3, 1] as const },
+  },
+};
 
 const CANTEENS = [
   {
@@ -112,6 +135,8 @@ export function CampusModelSection({ campusName }: { campusName?: string | null 
   const [hoveredCanteen, setHoveredCanteen] = useState<number | null>(null);
   const [linkPaths, setLinkPaths] = useState<LinkPath[]>([]);
 
+  const prefersReducedMotion = useReducedMotion();
+
   const mapRef = useRef<HTMLDivElement>(null);
   const canteenRefs = useRef<(HTMLDivElement | null)[]>([]);
   const roleRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -216,13 +241,41 @@ export function CampusModelSection({ campusName }: { campusName?: string | null 
           </RevealItem>
 
           <RevealItem>
-            <h2
-              className="mt-5 font-editorial text-[clamp(2.4rem,5vw,4rem)] font-normal leading-[1.02] tracking-[-0.03em] text-[var(--tray-ink)]"
-              style={{ textWrap: "balance" }}
-            >
-              One campus. Four roles.{" "}
-              <span className="italic text-[var(--tray-clay)]">No overlap.</span>
-            </h2>
+            {prefersReducedMotion ? (
+              <h2
+                className="mt-5 font-editorial text-[clamp(2.4rem,5vw,4rem)] font-normal leading-[1.02] tracking-[-0.03em] text-[var(--tray-ink)]"
+                style={{ textWrap: "balance" }}
+              >
+                One campus. Four roles.{" "}
+                <span className="italic text-[var(--tray-clay)]">No overlap.</span>
+              </h2>
+            ) : (
+              <motion.h2
+                className="mt-5 flex flex-wrap gap-x-[0.28em] font-editorial text-[clamp(2.4rem,5vw,4rem)] font-normal leading-[1.02] tracking-[-0.03em] text-[var(--tray-ink)]"
+                variants={headingContainer}
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true, amount: 0.4 }}
+              >
+                {HEADING_WORDS.map((word, i) => (
+                  <span
+                    key={`${word.text}-${i}`}
+                    className="inline-flex overflow-hidden pb-[0.04em]"
+                  >
+                    <motion.span
+                      className={
+                        word.accent
+                          ? "inline-block italic text-[var(--tray-clay)]"
+                          : "inline-block"
+                      }
+                      variants={headingWord}
+                    >
+                      {word.text}
+                    </motion.span>
+                  </span>
+                ))}
+              </motion.h2>
+            )}
           </RevealItem>
 
           <RevealItem>

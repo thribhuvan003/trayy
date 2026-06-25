@@ -38,8 +38,17 @@ export function ClosingSection() {
     <SectionReveal
       id="closing"
       as="div"
-      className="tl-closing px-5 py-[var(--section-y)] sm:px-8 lg:px-10 lg:py-[var(--section-y-lg)]"
+      className="tl-closing relative px-5 py-[var(--section-y)] sm:px-8 lg:px-10 lg:py-[var(--section-y-lg)]"
     >
+      {!reduce && (
+        <motion.div
+          className="absolute left-0 right-0 top-0 h-px origin-left bg-[var(--tray-clay)]"
+          initial={{ scaleX: 0 }}
+          whileInView={{ scaleX: 1 }}
+          viewport={{ once: true, amount: 0.4 }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        />
+      )}
       <div className="mx-auto max-w-7xl border-t border-[var(--tray-border)] pt-12 lg:pt-16">
         <div className="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between lg:gap-16">
           <div className="max-w-xl">

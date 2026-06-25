@@ -1,6 +1,12 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useRef, type ReactNode } from "react";
+import {
+  motion,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+} from "framer-motion";
 import { MotionCTA, OrderJourneyVisual } from "@/lib/motion/tray-framer";
 
 const RECEIPT_ROWS = [
@@ -11,19 +17,51 @@ const RECEIPT_ROWS = [
 
 const rowEase = [0.22, 1, 0.36, 1] as const;
 
-export function TrayHero() {
+function BlurFade({
+  children,
+  delay = 0,
+  className,
+}: {
+  children: ReactNode;
+  delay?: number;
+  className?: string;
+}) {
+  const reduced = useReducedMotion();
+  if (reduced) return <div className={className}>{children}</div>;
   return (
-    <section className="relative isolate px-5 pb-[var(--section-y)] pt-12 sm:px-8 sm:pt-16 lg:px-10 lg:pb-[var(--section-y-lg)] lg:pt-20">
+    <motion.div
+      className={className}
+      initial={{ opacity: 0, filter: "blur(8px)", y: 12 }}
+      animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+      transition={{ duration: 0.55, ease: rowEase, delay }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+export function TrayHero() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const reduced = useReducedMotion();
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start start", "end start"],
+  });
+  const visualY = useTransform(scrollYProgress, [0, 1], [0, -40]);
+
+  return (
+    <section
+      ref={sectionRef}
+      className="relative isolate px-5 pb-[var(--section-y)] pt-12 sm:px-8 sm:pt-16 lg:px-10 lg:pb-[var(--section-y-lg)] lg:pt-20"
+    >
       <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] lg:items-start lg:gap-16">
         <div>
-          <motion.p
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.32, ease: rowEase }}
+          <BlurFade
+            delay={0.05}
             className="mb-5 font-code text-[0.625rem] uppercase tracking-[0.16em] text-[var(--tray-muted)] lg:hidden"
           >
             Campus canteen · UPI · OTP pickup
-          </motion.p>
+          </BlurFade>
 
           <h1
             className="max-w-[13ch] font-editorial text-[clamp(2.5rem,5.4vw,4.75rem)] font-medium leading-[0.97] tracking-[-0.02em] text-[var(--tray-ink)]"
@@ -41,11 +79,11 @@ export function TrayHero() {
             </span>
           </h1>
 
-          <motion.p
-            className="tl-hero-rise-delay mt-6 max-w-[40ch] font-bricolage text-[1rem] leading-[1.65] text-[var(--tray-muted)]"
-          >
-            One queue for every counter. Kitchen, student, and admin stay on the same order — right through the lunch rush.
-          </motion.p>
+          <BlurFade delay={0.28}>
+            <p className="mt-6 max-w-[40ch] font-bricolage text-[1rem] leading-[1.65] text-[var(--tray-muted)]">
+              One queue for every counter. Kitchen, student, and admin stay on the same order — right through the lunch rush.
+            </p>
+          </BlurFade>
 
           <motion.ul
             className="mt-9 divide-y divide-[var(--tray-border)] border-y border-[var(--tray-border)]"
@@ -75,11 +113,9 @@ export function TrayHero() {
             ))}
           </motion.ul>
 
-          <motion.div
+          <BlurFade
+            delay={0.42}
             className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.42, ease: rowEase, delay: 0.28 }}
           >
             <MotionCTA
               href="#portals"
@@ -95,7 +131,7 @@ export function TrayHero() {
             >
               I run a canteen
             </MotionCTA>
-          </motion.div>
+          </BlurFade>
 
           <motion.a
             href="#portals"
@@ -113,6 +149,7 @@ export function TrayHero() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, ease: rowEase, delay: 0.14 }}
+          style={reduced ? undefined : { y: visualY }}
         >
           <div className="border-2 border-[var(--tray-ink)] bg-[var(--tray-cream)] p-1 shadow-[4px_4px_0_var(--tray-shadow)]">
             <div className="border-b border-dashed border-[var(--tray-border-strong)] px-3 py-2">

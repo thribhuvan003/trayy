@@ -392,14 +392,31 @@ export function PiranhaPortalsSection() {
       if (cards.length) {
         gsap.fromTo(
           cards,
-          { y: 60, opacity: 0 },
+          { y: 60, opacity: 0, filter: "blur(8px)" },
           {
             y: 0,
             opacity: 1,
+            filter: "blur(0px)",
             duration: 0.9,
             stagger: 0.12,
             ease: "power3.out",
             scrollTrigger: { trigger: root, start: "top 75%" },
+          }
+        );
+      }
+
+      const copy = root.querySelector("[data-portals-copy]");
+      if (copy) {
+        gsap.fromTo(
+          copy,
+          { opacity: 0, x: 24 },
+          {
+            opacity: 1,
+            x: 0,
+            duration: 0.65,
+            ease: "power3.out",
+            delay: 0.18,
+            scrollTrigger: { trigger: copy, start: "top 80%" },
           }
         );
       }
@@ -459,7 +476,7 @@ export function PiranhaPortalsSection() {
           </div>
 
           {/* Right: descriptive copy + mono status detail, bottom-aligned */}
-          <div className="flex flex-col gap-6 lg:col-span-5">
+          <div className="flex flex-col gap-6 lg:col-span-5" data-portals-copy>
             <p
               className="text-[1.05rem] leading-8 opacity-70"
               style={{ fontFamily: "var(--font-hero-ui)" }}

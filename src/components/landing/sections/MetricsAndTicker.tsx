@@ -104,7 +104,14 @@ function OdoNumber({ value }: { value: number }) {
   );
 }
 
+const HEADING_LINE = {
+  hidden: { y: "110%" },
+  show: { y: "0%", transition: { duration: 0.65, ease: ODO_EASE } },
+} as const;
+
 export function CampusTicker() {
+  const reduced = useReducedMotion();
+
   const trackGroup = (
     <span className="flex shrink-0 items-center gap-10 pr-10">
       {MARQUEE_ITEMS.map((item) => (
@@ -127,19 +134,53 @@ export function CampusTicker() {
         <div className="mx-auto max-w-7xl py-[var(--section-y)] lg:py-[var(--section-y-lg)]">
           <div className="grid gap-10 lg:grid-cols-[minmax(0,0.42fr)_1px_minmax(0,1fr)] lg:items-start lg:gap-10">
             <header>
-              <p className="font-code text-[0.65rem] uppercase tracking-[0.16em] text-[var(--tray-muted)]">
-                Lunch window
-              </p>
-              <h2
-                id="stats-heading"
-                className="mt-3 font-cormorant text-[clamp(2rem,4vw,3.25rem)] font-medium leading-[1.02] tracking-[-0.02em] text-[var(--tray-ink)]"
+              <motion.p
+                className="font-code text-[0.65rem] uppercase tracking-[0.16em] text-[var(--tray-muted)]"
+                initial={reduced ? undefined : { opacity: 0, y: 8, filter: "blur(4px)" }}
+                whileInView={reduced ? undefined : { opacity: 1, y: 0, filter: "blur(0px)" }}
+                viewport={{ once: true, amount: 0.6 }}
+                transition={{ duration: 0.5, delay: 0.05, ease }}
               >
-                What changes between
-                <span className="text-[var(--tray-clay)]"> 12:30 and 1:15.</span>
-              </h2>
-              <p className="mt-4 max-w-xs font-bricolage text-[0.94rem] leading-[1.6] text-[var(--tray-muted)]">
+                Lunch window
+              </motion.p>
+              {reduced ? (
+                <h2
+                  id="stats-heading"
+                  className="mt-3 font-cormorant text-[clamp(2rem,4vw,3.25rem)] font-medium leading-[1.02] tracking-[-0.02em] text-[var(--tray-ink)]"
+                >
+                  What changes between
+                  <span className="text-[var(--tray-clay)]"> 12:30 and 1:15.</span>
+                </h2>
+              ) : (
+                <motion.h2
+                  id="stats-heading"
+                  className="mt-3 font-cormorant text-[clamp(2rem,4vw,3.25rem)] font-medium leading-[1.02] tracking-[-0.02em] text-[var(--tray-ink)]"
+                  initial="hidden"
+                  whileInView="show"
+                  viewport={{ once: true, amount: 0.5 }}
+                  variants={{ hidden: {}, show: { transition: { staggerChildren: 0.12 } } }}
+                >
+                  <span className="block overflow-hidden pb-[0.04em]">
+                    <motion.span className="block" variants={HEADING_LINE}>
+                      What changes between
+                    </motion.span>
+                  </span>
+                  <span className="block overflow-hidden pb-[0.04em]">
+                    <motion.span className="block text-[var(--tray-clay)]" variants={HEADING_LINE}>
+                      12:30 and 1:15.
+                    </motion.span>
+                  </span>
+                </motion.h2>
+              )}
+              <motion.p
+                className="mt-4 max-w-xs font-bricolage text-[0.94rem] leading-[1.6] text-[var(--tray-muted)]"
+                initial={reduced ? undefined : { opacity: 0, y: 10, filter: "blur(4px)" }}
+                whileInView={reduced ? undefined : { opacity: 1, y: 0, filter: "blur(0px)" }}
+                viewport={{ once: true, amount: 0.6 }}
+                transition={{ duration: 0.55, delay: 0.25, ease }}
+              >
                 Peak-hour handoff on a real campus — not demo vanity metrics.
-              </p>
+              </motion.p>
               <p className="mt-10 font-code text-[0.62rem] uppercase tracking-[0.18em] text-[var(--tray-muted)]/70">
                 Last synced · live demo
               </p>

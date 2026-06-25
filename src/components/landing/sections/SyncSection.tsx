@@ -51,13 +51,38 @@ export function SyncSection() {
               </div>
             </RevealItem>
 
-            <RevealItem>
+            {reduce ? (
               <h2 className="mt-5 font-editorial text-[clamp(2.2rem,4.6vw,3.6rem)] font-normal leading-[1.04] tracking-[-0.03em] text-[var(--tray-ink)]">
                 One change.
                 <br />
                 <span className="text-[var(--tray-clay)]">Every screen.</span>
               </h2>
-            </RevealItem>
+            ) : (
+              <motion.h2
+                className="mt-5 font-editorial text-[clamp(2.2rem,4.6vw,3.6rem)] font-normal leading-[1.04] tracking-[-0.03em] text-[var(--tray-ink)]"
+                variants={{ hidden: {}, show: { transition: { staggerChildren: 0.14 } } }}
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true, amount: 0.5 }}
+              >
+                <span className="block overflow-hidden pb-[0.04em]">
+                  <motion.span
+                    className="block"
+                    variants={{ hidden: { y: "110%" }, show: { y: "0%", transition: { duration: 0.68, ease: [0.16, 1, 0.3, 1] } } }}
+                  >
+                    One change.
+                  </motion.span>
+                </span>
+                <span className="block overflow-hidden pb-[0.04em]">
+                  <motion.span
+                    className="block text-[var(--tray-clay)]"
+                    variants={{ hidden: { y: "110%" }, show: { y: "0%", transition: { duration: 0.68, ease: [0.16, 1, 0.3, 1] } } }}
+                  >
+                    Every screen.
+                  </motion.span>
+                </span>
+              </motion.h2>
+            )}
 
             <RevealItem>
               <p className="mt-5 max-w-sm font-bricolage text-[0.96rem] leading-[1.65] text-[var(--tray-muted)]">

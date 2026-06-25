@@ -152,20 +152,20 @@ export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
 
       <main id="main">
         <TrayHero />
-        <SectionFx>
+        <SectionFx variant="rise">
           <CampusTicker />
         </SectionFx>
-        <SectionFx>
+        <SectionFx variant="blur-rise">
           <PiranhaPortalsSection />
         </SectionFx>
         <CampusModelSection campusName={campusName} />
-        <SectionFx>
+        <SectionFx variant="slide-left">
           <TrustSection />
         </SectionFx>
-        <SectionFx>
+        <SectionFx variant="slide-right">
           <SyncSection />
         </SectionFx>
-        <SectionFx>
+        <SectionFx variant="blur-rise">
           <ClosingSection />
         </SectionFx>
       </main>

@@ -122,6 +122,11 @@ export function TrustSection() {
             <motion.div
               variants={noteVar}
               className="mt-8 border border-dashed border-[var(--tray-border)] px-4 py-3.5"
+              whileHover={{
+                borderColor: "var(--tray-clay)",
+                x: 4,
+                transition: { duration: 0.22, ease: [0.22, 1, 0.36, 1] },
+              }}
             >
               <p className="font-code text-[0.68rem] uppercase leading-[1.7] tracking-[0.12em] text-[var(--tray-muted)]">
                 Tray does not hold student funds.

@@ -92,23 +92,38 @@ export const SectionReveal = React.forwardRef<HTMLElement, SectionRevealProps>(f
 // ── SectionFx — connective section-to-section entrance ────────────────────────
 // Rises + fades a whole section into view as you scroll. Layered under each
 // section's own signature effect to make the page feel alive between sections.
+type SectionFxVariant = "rise" | "slide-left" | "slide-right" | "blur-rise";
+
+const sectionFxVariants: Record<SectionFxVariant, Variants> = {
+  rise: { hidden: { opacity: 0, y: 40 }, show: { opacity: 1, y: 0 } },
+  "slide-left": { hidden: { opacity: 0, x: -32 }, show: { opacity: 1, x: 0 } },
+  "slide-right": { hidden: { opacity: 0, x: 32 }, show: { opacity: 1, x: 0 } },
+  "blur-rise": {
+    hidden: { opacity: 0, y: 36, filter: "blur(6px)" },
+    show: { opacity: 1, y: 0, filter: "blur(0px)" },
+  },
+};
+
 export function SectionFx({
   children,
   className,
   amount = 0.18,
+  variant = "rise",
 }: {
   children: ReactNode;
   className?: string;
   amount?: number;
+  variant?: SectionFxVariant;
 }) {
   const reduced = useReducedMotion();
   return (
     <motion.div
       className={className}
-      initial={reduced ? false : { opacity: 0, y: 40 }}
-      whileInView={reduced ? undefined : { opacity: 1, y: 0 }}
+      variants={sectionFxVariants[variant]}
+      initial={reduced ? false : "hidden"}
+      whileInView={reduced ? undefined : "show"}
       viewport={{ once: true, amount }}
-      transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.72, ease: [0.16, 1, 0.3, 1] }}
     >
       {children}
     </motion.div>
