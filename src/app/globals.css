@@ -855,6 +855,20 @@ select option {
   opacity: 1;
 }
 
+/* ── Intro curtain no-JS failsafe ── */
+/* If JS never hydrates, the curtain auto-lifts at 4s so it can't trap the page.
+   On the normal path the component unmounts (~1.5s) long before this fires. */
+#intro-curtain {
+  animation: tl-intro-failsafe 0s linear 4s forwards;
+}
+@keyframes tl-intro-failsafe {
+  to {
+    transform: translateY(-100%);
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
 /* ── Preloader FOUC/Hydration Flash Guard ── */
 .tray-landing-wrapper {
   opacity: 1;
