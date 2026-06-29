@@ -38,7 +38,12 @@ export default async function GetStartedPage({
         },
       }
     );
-    const { data: { session: _gsSession } } = await supabase.auth.getSession();
+    const { data: { session: _gsSession } } = await Promise.race([
+      supabase.auth.getSession(),
+      new Promise<Awaited<ReturnType<typeof supabase.auth.getSession>>>((resolve) =>
+        setTimeout(() => resolve({ data: { session: null }, error: null }), 1200),
+      ),
+    ]);
     if (_gsSession?.user) isSignedIn = true;
   } catch {
     // Show wizard anyway

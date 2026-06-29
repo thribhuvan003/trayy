@@ -45,7 +45,25 @@
 
   function getSpecials(canteenId) {
     try {
-      return JSON.parse(localStorage.getItem(specialsKey(canteenId)) || "[]");
+      var list = JSON.parse(localStorage.getItem(specialsKey(canteenId)) || "[]");
+      if (!Array.isArray(list)) return [];
+      var now = Date.now();
+      return list.map(function (s, i) {
+        var addedAt = Number(s && s.addedAt);
+        if (!addedAt || now - addedAt > 90 * 60 * 1000 || addedAt > now) {
+          addedAt = now - (6 + i * 8) * 60 * 1000;
+        }
+        return {
+          id: String((s && s.id) || ("sp-" + i)),
+          name: String((s && s.name) || "Chef special"),
+          desc: String((s && s.desc) || "Fresh counter special"),
+          price: Number((s && s.price) || 120),
+          prep: Number((s && s.prep) || 6),
+          diet: (s && s.diet) === "nonveg" ? "nonveg" : "veg",
+          icon: String((s && s.icon) || ((s && s.name) ? s.name.charAt(0) : "S")).slice(0, 2).toUpperCase(),
+          addedAt: addedAt,
+        };
+      });
     } catch (_) {
       return [];
     }

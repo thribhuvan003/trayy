@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { ResolvedTenant } from "@/lib/tenant";
 import { LandingIntro } from "@/components/landing/LandingIntro";
 import { LandingMotion } from "@/components/landing/landing-motion";
+import { BuiltWithSection } from "@/components/landing/sections/BuiltWithSection";
 import { CampusModelSection } from "@/components/landing/sections/CampusModelSection";
 import { ClosingSection } from "@/components/landing/sections/ClosingSection";
 import { CampusTicker } from "@/components/landing/sections/MetricsAndTicker";
@@ -152,19 +153,29 @@ export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
 
       <main id="main">
         <TrayHero />
+        <div className="tl-section-bridge" aria-hidden />
         <SectionFx variant="rise">
           <CampusTicker />
         </SectionFx>
+        <div className="tl-section-bridge" aria-hidden />
         <SectionFx variant="blur-rise">
           <PiranhaPortalsSection />
         </SectionFx>
+        <div className="tl-section-bridge" aria-hidden />
         <CampusModelSection campusName={campusName} />
+        <div className="tl-section-bridge" aria-hidden />
         <SectionFx variant="slide-left">
           <TrustSection />
         </SectionFx>
+        <div className="tl-section-bridge" aria-hidden />
         <SectionFx variant="slide-right">
           <SyncSection />
         </SectionFx>
+        <div className="tl-section-bridge" aria-hidden />
+        <SectionFx variant="blur-rise">
+          <BuiltWithSection />
+        </SectionFx>
+        <div className="tl-section-bridge" aria-hidden />
         <SectionFx variant="blur-rise">
           <ClosingSection />
         </SectionFx>
@@ -212,9 +223,9 @@ export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
               <p className="font-code mb-5 text-[0.85rem] font-bold uppercase tracking-[0.22em] text-[var(--tray-muted)]">Product</p>
               <ul className="flex flex-col gap-3 text-[1.05rem]">
                 {[
-                  ["Student view", "/login?role=student"],
-                  ["Kitchen view", "/login?role=kitchen"],
-                  ["Admin view", "/login?role=owner"],
+                  ["Student view", "/demo/student.html"],
+                  ["Kitchen view", "/demo/kitchen.html"],
+                  ["Admin view", "/demo/admin.html"],
                   ["Get started", "/get-started"],
                 ].map(([label, href]) => (
                   <li key={label}>
@@ -231,9 +242,9 @@ export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
               <p className="font-code mb-5 text-[0.85rem] font-bold uppercase tracking-[0.22em] text-[var(--tray-muted)]">Resources</p>
               <ul className="flex flex-col gap-3 text-[1.05rem]">
                 {[
-                  ["README", "https://github.com/thribhuvan003/Tray/blob/main/README.md"],
-                  ["Architecture", "https://github.com/thribhuvan003/Tray/tree/main/docs/adr"],
-                  ["Security", "https://github.com/thribhuvan003/Tray/blob/main/SECURITY.md"],
+                  ["README", "https://github.com/thribhuvan003/trayy/blob/main/README.md"],
+                  ["Architecture", "https://github.com/thribhuvan003/trayy/tree/main/docs/adr"],
+                  ["Security", "https://github.com/thribhuvan003/trayy/blob/main/SECURITY.md"],
                 ].map(([label, href]) => (
                   <li key={label}>
                     <a href={href} target="_blank" rel="noreferrer" className="tl-footer-link-item opacity-75 font-semibold">

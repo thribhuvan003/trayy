@@ -81,7 +81,7 @@ export function TrustSection() {
   const viewport = { once: true, amount: 0.2 } as const;
 
   return (
-    <section id="trust" className="px-5 py-[var(--section-y)] sm:px-8 lg:px-10 lg:py-[var(--section-y-lg)]">
+    <section id="trust" className="tl-trust px-5 py-[var(--section-y)] sm:px-8 lg:px-10 lg:py-[var(--section-y-lg)]">
       <div className="mx-auto max-w-7xl">
         <div className="grid gap-12 lg:grid-cols-[minmax(0,0.42fr)_minmax(0,1fr)] lg:items-start lg:gap-16">
           {/* ── Heading column ── */}
@@ -96,7 +96,7 @@ export function TrustSection() {
               variants={eyebrowVar}
               className="font-code text-[0.65rem] uppercase tracking-[0.16em] text-[var(--tray-muted)]"
             >
-              Money & data
+              Controls / money / data
             </motion.p>
 
             <motion.div
@@ -108,15 +108,15 @@ export function TrustSection() {
               variants={headingVar}
               className="mt-5 max-w-[14ch] font-cormorant text-[clamp(2.2rem,4.5vw,3.5rem)] font-normal leading-[1.05] tracking-[-0.03em] text-[var(--tray-ink)]"
             >
-              Built for auditors.
-              <span className="text-[var(--tray-clay)]"> Used by hungry students.</span>
+              Serious under the hood.
+              <span className="text-[var(--tray-clay)]"> Fast at the counter.</span>
             </motion.h2>
 
             <motion.p
               variants={noteVar}
               className="mt-5 max-w-sm font-bricolage text-[0.96rem] leading-[1.65] text-[var(--tray-muted)]"
             >
-              Deans ask where UPI lands. IT asks about tenant boundaries. Canteen managers ask about margins.
+              Recruiters should not have to guess if this is real software. The landing shows payment flow, tenant boundaries, and operational ownership directly.
             </motion.p>
 
             <motion.div
@@ -131,7 +131,7 @@ export function TrustSection() {
               <p className="font-code text-[0.68rem] uppercase leading-[1.7] tracking-[0.12em] text-[var(--tray-muted)]">
                 Tray does not hold student funds.
                 <br />
-                Settlements go merchant → canteen UPI.
+                Settlements go merchant / canteen UPI.
               </p>
             </motion.div>
           </motion.aside>

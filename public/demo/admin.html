@@ -707,6 +707,10 @@ let feedItems = [];
 let feedStudents = [];
 let auditEvents = [];
 let orderCounter = 2425;
+const bootCanteen = TD.getCanteen(currentTenantId);
+feedItems = bootCanteen.feedItems.slice();
+feedStudents = bootCanteen.studentRows.map(function (s) { return s.name; });
+orderCounter = bootCanteen.counterBase || orderCounter;
 
 const $ = (q) => document.querySelector(q);
 const $$ = (q) => document.querySelectorAll(q);
@@ -846,7 +850,7 @@ const EVENTS = [
 ];
 function nextId(){ return ++orderCounter; }
 function prevId(n=1){ return orderCounter - n; }
-function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function pick(arr, fallback){ return arr && arr.length ? arr[Math.floor(Math.random()*arr.length)] : fallback; }
 function fmtT(d){ return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0'); }
 
 const ICON_LABELS = {order:'NEW',pay:'PAY',prep:'PREP',ready:'READY',handover:'DONE',menu:'MENU',reject:'WARN'};

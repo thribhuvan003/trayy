@@ -142,6 +142,12 @@ export function CampusModelSection({ campusName }: { campusName?: string | null 
   const roleRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const isAnyHovered = hoveredRole !== null || hoveredCanteen !== null;
+  const activeSummary =
+    hoveredRole !== null
+      ? `${ROLES[hoveredRole].role} can reach ${ROLE_ACCESS_MAP[hoveredRole].length} counter${ROLE_ACCESS_MAP[hoveredRole].length === 1 ? "" : "s"}.`
+      : hoveredCanteen !== null
+        ? `${CANTEENS[hoveredCanteen].name} is visible to ${CANTEEN_ACCESS_MAP[hoveredCanteen].length} role${CANTEEN_ACCESS_MAP[hoveredCanteen].length === 1 ? "" : "s"}.`
+        : "Move across the map to trace tenant boundaries.";
 
   const isCanteenActive = (cIdx: number) => {
     if (hoveredCanteen === cIdx) return true;
@@ -286,6 +292,24 @@ export function CampusModelSection({ campusName }: { campusName?: string | null 
           </RevealItem>
         </div>
 
+        <RevealItem>
+          <motion.div
+            className="mb-8 inline-flex max-w-full items-center gap-3 rounded-full border border-[var(--tray-border)] bg-[var(--tray-surface-strong)] px-4 py-2.5 lg:mb-10"
+            animate={{ borderColor: isAnyHovered ? "var(--tray-clay)" : "var(--tray-border)" }}
+            transition={{ duration: 0.2 }}
+          >
+            <motion.span
+              className="h-2 w-2 rounded-full bg-[var(--tray-clay)]"
+              animate={prefersReducedMotion ? undefined : { scale: isAnyHovered ? [1, 1.45, 1] : 1 }}
+              transition={{ duration: 0.55, repeat: isAnyHovered ? Infinity : 0, repeatDelay: 0.7 }}
+              aria-hidden
+            />
+            <span className="font-code text-[0.62rem] uppercase tracking-[0.08em] text-[var(--tray-muted)]">
+              {activeSummary}
+            </span>
+          </motion.div>
+        </RevealItem>
+
         <div
           ref={mapRef}
           className="relative grid gap-10 lg:grid-cols-[1fr_1.05fr] lg:gap-16"
@@ -341,6 +365,9 @@ export function CampusModelSection({ campusName }: { campusName?: string | null 
                     }}
                     onMouseEnter={() => setHoveredCanteen(c.id)}
                     onMouseLeave={() => setHoveredCanteen(null)}
+                    onFocus={() => setHoveredCanteen(c.id)}
+                    onBlur={() => setHoveredCanteen(null)}
+                    onClick={() => setHoveredCanteen((current) => current === c.id ? null : c.id)}
                     animate={{
                       y: active && isAnyHovered ? -3 : 0,
                       opacity: dimmed ? 0.32 : 1,
@@ -350,8 +377,11 @@ export function CampusModelSection({ campusName }: { campusName?: string | null 
                           : "var(--tray-border)",
                     }}
                     transition={{ type: "spring", stiffness: 380, damping: 32 }}
-                    className="relative flex min-h-[132px] cursor-pointer flex-col justify-between rounded-lg border bg-[var(--tray-surface-strong)] p-4 select-none"
+                    className="relative flex min-h-[132px] cursor-pointer flex-col justify-between rounded-lg border bg-[var(--tray-surface-strong)] p-4 select-none outline-none focus-visible:ring-2 focus-visible:ring-[var(--tray-clay)]"
                     style={{ borderStyle: "solid", borderWidth: "1px" }}
+                    tabIndex={0}
+                    role="button"
+                    aria-pressed={hoveredCanteen === c.id}
                   >
                     <div className="flex items-start justify-between">
                       <div className="font-code text-[0.62rem] font-bold uppercase tracking-[0.14em] text-[var(--tray-clay)]">
@@ -400,6 +430,9 @@ export function CampusModelSection({ campusName }: { campusName?: string | null 
                     }}
                     onMouseEnter={() => setHoveredRole(r.id)}
                     onMouseLeave={() => setHoveredRole(null)}
+                    onFocus={() => setHoveredRole(r.id)}
+                    onBlur={() => setHoveredRole(null)}
+                    onClick={() => setHoveredRole((current) => current === r.id ? null : r.id)}
                     animate={{
                       x: active && isAnyHovered ? 4 : 0,
                       opacity: dimmed ? 0.32 : 1,
@@ -411,8 +444,11 @@ export function CampusModelSection({ campusName }: { campusName?: string | null 
                           : "var(--tray-surface-strong)",
                     }}
                     transition={{ type: "spring", stiffness: 380, damping: 32 }}
-                    className="relative cursor-pointer overflow-hidden rounded-lg border p-5 select-none"
+                    className="relative cursor-pointer overflow-hidden rounded-lg border p-5 select-none outline-none focus-visible:ring-2 focus-visible:ring-[var(--tray-clay)]"
                     style={{ borderStyle: "solid", borderWidth: "1px" }}
+                    tabIndex={0}
+                    role="button"
+                    aria-pressed={hoveredRole === r.id}
                   >
                     <div
                       className="absolute bottom-0 left-0 top-0 w-[3px]"

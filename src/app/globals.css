@@ -577,18 +577,19 @@ select option {
    ════════════════════════════════════════════════════════════════════ */
 
 :root {
-  --tray-bg:      #f4f0e6;
-  --tray-surface: #ebe6da;
-  --tray-surface-strong: #faf8f3;
-  --tray-ink:     #12151a;
-  --tray-muted:   #5c636b;
-  --tray-accent:  #1a5c45;
-  --tray-clay:    #9a4e28;
-  --tray-green:   #1a5c45;
-  --tray-border:  rgba(18, 21, 26, 0.1);
-  --tray-border-strong: rgba(18, 21, 26, 0.18);
-  --tray-cream:   #faf8f3;
-  --tray-shadow:  rgba(18, 21, 26, 0.06);
+  --tray-bg:      #eef2ed;
+  --tray-surface: #dde6df;
+  --tray-surface-strong: #fbfcf8;
+  --tray-ink:     #101419;
+  --tray-muted:   #56626a;
+  --tray-accent:  #155f47;
+  --tray-clay:    #c14822;
+  --tray-blue:    #244ed8;
+  --tray-green:   #155f47;
+  --tray-border:  rgba(16, 20, 25, 0.11);
+  --tray-border-strong: rgba(16, 20, 25, 0.22);
+  --tray-cream:   #fbfcf8;
+  --tray-shadow:  rgba(16, 20, 25, 0.08);
 
   --font-display-cond: var(--font-dm-serif), Georgia, serif;
   --font-editorial: var(--font-dm-serif), Georgia, serif;
@@ -604,7 +605,7 @@ select option {
   --font-hero-display: var(--font-clash), system-ui, sans-serif;
   --font-hero-accent:  var(--font-clash), system-ui, sans-serif;
   --font-hero-ui:      var(--font-switzer), system-ui, sans-serif;
-  --font-hero-mono:    var(--font-space-mono), ui-monospace, monospace;
+  --font-hero-mono:    var(--font-dm-mono), ui-monospace, monospace;
   --font-hero-punch:   var(--font-clash), system-ui, sans-serif;
   --font-editorial:    var(--font-hero-display);
   --font-ui:           var(--font-hero-ui);
@@ -770,16 +771,144 @@ select option {
 .tray-page {
   min-height: 100svh;
   background:
-    linear-gradient(180deg, rgba(26, 92, 69, 0.04) 0%, transparent 18rem),
+    linear-gradient(180deg, rgba(36, 78, 216, 0.07) 0%, transparent 19rem),
+    linear-gradient(120deg, transparent 0%, rgba(21, 95, 71, 0.08) 48%, transparent 78%),
     repeating-linear-gradient(
       90deg,
-      rgba(18, 21, 26, 0.018) 0,
-      rgba(18, 21, 26, 0.018) 1px,
+      rgba(16, 20, 25, 0.026) 0,
+      rgba(16, 20, 25, 0.026) 1px,
       transparent 1px,
-      transparent 72px
+      transparent 80px
     ),
     var(--tray-bg);
   color: var(--tray-ink);
+}
+
+.tl-section-bridge {
+  position: relative;
+  height: 28px;
+  margin: -14px auto;
+  max-width: 80rem;
+  pointer-events: none;
+}
+.tl-section-bridge::before {
+  content: "";
+  position: absolute;
+  left: 1.25rem;
+  right: 1.25rem;
+  top: 50%;
+  height: 1px;
+  background:
+    linear-gradient(90deg, transparent, var(--tray-border-strong) 16%, var(--tray-clay) 50%, var(--tray-border-strong) 84%, transparent);
+}
+.tl-section-bridge::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  border: 1px solid var(--tray-clay);
+  background: var(--tray-bg);
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+/* Section-specific type direction: each band gets a distinct voice while
+   retaining the same spacing/grid system. */
+.tl-hero {
+  --font-editorial: var(--font-clash), system-ui, sans-serif;
+  --font-ui: var(--font-switzer), system-ui, sans-serif;
+  --font-code: var(--font-dm-mono), ui-monospace, monospace;
+}
+.tl-hero h1 {
+  letter-spacing: -0.035em;
+}
+.tl-hero [style*="tabular-nums"],
+.tl-hero .font-code {
+  font-variant-numeric: tabular-nums;
+}
+
+.tl-metrics {
+  --font-editorial: var(--font-newsreader), ui-serif, Georgia;
+  --font-ui: var(--font-hanken), system-ui, sans-serif;
+  --font-code: var(--font-space-mono), ui-monospace, monospace;
+}
+.tl-metrics .font-cormorant {
+  font-family: var(--font-newsreader), ui-serif, Georgia !important;
+}
+.tl-metrics .font-bricolage {
+  font-family: var(--font-hanken), system-ui, sans-serif !important;
+}
+.tl-metrics p {
+  font-variant-numeric: tabular-nums;
+}
+
+.tl-trust {
+  --font-editorial: var(--font-unbounded), system-ui, sans-serif;
+  --font-ui: var(--font-jakarta), system-ui, sans-serif;
+  --font-code: var(--font-dm-mono), ui-monospace, monospace;
+}
+.tl-trust .font-cormorant {
+  font-family: var(--font-unbounded), system-ui, sans-serif !important;
+}
+.tl-trust .font-bricolage {
+  font-family: var(--font-jakarta), system-ui, sans-serif !important;
+}
+.tl-trust h2 {
+  letter-spacing: -0.045em;
+}
+
+.tl-sync {
+  --font-editorial: var(--font-krona-one), system-ui, sans-serif;
+  --font-ui: var(--font-switzer), system-ui, sans-serif;
+  --font-code: var(--font-jetbrains), ui-monospace, monospace;
+}
+.tl-sync h2 {
+  letter-spacing: -0.015em;
+}
+
+.tl-kitchen-proof {
+  --font-editorial: var(--font-newsreader), ui-serif, Georgia;
+  --font-ui: var(--font-hanken), system-ui, sans-serif;
+  --font-code: var(--font-dm-mono), ui-monospace, monospace;
+}
+.tl-built-with {
+  --font-editorial: var(--font-unbounded), system-ui, sans-serif;
+  --font-ui: var(--font-jakarta), system-ui, sans-serif;
+  --font-code: var(--font-jetbrains), ui-monospace, monospace;
+  background:
+    radial-gradient(circle at 12% 20%, rgba(193, 72, 34, 0.08), transparent 26rem),
+    linear-gradient(180deg, var(--tray-cream) 0%, var(--tray-bg) 100%);
+}
+
+.tl-closing {
+  --font-editorial: var(--font-barlow), system-ui, sans-serif;
+  --font-ui: var(--font-hanken), system-ui, sans-serif;
+  --font-code: var(--font-space-mono), ui-monospace, monospace;
+}
+.tl-closing h2 {
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+.tray-landing :is(h1, h2, h3, p, a, button, span) {
+  text-wrap: pretty;
+}
+.tray-landing :is(.font-code, .tl-nav-link) {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+  .tray-landing {
+    --section-y: 2.75rem;
+  }
+  .tl-section-bridge {
+    height: 20px;
+    margin: -10px auto;
+  }
+  .tl-hero h1 {
+    letter-spacing: -0.028em;
+  }
 }
 
 /* ── Utility classes ─────────────────────────────────────────────── */

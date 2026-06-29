@@ -62,11 +62,11 @@ function VelocityMarquee({
 }
 
 const MARQUEE_ITEMS = [
-  "12:47 PM · QUEUE LIVE",
-  "UPI CONFIRMED · OTP READY",
-  "0% COMMISSION · DIRECT SETTLEMENT",
-  "300MS · MENU SYNC",
-  "NORTH BLOCK · MAIN CANTEEN",
+  "12:47 PM / QUEUE LIVE",
+  "UPI CONFIRMED / OTP READY",
+  "0% COMMISSION / DIRECT SETTLEMENT",
+  "300MS / MENU SYNC",
+  "NORTH BLOCK / MAIN CANTEEN",
 ] as const;
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -127,7 +127,7 @@ export function CampusTicker() {
   );
 
   return (
-    <section aria-labelledby="stats-heading" className="relative border-y border-[var(--tray-border)]">
+    <section aria-labelledby="stats-heading" className="tl-metrics relative border-y border-[var(--tray-border)] bg-[color-mix(in_srgb,var(--tray-surface)_50%,transparent)]">
       <VelocityMarquee>{trackGroup}</VelocityMarquee>
 
       <div className="px-5 sm:px-8 lg:px-10">
@@ -146,14 +146,16 @@ export function CampusTicker() {
               {reduced ? (
                 <h2
                   id="stats-heading"
+                  aria-label="What the lunch rush does to a canteen."
                   className="mt-3 font-cormorant text-[clamp(2rem,4vw,3.25rem)] font-medium leading-[1.02] tracking-[-0.02em] text-[var(--tray-ink)]"
                 >
-                  What changes between
-                  <span className="text-[var(--tray-clay)]"> 12:30 and 1:15.</span>
+                  What the lunch rush
+                  <span className="text-[var(--tray-clay)]"> does to a canteen.</span>
                 </h2>
               ) : (
                 <motion.h2
                   id="stats-heading"
+                  aria-label="What the lunch rush does to a canteen."
                   className="mt-3 font-cormorant text-[clamp(2rem,4vw,3.25rem)] font-medium leading-[1.02] tracking-[-0.02em] text-[var(--tray-ink)]"
                   initial="hidden"
                   whileInView="show"
@@ -162,12 +164,12 @@ export function CampusTicker() {
                 >
                   <span className="block overflow-hidden pb-[0.04em]">
                     <motion.span className="block" variants={HEADING_LINE}>
-                      What changes between
+                      What the lunch rush
                     </motion.span>
                   </span>
                   <span className="block overflow-hidden pb-[0.04em]">
                     <motion.span className="block text-[var(--tray-clay)]" variants={HEADING_LINE}>
-                      12:30 and 1:15.
+                      does to a canteen.
                     </motion.span>
                   </span>
                 </motion.h2>
@@ -179,10 +181,10 @@ export function CampusTicker() {
                 viewport={{ once: true, amount: 0.6 }}
                 transition={{ duration: 0.55, delay: 0.25, ease }}
               >
-                Peak-hour handoff on a real campus — not demo vanity metrics.
+                Peak-hour handoff on a campus model: payment, prep, pickup, and admin visibility moving as one state.
               </motion.p>
               <p className="mt-10 font-code text-[0.62rem] uppercase tracking-[0.18em] text-[var(--tray-muted)]/70">
-                Last synced · live demo
+                Local demo / static data / live interactions
               </p>
             </header>
 
@@ -210,10 +212,10 @@ export function CampusTicker() {
                 </p>
                 <div className="pb-1.5">
                   <p className="font-bricolage text-[1rem] font-semibold tracking-[-0.02em] text-[var(--tray-ink)]">
-                    back in your break
+                    saved from counter waiting
                   </p>
                   <p className="mt-1 max-w-[22ch] font-code text-[0.68rem] uppercase leading-[1.5] tracking-[0.14em] text-[var(--tray-muted)]">
-                    vs standing in line at North block, peak day
+                    modeled as a peak-window campus flow
                   </p>
                 </div>
               </motion.article>
@@ -249,7 +251,7 @@ export function CampusTicker() {
                   </p>
                   <p className="mt-2 font-bricolage text-[0.92rem] font-semibold text-[var(--tray-ink)]">menu sync</p>
                   <p className="mt-1 font-code text-[0.65rem] uppercase tracking-[0.14em] text-[var(--tray-muted)]">
-                    kitchen write → every student screen
+                    kitchen write / every student screen
                   </p>
                 </motion.article>
 

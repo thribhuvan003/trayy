@@ -23,12 +23,10 @@ const wordRise: Variants = {
 
 // "The demos answer most of it." — "answer" carries the clay accent.
 const HEADLINE: { text: string; accent?: boolean }[] = [
-  { text: "The" },
-  { text: "demos" },
-  { text: "answer", accent: true },
-  { text: "most" },
-  { text: "of" },
-  { text: "it." },
+  { text: "Open" },
+  { text: "the" },
+  { text: "working", accent: true },
+  { text: "product." },
 ];
 
 export function ClosingSection() {
@@ -60,11 +58,12 @@ export function ClosingSection() {
 
             {reduce ? (
               <h2 className="mt-4 font-editorial text-[clamp(1.8rem,3.6vw,2.6rem)] font-semibold leading-[1.08] tracking-[-0.02em] text-[var(--tray-ink)]">
-                The demos <span className="text-[var(--tray-clay)]">answer</span> most of it.
+                Open the <span className="text-[var(--tray-clay)]">working</span> product.
               </h2>
             ) : (
               <motion.h2
                 variants={headlineGroup}
+                aria-label="Open the working product."
                 className="mt-4 flex flex-wrap font-editorial text-[clamp(1.8rem,3.6vw,2.6rem)] font-semibold leading-[1.08] tracking-[-0.02em] text-[var(--tray-ink)]"
               >
                 {HEADLINE.map((word, i) => (
@@ -82,7 +81,7 @@ export function ClosingSection() {
 
             <RevealItem>
               <p className="mt-4 text-[0.95rem] leading-[1.6] text-[var(--tray-muted)]">
-                Static campus data. No signup to explore student, kitchen, and admin views.
+                No signup needed. Inspect the student app, kitchen queue, and admin console as one connected campus flow.
               </p>
             </RevealItem>
           </div>

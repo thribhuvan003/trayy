@@ -36,7 +36,7 @@ export function SyncSection() {
       as="div"
       id="sync"
       ref={sectionRef}
-      className="px-5 py-[var(--section-y)] sm:px-8 lg:px-10 lg:py-[var(--section-y-lg)]"
+      className="tl-sync px-5 py-[var(--section-y)] sm:px-8 lg:px-10 lg:py-[var(--section-y-lg)]"
     >
       <div className="mx-auto max-w-7xl">
         <div className="grid gap-12 lg:grid-cols-[0.42fr_0.58fr] lg:items-center lg:gap-16">
@@ -46,19 +46,23 @@ export function SyncSection() {
               <div className="flex items-center gap-3">
                 <span className="h-px w-8 bg-[var(--tray-border-strong)]" aria-hidden />
                 <p className="font-code text-[0.68rem] tracking-[0.08em] text-[var(--tray-muted)]">
-                  Sync
+                  State propagation
                 </p>
               </div>
             </RevealItem>
 
             {reduce ? (
-              <h2 className="mt-5 font-editorial text-[clamp(2.2rem,4.6vw,3.6rem)] font-normal leading-[1.04] tracking-[-0.03em] text-[var(--tray-ink)]">
-                One change.
+              <h2
+                aria-label="One write. Every screen."
+                className="mt-5 font-editorial text-[clamp(2.2rem,4.6vw,3.6rem)] font-normal leading-[1.04] tracking-[-0.03em] text-[var(--tray-ink)]"
+              >
+                One write.
                 <br />
                 <span className="text-[var(--tray-clay)]">Every screen.</span>
               </h2>
             ) : (
               <motion.h2
+                aria-label="One write. Every screen."
                 className="mt-5 font-editorial text-[clamp(2.2rem,4.6vw,3.6rem)] font-normal leading-[1.04] tracking-[-0.03em] text-[var(--tray-ink)]"
                 variants={{ hidden: {}, show: { transition: { staggerChildren: 0.14 } } }}
                 initial="hidden"
@@ -70,7 +74,7 @@ export function SyncSection() {
                     className="block"
                     variants={{ hidden: { y: "110%" }, show: { y: "0%", transition: { duration: 0.68, ease: [0.16, 1, 0.3, 1] } } }}
                   >
-                    One change.
+                    One write.
                   </motion.span>
                 </span>
                 <span className="block overflow-hidden pb-[0.04em]">
@@ -87,13 +91,13 @@ export function SyncSection() {
             <RevealItem>
               <p className="mt-5 max-w-sm font-bricolage text-[0.96rem] leading-[1.65] text-[var(--tray-muted)]">
                 Mark a dish sold out in the kitchen. The student menu, live queue, and admin
-                totals update from the same write — no polling, no manual refresh.
+                totals move from the same write, so the product feels like one system.
               </p>
             </RevealItem>
 
             <RevealItem>
               <p className="mt-6 max-w-xs border-l-2 border-[var(--tray-clay)]/30 pl-4 font-code text-[0.62rem] leading-[1.7] tracking-[0.02em] text-[var(--tray-muted)]">
-                Supabase Realtime · Postgres row locks · tenant-scoped channels
+                Supabase Realtime / Postgres row locks / tenant-scoped channels
               </p>
             </RevealItem>
           </div>
