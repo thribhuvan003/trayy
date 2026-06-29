@@ -871,14 +871,34 @@ select option {
   --font-editorial: var(--font-newsreader), ui-serif, Georgia;
   --font-ui: var(--font-hanken), system-ui, sans-serif;
   --font-code: var(--font-dm-mono), ui-monospace, monospace;
+  background:
+    linear-gradient(120deg, rgba(16, 20, 25, 0.94), rgba(21, 95, 71, 0.92)),
+    var(--tray-ink);
 }
 .tl-built-with {
   --font-editorial: var(--font-unbounded), system-ui, sans-serif;
   --font-ui: var(--font-jakarta), system-ui, sans-serif;
   --font-code: var(--font-jetbrains), ui-monospace, monospace;
   background:
-    radial-gradient(circle at 12% 20%, rgba(193, 72, 34, 0.08), transparent 26rem),
-    linear-gradient(180deg, var(--tray-cream) 0%, var(--tray-bg) 100%);
+    linear-gradient(180deg, rgba(251, 252, 248, 0.78) 0%, rgba(238, 242, 237, 0.96) 100%),
+    repeating-linear-gradient(
+      90deg,
+      rgba(16, 20, 25, 0.025) 0,
+      rgba(16, 20, 25, 0.025) 1px,
+      transparent 1px,
+      transparent 80px
+    ),
+    var(--tray-bg);
+}
+@media (hover: none) {
+  .tl-built-with article > div {
+    transform: translateY(0);
+    opacity: 1;
+    filter: blur(0);
+  }
+  .tl-built-with article > span[aria-hidden] {
+    opacity: 0;
+  }
 }
 
 .tl-closing {
