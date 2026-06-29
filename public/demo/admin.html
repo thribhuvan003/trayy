@@ -370,6 +370,120 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .toast{position:fixed;bottom:24px;right:24px;background:var(--bg-3);border:1px solid var(--line-2);color:var(--ink);padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:10px;box-shadow:0 12px 32px rgba(0,0,0,.4);transform:translateY(20px);opacity:0;transition:all .35s cubic-bezier(.34,1.26,.64,1);z-index:50;pointer-events:none}
 .toast.show{transform:translateY(0);opacity:1}
 .toast .d{width:7px;height:7px;border-radius:50%;background:var(--lime)}
+
+/* Responsive admin shell */
+.main,.panel,.kpi-card,.dash-row>*{min-width:0}
+.panel:has(.table){overflow-x:auto}
+.panel:has(.table) .table{min-width:760px}
+
+@media (max-width:1180px){
+  .app{grid-template-columns:224px minmax(0,1fr)}
+  .main{padding-left:24px;padding-right:24px}
+  .kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dash-row.r1,.dash-row.r2{grid-template-columns:1fr}
+  .students-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+@media (max-width:900px){
+  body{overflow-x:hidden}
+  .app{display:block;min-width:0}
+  .sb{
+    position:relative;
+    height:auto;
+    max-height:none;
+    overflow:visible;
+    border-right:0;
+    border-bottom:1px solid var(--line);
+    padding:12px;
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:10px;
+  }
+  .sb-brand{padding:4px 4px 10px;margin:0;border-bottom:0}
+  .sb-tenant{grid-column:1/-1;margin:0}
+  .sb-tenant-menu{grid-column:1/-1;margin:0}
+  .sb-group{display:none}
+  .sb-link{
+    padding:9px 10px;
+    border:1px solid var(--line);
+    background:var(--bg-2);
+    justify-content:flex-start;
+  }
+  .sb-link.active{border-color:rgba(205,250,80,0.28)}
+  .sb-link .kbd{display:none}
+  .sb-bottom{
+    grid-column:1/-1;
+    margin:2px 0 0;
+    padding-top:10px;
+    border-top:1px solid var(--line);
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:8px;
+  }
+  .sb-portal-link{
+    border:1px solid var(--line);
+    background:var(--bg-2);
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .sb-user{grid-column:1/-1;margin-top:0}
+  .main{width:100%;max-width:none;padding:0 16px 44px}
+  .topbar{
+    top:0;
+    flex-wrap:wrap;
+    gap:14px;
+    align-items:flex-start;
+    padding:14px 0;
+    margin-bottom:18px;
+  }
+  .topbar-l{min-width:0}
+  .topbar h1{font-size:23px;line-height:1.1}
+  .topbar-r{width:100%;display:grid;grid-template-columns:1fr auto auto;gap:8px}
+  .search{width:100%;min-width:0}
+  .range-toggle{overflow-x:auto;justify-content:flex-start}
+  .range-toggle button{white-space:nowrap}
+  .kpi-grid{gap:10px;margin-bottom:14px}
+  .kpi-card{padding:16px}
+  .kpi-card .val{font-size:34px}
+  .panel{padding:18px;min-height:auto}
+  .panel-head{gap:12px;flex-wrap:wrap}
+  .panel-head .actions{overflow-x:auto;max-width:100%;padding-bottom:2px}
+  .rev-chart{min-height:230px}
+  .heat,.heat-x{min-width:640px}
+  .heat-shell{overflow-x:auto;padding-bottom:4px}
+  .feed-item{grid-template-columns:44px auto 1fr;gap:8px}
+  .feed-item .t{font-size:10px;letter-spacing:0;min-width:52px}
+  .feed-item .amt{grid-column:3;text-align:left}
+  .spec-card{align-items:flex-start;flex-wrap:wrap}
+  .spec-card .nm{flex-basis:calc(100% - 50px)}
+  .spec-card .meta{margin-left:50px}
+  .toast{left:16px;right:16px;bottom:16px;justify-content:center}
+}
+
+@media (max-width:640px){
+  html,body{font-size:13px}
+  .sb{grid-template-columns:1fr;padding:10px}
+  .sb-brand{padding-bottom:4px}
+  .sb-link{font-size:12.5px}
+  .sb-bottom{grid-template-columns:1fr}
+  .main{padding:0 12px 36px}
+  .topbar-r{grid-template-columns:1fr 1fr}
+  .search{grid-column:1/-1}
+  .range-toggle{grid-column:1/-1}
+  .btn{min-height:38px}
+  .kpi-grid{grid-template-columns:1fr}
+  .kpi-card{gap:12px}
+  .dash-row{gap:10px;margin-bottom:10px}
+  .panel{padding:16px;border-radius:10px}
+  .panel:has(.table){padding-left:0;padding-right:0}
+  .panel:has(.table) .panel-head{padding-left:16px!important;padding-right:16px!important}
+  .table-foot{flex-direction:column;align-items:flex-start;gap:10px}
+  .students-grid{grid-template-columns:1fr}
+  .modal-card{padding:20px;max-width:calc(100vw - 24px)}
+  .modal-card .modal-row{align-items:flex-start;gap:12px}
+}
 </style>
 </head>
 <body>
