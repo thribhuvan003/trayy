@@ -1,0 +1,79 @@
+/* Admin demo — daily cash book. Desktop values match the design spec. */
+
+.ad {
+  min-height: 100svh;
+  background: #faf7ee;
+  border-top: 10px solid #1e5a3c;
+  box-sizing: border-box;
+  color: #232019;
+  font-family: var(--font-familjen), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.ad ::selection { background: #1e5a3c; color: #f5f1e4; }
+.ad input { font-family: inherit; }
+
+@keyframes adRowIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.ad-strip-link { color: rgba(35, 32, 25, 0.55); text-decoration: none; }
+.ad-strip-link:hover { color: #1e5a3c; }
+.ad-strip-link--green { color: #1e5a3c; text-decoration: none; font-weight: 600; }
+.ad-strip-link--green:hover { text-decoration: underline; }
+
+.ad-edit-btn {
+  padding: 4px 12px;
+  border: 1px solid rgba(35, 32, 25, 0.4);
+  border-radius: 3px;
+  background: none;
+  color: rgba(35, 32, 25, 0.7);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: var(--font-familjen), sans-serif;
+}
+.ad-edit-btn:hover { border-color: #1e5a3c; color: #1e5a3c; }
+
+.ad-takeoff-btn {
+  border: 1px solid rgba(176, 58, 42, 0.5);
+  border-radius: 3px;
+  background: none;
+  color: #b03a2a;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-family: var(--font-familjen), sans-serif;
+  white-space: nowrap;
+}
+.ad-takeoff-btn:hover { background: rgba(176, 58, 42, 0.1); }
+
+.ad-kpis { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1.5px solid rgba(35, 32, 25, 0.4); }
+.ad-overview-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); align-items: start; }
+.ad-menu-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: start; animation: adRowIn 0.3s ease both; }
+.ad-people-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); align-items: start; animation: adRowIn 0.3s ease both; }
+.ad-rollup { display: flex; align-items: center; gap: 22px; padding: 13px 56px; background: rgba(30, 90, 60, 0.06); border-bottom: 1px solid rgba(30, 90, 60, 0.35); }
+.ad-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; padding: 24px 56px 16px; border-bottom: 2.5px solid #1e5a3c; }
+.ad-tabsbar { display: flex; gap: 4px; padding: 0 56px; border-bottom: 1.5px solid rgba(35, 32, 25, 0.5); overflow-x: auto; }
+
+@media (max-width: 1100px) {
+  .ad-kpis { grid-template-columns: 1fr 1fr; }
+  .ad-kpis > div { padding: 18px 24px 16px 32px !important; }
+  .ad-overview-grid, .ad-menu-grid, .ad-people-grid { grid-template-columns: 1fr; }
+  .ad-overview-grid > section, .ad-menu-grid > section, .ad-people-grid > section {
+    border-right: none !important;
+    padding-left: 32px !important;
+    padding-right: 32px !important;
+  }
+  .ad-rollup { flex-wrap: wrap; padding: 13px 32px; gap: 12px; }
+  .ad-head { flex-wrap: wrap; align-items: flex-start; padding: 20px 32px 14px; }
+  .ad-tabsbar { padding: 0 32px; }
+  .ad-strip { padding: 9px 32px !important; }
+  .ad-footer { padding: 14px 32px 18px !important; flex-wrap: wrap; }
+}
+@media (max-width: 700px) {
+  .ad-kpis { grid-template-columns: 1fr; }
+  .ad-strip { flex-wrap: wrap; }
+}

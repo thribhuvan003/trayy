@@ -1,0 +1,100 @@
+/* Kitchen demo — dark KDS ("the pass"). Desktop values match the design spec. */
+
+.kd {
+  position: relative;
+  min-height: 100svh;
+  background: linear-gradient(to bottom, #101316, #15181b 30%, #181c20);
+  color: #edeae0;
+  font-family: var(--font-barlow), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.kd ::selection { background: #2e7d52; color: #edeae0; }
+.kd input { font-family: inherit; }
+
+@keyframes kdTicketIn {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes kdReadyPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(46, 125, 82, 0.5), 0 10px 22px -8px rgba(0, 0, 0, 0.7); }
+  50% { box-shadow: 0 0 0 7px rgba(46, 125, 82, 0), 0 10px 22px -8px rgba(0, 0, 0, 0.7); }
+}
+
+.kd-strip-link { color: rgba(237, 234, 224, 0.5); text-decoration: none; }
+.kd-strip-link:hover { color: #edeae0; }
+.kd-strip-link--green { color: #7fb79a; text-decoration: none; }
+.kd-strip-link--green:hover { text-decoration: underline; }
+
+.kd-special-btn {
+  padding: 9px 16px;
+  border: 1px solid rgba(127, 183, 154, 0.55);
+  border-radius: 4px;
+  background: rgba(46, 125, 82, 0.14);
+  color: #7fb79a;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: var(--font-barlow), sans-serif;
+  white-space: nowrap;
+}
+.kd-special-btn:hover { background: rgba(46, 125, 82, 0.28); }
+
+.kd-start-btn {
+  padding: 8px 18px;
+  border: none;
+  border-radius: 4px;
+  background: #23201a;
+  color: #f8f4e8;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: var(--font-barlow), sans-serif;
+  white-space: nowrap;
+}
+.kd-start-btn:hover { background: #2e7d52; }
+
+.kd-green-btn {
+  border: none;
+  border-radius: 4px;
+  background: #2e7d52;
+  color: #f8f4e8;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font-barlow), sans-serif;
+  white-space: nowrap;
+}
+.kd-green-btn:hover { filter: brightness(1.15); }
+
+.kd-cancel-btn {
+  width: 100%;
+  padding: 9px 0;
+  margin-top: 6px;
+  border: none;
+  background: none;
+  color: rgba(35, 32, 26, 0.55);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: var(--font-barlow), sans-serif;
+}
+.kd-cancel-btn:hover { color: #c13a2a; }
+
+.kd-lanes {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.08fr 240px;
+  gap: 22px;
+  padding: 22px 32px 70px;
+  align-items: start;
+}
+.kd-service-strip { display: flex; align-items: center; gap: 0; padding: 0 32px; border-bottom: 1px solid rgba(237, 234, 224, 0.14); }
+
+@media (max-width: 1320px) {
+  .kd-lanes { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 760px) {
+  .kd-lanes { grid-template-columns: 1fr; padding: 18px 16px 60px; }
+  .kd-head { flex-wrap: wrap; }
+  .kd-service-strip { flex-wrap: wrap; padding: 0 16px; }
+  .kd-service-strip > div:last-child { margin-left: 0 !important; padding: 10px 0; }
+  .kd-strip { flex-wrap: wrap; }
+}
