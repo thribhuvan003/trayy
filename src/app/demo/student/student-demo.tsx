@@ -221,7 +221,7 @@ export function StudentDemo() {
               STUDENT VIEW · ORDER OFF THE BOARD, SKIP THE LINE
             </div>
           </div>
-          <div style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" }}>
+          <div className="sd-tabs" style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" }}>
             {listCanteens().map((x, i) => {
               const active = x.id === c.id;
               return (
@@ -313,6 +313,7 @@ export function StudentDemo() {
                 );
               })}
               <div
+                className="sd-tip"
                 style={{
                   marginTop: 26,
                   padding: "14px 14px 16px",
@@ -687,6 +688,7 @@ export function StudentDemo() {
                   return (
                     <div
                       key={d.tag}
+                      className="sd-srow"
                       style={{
                         display: "grid",
                         gridTemplateColumns: "40px 150px minmax(0, 1fr) 100px",

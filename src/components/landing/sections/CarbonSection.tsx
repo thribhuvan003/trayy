@@ -36,7 +36,7 @@ export function CarbonSection() {
         </p>
       </div>
 
-      <div style={{ position: "relative", height: 340, maxWidth: 520 }}>
+      <div className="lp-carbon-stack" style={{ position: "relative", height: 340, maxWidth: 520 }}>
         <div
           style={{
             position: "absolute",

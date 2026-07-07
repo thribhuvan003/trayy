@@ -467,7 +467,7 @@ export function WalkthroughSection() {
           overflow: "hidden",
         }}
       >
-        <div style={{ position: "relative", minHeight: 380, display: "grid", placeItems: "center", padding: "40px 36px" }}>
+        <div className="lp-stage" style={{ position: "relative", minHeight: 380, display: "grid", placeItems: "center", padding: "40px 36px" }}>
           <Scene key={scene} />
         </div>
 

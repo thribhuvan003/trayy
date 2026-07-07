@@ -91,10 +91,15 @@
 @media (max-width: 1320px) {
   .kd-lanes { grid-template-columns: 1fr 1fr; }
 }
-@media (max-width: 760px) {
-  .kd-lanes { grid-template-columns: 1fr; padding: 18px 16px 60px; }
+/* head, demo strip and service strip run out of room well above phone
+   width (brand + canteen tabs + special + clock ≈ 1050px) — wrap on tablets */
+@media (max-width: 1100px) {
   .kd-head { flex-wrap: wrap; }
-  .kd-service-strip { flex-wrap: wrap; padding: 0 16px; }
+  .kd-service-strip { flex-wrap: wrap; }
   .kd-service-strip > div:last-child { margin-left: 0 !important; padding: 10px 0; }
   .kd-strip { flex-wrap: wrap; }
+}
+@media (max-width: 760px) {
+  .kd-lanes { grid-template-columns: 1fr; padding: 18px 16px 60px; }
+  .kd-service-strip { padding: 0 16px; }
 }

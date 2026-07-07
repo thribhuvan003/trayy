@@ -61,9 +61,13 @@
 @media (max-width: 1100px) {
   .ad-kpis { grid-template-columns: 1fr 1fr; }
   .ad-kpis > div { padding: 18px 24px 16px 32px !important; }
-  .ad-overview-grid, .ad-menu-grid, .ad-people-grid { grid-template-columns: 1fr; }
+  /* minmax(0,1fr), not 1fr: a plain 1fr track refuses to shrink below its
+     content's min-width, so the inner tables blow the column out past the
+     viewport. minmax(0,…) lets the single column actually fit the phone. */
+  .ad-overview-grid, .ad-menu-grid, .ad-people-grid { grid-template-columns: minmax(0, 1fr); }
   .ad-overview-grid > section, .ad-menu-grid > section, .ad-people-grid > section {
     border-right: none !important;
+    min-width: 0;
     padding-left: 32px !important;
     padding-right: 32px !important;
   }
@@ -75,5 +79,31 @@
 }
 @media (max-width: 700px) {
   .ad-kpis { grid-template-columns: 1fr; }
-  .ad-strip { flex-wrap: wrap; }
+  .ad-strip { flex-wrap: wrap; gap: 6px !important; }
+  /* the demo strip's two spans sit at opposite ends via space-between; once
+     wrapped, pin them left so the nav links don't clip off the right edge */
+  .ad-strip > span { white-space: normal !important; }
+  .ad-strip > span:last-child { justify-content: flex-start; flex-wrap: wrap; }
+  /* order-entries table: 5 cols (456px) overflow the phone — drop the TIME
+     column and tighten so NO./PARTICULARS/STATUS/CREDIT read cleanly */
+  .ad-ledger-row {
+    grid-template-columns: 52px minmax(0, 1fr) 74px 58px !important;
+    gap: 8px !important;
+  }
+  .ad-ledger-row > :nth-child(5) { display: none; }
+  /* menu register (ITEM/PRICE/ON MENU/EDIT) — keep all four, just tighten */
+  .ad-menu-row {
+    grid-template-columns: minmax(0, 1fr) 62px 66px 48px !important;
+    gap: 8px !important;
+  }
+  /* regulars table: 5 cols overflow — drop ROLL and LAST, keep NAME/ORDERS/SPEND */
+  .ad-people-row {
+    grid-template-columns: minmax(0, 1fr) 60px 84px !important;
+    gap: 10px !important;
+  }
+  .ad-people-row > :nth-child(2),
+  .ad-people-row > :nth-child(5) { display: none; }
+  /* audit log: 56px side padding is too heavy for the phone and clips the
+     signer name — pull it in to match the other tabs */
+  .ad-audit { padding-left: 20px !important; padding-right: 20px !important; }
 }

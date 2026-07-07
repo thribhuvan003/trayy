@@ -366,6 +366,9 @@
 }
 
 /* ---------- responsive degradation (below the 1160px design width) ---------- */
+/* Several sections carry their desktop padding as inline styles, so every
+   competing declaration here needs !important to actually win on small
+   screens. Values follow the design handoff's mobile spec (≤940px). */
 @media (max-width: 1160px) {
   .lp-hero { grid-template-columns: 1fr; padding: 64px 40px 64px 96px; gap: 48px; }
   .lp-hero > div:last-child { justify-self: start; }
@@ -375,24 +378,38 @@
   .lp-coupons-grid { grid-template-columns: 1fr; max-width: 460px; }
   .lp-footer-grid { grid-template-columns: 1fr 1fr; }
   .lp-steprail { grid-template-columns: repeat(2, 1fr) 100px; }
-  .lp-pad, .lp-masthead-inner, .lp-register-line { padding-left: 96px; }
+  .lp-pad, .lp-masthead-inner, .lp-register-line { padding-left: 96px !important; }
   .lp-section-no { left: -56px; }
 }
-@media (max-width: 760px) {
-  .lp-margin-line { left: 20px; }
-  .lp-pad, .lp-masthead-inner, .lp-register-line { padding-left: 40px; padding-right: 20px; }
-  .lp-hero { padding: 48px 20px 48px 40px; }
-  .lp-h1 { font-size: clamp(44px, 12vw, 88px); }
-  .lp-section-no { position: static; display: block; margin-bottom: 8px; }
+@media (max-width: 940px) {
+  .lp-margin-line { left: 22px; }
+  .lp-masthead-inner { flex-wrap: wrap; padding: 14px 20px !important; }
   .lp-nav { display: none; }
-  .lp-masthead-inner { flex-wrap: wrap; }
-  .lp-ledger-row { grid-template-columns: 56px 1fr; grid-auto-rows: auto; }
-  .lp-ledger-row > p { grid-column: 2; }
-  .lp-ledger-row > span:last-child { grid-column: 2; text-align: left; }
-  .lp-trust-row { grid-template-columns: 64px 1fr; }
-  .lp-trust-row > span:last-child { grid-column: 2; }
-  .lp-footer-grid { grid-template-columns: 1fr; padding-left: 40px; }
+  .lp-hero { grid-template-columns: 1fr; padding: 52px 20px 48px 44px; gap: 44px; }
+  /* min-width guards the 1fr track against the h1's nowrap "the queue" span;
+     the clamp keeps that span fitting on sub-375px phones */
+  .lp-hero > div { min-width: 0; }
+  .lp-h1 { font-size: clamp(34px, 12.5vw, 47px); }
+  .lp-hero-token { width: 100% !important; max-width: 344px; justify-self: start; }
+  .lp-register-line { padding: 12px 20px 12px 44px !important; }
+  .lp-pad { padding: 56px 20px 56px 44px !important; }
+  .lp-sync { padding: 56px 20px 56px 44px !important; grid-template-columns: 1fr; gap: 44px; }
+  .lp-quote { padding: 56px 20px 56px 44px !important; grid-template-columns: 1fr; gap: 40px; }
+  .lp-coupons-grid { grid-template-columns: 1fr; max-width: 460px; }
+  .lp-stage { min-height: 0 !important; padding: 26px 14px !important; }
   .lp-steprail { grid-template-columns: 1fr 1fr; }
   .lp-steprail .lp-play-btn { grid-column: span 2; padding: 12px; }
-  .lp-hero-token { width: 100% !important; max-width: 372px; }
+  /* step titles are nowrap inline for the desktop rail — let them wrap here */
+  .lp-step-btn span { white-space: normal !important; }
+  .lp-step-btn { padding: 14px 14px 16px; }
+  .lp-section-no { position: static; display: block; margin-bottom: 8px; }
+  .lp-ledger-row { grid-template-columns: 1fr; gap: 8px; }
+  .lp-ledger-row > span:last-child { text-align: left !important; }
+  /* carbon stack: fixed 340px height clips wrapped copy on narrow screens —
+     let the original card size itself and keep the blue sheets peeking below */
+  .lp-carbon-stack { height: auto !important; padding-bottom: 48px; }
+  .lp-carbon-stack > div:last-child { position: static !important; margin-right: 12px; }
+  .lp-trust-grid { grid-template-columns: 1fr; gap: 44px; }
+  .lp-trust-row { grid-template-columns: 1fr; gap: 6px; }
+  .lp-footer-grid { grid-template-columns: 1fr 1fr; padding: 36px 20px 44px 44px !important; gap: 32px; }
 }

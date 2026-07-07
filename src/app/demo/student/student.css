@@ -151,18 +151,38 @@
 }
 .sd-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 28px; padding: 26px 36px 20px; border-bottom: 2px solid rgba(242, 238, 226, 0.75); }
 
-@media (max-width: 1180px) {
+/* The board's nav / section / aside carry desktop layout as inline styles
+   (sticky columns, paddings), so the mobile declarations below need
+   !important to win. Values follow the design handoff's ≤940px spec. */
+@media (max-width: 940px) {
   .sd { border-width: 8px; }
-  .sd-menu-grid { grid-template-columns: 180px minmax(0, 1fr); }
-  .sd-menu-grid > aside { grid-column: 1 / -1; position: static; padding: 0 24px 40px; }
-  .sd-track-grid { grid-template-columns: 1fr; gap: 48px; padding: 40px 28px 70px; }
-}
-@media (max-width: 760px) {
-  .sd-head { flex-wrap: wrap; align-items: flex-start; padding: 20px 20px 16px; }
+  .sd-strip { flex-wrap: wrap; padding: 8px 14px !important; gap: 8px !important; }
+  .sd-head { flex-wrap: wrap; align-items: flex-start; padding: 18px 16px 14px; }
+  .sd-tabs { order: 3; width: 100%; }
   .sd-menu-grid { grid-template-columns: 1fr; }
-  .sd-menu-grid > nav { position: static; flex-direction: row; flex-wrap: wrap; padding: 20px 20px 0; }
-  .sd-menu-grid > section { border-left: none; border-right: none; padding: 20px 20px 50px; min-height: 0; }
-  .sd-item-row { grid-template-columns: 20px minmax(0, 1fr) 64px; }
-  .sd-item-row > span:last-child { grid-column: 2 / -1; justify-content: flex-start !important; }
-  .sd-strip { flex-wrap: wrap; }
+  .sd-menu-grid > nav {
+    position: static !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    overflow-x: auto;
+    padding: 16px 16px 0 !important;
+    gap: 10px !important;
+    scrollbar-width: none;
+  }
+  .sd-menu-grid > nav button { flex-shrink: 0; }
+  .sd-menu-grid > nav > div:first-child { flex-shrink: 0; margin-bottom: 0 !important; }
+  .sd-tip { display: none !important; }
+  .sd-menu-grid > section {
+    border-left: none !important;
+    border-right: none !important;
+    padding: 14px 16px 40px !important;
+    min-height: 0 !important;
+  }
+  .sd-menu-grid > section h1 { font-size: 30px !important; }
+  .sd-item-row { grid-template-columns: 16px minmax(0, 1fr) 52px 96px; gap: 8px; }
+  .sd-menu-grid > aside { position: static !important; padding: 4px 16px 44px !important; }
+  .sd-track-grid { grid-template-columns: 1fr; padding: 36px 16px 64px; gap: 44px; }
+  .sd-track-grid h2 { font-size: 34px !important; }
+  .sd-srow { grid-template-columns: 28px 104px minmax(0, 1fr) !important; gap: 10px !important; }
+  .sd-srow > span:last-child { display: none; }
 }

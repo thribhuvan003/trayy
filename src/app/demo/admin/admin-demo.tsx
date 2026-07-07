@@ -340,6 +340,7 @@ export function AdminDemo() {
                 <section style={{ padding: "24px 34px 46px 56px", borderRight: "1px solid rgba(35,32,25,.22)" }}>
                   <SectionHead title="Order entries — live" note="NEWEST FIRST" />
                   <div
+                    className="ad-ledger-row"
                     style={{
                       display: "grid",
                       gridTemplateColumns: "84px minmax(0, 1fr) 100px 100px 60px",
@@ -361,6 +362,7 @@ export function AdminDemo() {
                     return (
                       <div
                         key={`${o.id}-${i}`}
+                        className="ad-ledger-row"
                         style={{
                           display: "grid",
                           gridTemplateColumns: "84px minmax(0, 1fr) 100px 100px 60px",
@@ -433,6 +435,7 @@ export function AdminDemo() {
               <section style={{ padding: "24px 34px 46px 56px", borderRight: "1px solid rgba(35,32,25,.22)" }}>
                 <SectionHead title="Menu register" note="ONE TOGGLE → EVERY SCREEN" />
                 <div
+                  className="ad-menu-row"
                   style={{
                     display: "grid",
                     gridTemplateColumns: "minmax(0, 1fr) 130px 120px 90px",
@@ -456,6 +459,7 @@ export function AdminDemo() {
                   return (
                     <div
                       key={key}
+                      className="ad-menu-row"
                       style={{
                         display: "grid",
                         gridTemplateColumns: "minmax(0, 1fr) 130px 120px 90px",
@@ -644,9 +648,9 @@ export function AdminDemo() {
                     >
                       {st.name.charAt(0).toUpperCase()}
                     </span>
-                    <span style={{ minWidth: 0 }}>
-                      <span style={{ display: "block", fontWeight: 600, fontSize: 14.5, whiteSpace: "nowrap" }}>{st.name}</span>
-                      <span style={{ display: "block", fontSize: 12, color: "rgba(35,32,25,.5)", whiteSpace: "nowrap" }}>{st.role}</span>
+                    <span style={{ minWidth: 0, overflow: "hidden" }}>
+                      <span style={{ display: "block", fontWeight: 600, fontSize: 14.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{st.name}</span>
+                      <span style={{ display: "block", fontSize: 12, color: "rgba(35,32,25,.5)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{st.role}</span>
                     </span>
                     <span
                       style={{
@@ -673,6 +677,7 @@ export function AdminDemo() {
               <section style={{ padding: "24px 56px 40px 34px" }}>
                 <SectionHead title="Regulars this month" note="BY SPEND" />
                 <div
+                  className="ad-people-row"
                   style={{
                     display: "grid",
                     gridTemplateColumns: "minmax(0, 1fr) 90px 80px 110px 70px",
@@ -693,6 +698,7 @@ export function AdminDemo() {
                 {c.studentRows.map((sr) => (
                   <div
                     key={sr.roll}
+                    className="ad-people-row"
                     style={{
                       display: "grid",
                       gridTemplateColumns: "minmax(0, 1fr) 90px 80px 110px 70px",
@@ -715,7 +721,7 @@ export function AdminDemo() {
 
           {/* ============ AUDIT LOG ============ */}
           {view === "audit" && (
-            <div style={{ padding: "24px 56px 46px", animation: "adRowIn .3s ease both" }}>
+            <div className="ad-audit" style={{ padding: "24px 56px 46px", animation: "adRowIn .3s ease both" }}>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16, marginBottom: 12, maxWidth: 860 }}>
                 <h2 style={{ margin: 0, fontFamily: SERIF, fontWeight: 700, fontSize: 22 }}>Audit log</h2>
                 <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".12em", color: "rgba(35,32,25,.5)" }}>EVERY WRITE, SIGNED & TIMED</span>
