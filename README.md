@@ -2,11 +2,13 @@
 
 # Tray
 
-**Multi-tenant food ordering infrastructure for institutions.**
+**Zero-commission ordering for street food stalls, tiffin centers, and canteens.**
 
-One deployment serves any number of colleges, canteens, and campuses.
-Every stakeholder gets their own portal — instantly, on signup.
+A stall owner signs up, prints one QR, and customers order and pay the stall's
+own UPI directly. One deployment serves every outlet — each gets its own link,
+menu, and live dashboard.
 
+[![CI](https://github.com/thribhuvan003/trayy/actions/workflows/ci.yml/badge.svg)](https://github.com/thribhuvan003/trayy/actions/workflows/ci.yml)
 [![Live](https://img.shields.io/badge/live-trayy.vercel.app-22c55e?style=flat-square&logo=vercel)](https://trayy.vercel.app)
 [![Next.js](https://img.shields.io/badge/Next.js_15-black?style=flat-square&logo=next.js)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?style=flat-square&logo=typescript)](https://typescriptlang.org)
@@ -18,14 +20,14 @@ Every stakeholder gets their own portal — instantly, on signup.
 
 ## Overview
 
-Tray replaces paper tokens, cash counters, and manual queues at institutional food outlets. A canteen owner signs up and immediately gets:
+Tray replaces shouting, paper slips, and cash-counting at food counters — from a two-person street stall to a full campus mess. An owner signs up and immediately gets:
 
-- A **student ordering app** at a dedicated URL
-- A **live kitchen board** for staff
+- A **customer ordering page** at a dedicated URL — scan the QR at the counter, order, pay
+- **Direct UPI payments** — money goes straight to the owner's bank, no intermediary, zero commission
+- A choice of **order flow per outlet**: a full live kitchen board for canteens with staff, or a hands-free **token counter** for stalls — paid orders confirm themselves and the customer's phone shows the token
 - A **business dashboard** with real-time revenue and analytics
-- **Direct UPI payments** — money goes straight to the owner's bank, no intermediary
 
-No IT team required. No per-tenant infrastructure. The platform handles everything through a single shared deployment.
+No IT team required. No per-tenant infrastructure. No app install for customers — it's all web.
 
 ---
 
@@ -33,7 +35,7 @@ No IT team required. No per-tenant infrastructure. The platform handles everythi
 
 | Portal | URL |
 |--------|-----|
-| Student app | [trayy.vercel.app/c/aditya/menu](https://trayy.vercel.app/c/aditya/menu) |
+| Customer app | [trayy.vercel.app/c/aditya/menu](https://trayy.vercel.app/c/aditya/menu) |
 | Kitchen board | [trayy.vercel.app/c/aditya/kitchen](https://trayy.vercel.app/c/aditya/kitchen) |
 | Admin console | [trayy.vercel.app/c/aditya/admin/dashboard](https://trayy.vercel.app/c/aditya/admin/dashboard) |
 | College portal | [trayy.vercel.app/college/aditya](https://trayy.vercel.app/college/aditya) |
@@ -63,11 +65,15 @@ A single Vercel deployment serves **N colleges**, each with **M canteens**, each
 
 ### Payment flow
 
-1. Student places order → Razorpay order created, linked to the canteen's UPI VPA
-2. Mobile opens `upi://` deep link (GPay / PhonePe / Paytm); desktop renders a QR code
-3. Razorpay fires `payment.captured` webhook → HMAC-SHA256 verified
-4. `safe_capture_payment()` Postgres function acquires a `SELECT ... FOR UPDATE` row lock, validates the received amount against the order total, then transitions the order atomically
-5. Order appears on the kitchen board in under one second
+Each tenant picks its rail (`payment_mode`):
+
+**Direct UPI (default)** — the customer pays the stall's own VPA via a `upi://` deep link (GPay / PhonePe / Paytm) or QR. Money is instant and peer-to-peer, which means no server can verify it programmatically — so the order enters the queue flagged unverified, and an optional SMS-listener webhook (`upi-credit`) auto-verifies by matching a unique paise tag on the amount.
+
+**Razorpay (gateway)** —
+1. Order placed → Razorpay order created
+2. Razorpay fires `payment.captured` webhook → HMAC-SHA256 verified
+3. `safe_capture_payment()` Postgres function acquires a `SELECT ... FOR UPDATE` row lock, validates the received amount against the order total, then transitions the order atomically
+4. Order appears on the kitchen board in under one second
 
 The webhook handler is fully idempotent: a `raw_event_id` unique constraint on `payments` makes duplicate delivery a database no-op. Failed webhooks write to a Dead Letter Queue; a daily reconciliation cron cross-checks every `pending_payment` order against the Razorpay API.
 
@@ -86,19 +92,9 @@ payment.captured webhook
 
 All three portals stay synchronized. A 20-second poll fallback and exponential-backoff reconnect (900 ms base, 30 s cap, ±400 ms jitter) keep the kitchen board alive through 30–60 second WiFi drops.
 
-### Why this scales beyond campuses
+### One schema, two very different counters
 
-The domain model is intentionally generic:
-
-| Institution | "Tenant" | "Customer" | "Queue" |
-|-------------|----------|------------|---------|
-| College | Canteen | Student | Kitchen prep |
-| Hospital | Cafeteria | Staff / visitor | Cook |
-| Stadium | Concession stand | Fan | Counter |
-| Airport | Lounge F&B | Passenger | Galley |
-| Corporate | Office canteen | Employee | Kitchen |
-
-The schema, payment flow, and queue logic are identical across all of these. Only the copy changes.
+Tray started as a campus canteen system and was repositioned for street stalls. The pivot cost almost no schema changes — a mess with kitchen staff and a one-person dosa cart differ only in *who advances an order*, so that became a per-tenant switch (`order_mode`): the full board pipeline for canteens, or "paid ⇒ done, show your token" for stalls. Same tables, same payment rails, same realtime fan-out.
 
 ---
 
@@ -125,7 +121,7 @@ The schema, payment flow, and queue logic are identical across all of these. Onl
 
 ## Portals
 
-### Student `/c/[slug]/`
+### Customer `/c/[slug]/`
 
 - Browse menu with live availability, search, and veg/egg/nonveg filter
 - Cart with takeaway or dine-in selection, persisted per canteen in localStorage
@@ -262,7 +258,19 @@ tray/
 │   ├── 0013_payment_failed_status.sql             payment_failed order status
 │   ├── 0014_safe_capture_and_walkin.sql           Atomic payment capture function
 │   ├── 0015_atomic_order_events_on_capture.sql    order_events emitted inside capture transaction
-│   └── 0016_amount_validation_and_atomic_stock.sql  Amount validation + atomic stock decrement
+│   ├── 0016_amount_validation_and_atomic_stock.sql  Amount validation + atomic stock decrement
+│   ├── 0017_performance_indexes.sql               Hot-path indexes
+│   ├── 0018_payments_refund_id_and_cleanup.sql    Refund tracking
+│   ├── 0019_upi_trust_dlq_rls_heartbeat.sql       UPI trust flag, DLQ RLS, heartbeat
+│   ├── 0020_menu_images_storage_bucket.sql        Menu image storage
+│   ├── 0021_safe_fail_payment.sql                 Atomic payment-failed transition
+│   ├── 0022_find_auth_user_by_email.sql           Staff invite lookup
+│   ├── 0023_pre_request_set_tenant.sql            PostgREST tenant session hook
+│   ├── 0024_payment_mode.sql                      Per-tenant payment rail (direct UPI vs gateway)
+│   ├── 0025_admin_phone.sql                       Owner SMS alerts
+│   ├── 0026_realtime_rls_fix.sql                  Realtime WebSocket RLS policies
+│   ├── 0027_upi_autoverify.sql                    UPI SMS auto-verification
+│   └── 0028_tenant_tier_order_mode.sql            Street edition: tier + token-counter order flow
 │
 ├── src/__tests__/                Unit and integration tests (Vitest)
 ├── docs/                         Architecture decision records
@@ -296,7 +304,22 @@ Before creating an order row, `placeOrder` calls a Postgres function that acquir
 
 **Per-tenant cart bucket in localStorage**
 
-A student browsing two canteens at the same college keeps an independent cart for each. `ensureTenant()` saves the outgoing cart state and loads the incoming one. Switching canteens never clears or merges a cart.
+A customer browsing two outlets keeps an independent cart for each. `ensureTenant()` saves the outgoing cart state and loads the incoming one. Switching outlets never clears or merges a cart.
+
+---
+
+## What broke in production
+
+The migration history is the honest changelog. Three scars worth reading:
+
+**The RLS policy that queried itself (`0007`)**
+The membership policies on `tenant_memberships` checked membership by… selecting from `tenant_memberships`. Postgres detected the infinite recursion and errored on every authenticated query. Fix: move the membership checks into `SECURITY DEFINER` helper functions (`is_tenant_member/staff/admin`) that bypass RLS for the lookup itself.
+
+**The global flag that stranded every order (`0024`)**
+Payment behaviour used to switch on "do Razorpay keys exist in env?" — a global flag. The moment live keys were set, tenants collecting money by raw `upi://` deep link (which never touches Razorpay) had every order stuck at `pending_payment`, waiting for a webhook that could never come. Money left customers' accounts; the kitchen never saw the orders. Fix: payment behaviour became a per-tenant column, and "the money rail and the confirmation rail must be the same rail" became a design rule.
+
+**Realtime sockets don't run your HTTP hooks (`0026`)**
+Tenant context is set by a PostgREST pre-request hook reading an HTTP header — which WebSocket subscriptions never trigger. RLS dutifully returned zero rows to every realtime subscriber: boards looked alive in dev (polling fallback) and dead-silent in production. Fix: membership-based policies specifically for the realtime paths.
 
 ---
 
@@ -312,8 +335,8 @@ A student browsing two canteens at the same college keeps an independent cart fo
 ### Steps
 
 ```bash
-git clone https://github.com/thribhuvan003/Tray.git
-cd Tray
+git clone https://github.com/thribhuvan003/trayy.git
+cd trayy
 pnpm install
 cp .env.example .env.local
 # Fill in .env.local with your Supabase credentials
@@ -368,13 +391,13 @@ supabase db push
 
 After deploying: push migrations to your Supabase project, configure environment variables, set up the Razorpay webhook.
 
-### Adding a canteen
+### Adding a stall
 
 No code changes required. Insert one row:
 
 ```sql
-INSERT INTO tenants (slug, name, college_id, upi_vpa)
-VALUES ('north-block', 'North Block Canteen', '<college-id>', 'canteen@upi');
+INSERT INTO tenants (slug, name, college_name, upi_vpa, order_mode)
+VALUES ('mg-road-07', 'Stall No. 7', 'MG Road', 'stall07@upi', 'token_prepaid');
 ```
 
 The portals are immediately live at `/c/north-block/menu`, `/c/north-block/kitchen`, and `/c/north-block/admin/dashboard`.
@@ -399,6 +422,6 @@ MIT — see [LICENSE](./LICENSE).
 
 <div align="center">
 
-Built for India's college campuses &nbsp;·&nbsp; Designed to work anywhere there is a queue and a counter
+Built for India's street food stalls, tiffin counters, and campus messes &nbsp;·&nbsp; Works anywhere there is a queue and a counter
 
 </div>

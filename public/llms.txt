@@ -1,17 +1,17 @@
 # Tray
 
-> Tray is a campus canteen ordering platform. Students order from any canteen on their campus, kitchens run live order queues, and admins track orders, revenue, and handovers in real time. One system, three roles, run from a single screen.
+> Tray is a zero-commission ordering platform for street food stalls, tiffin centers, and canteens. Customers scan the stall's QR, order, pay the stall's UPI directly, and pick up with a token. Owners see orders, revenue, and handovers in real time. One system, three roles, run from a single screen.
 
-Tray is built first for colleges and campuses, and generalizes to any food court, canteen, or QSR (quick-service restaurant) outlet that needs ordering, live kitchen queues, and operational oversight in one place.
+Tray is built first for food stalls and tiffin centers near PGs and hostels, and works for any canteen, food court, or QSR (quick-service restaurant) outlet that needs ordering, live queues, and operational oversight in one place. Payments go straight to the stall's own UPI — Tray never holds the money and takes no commission.
 
 ## What Tray does
-- Students browse the canteens on their campus, place orders, pay, and track order status live.
-- Kitchen staff receive orders in a live queue and manage preparation and handover.
-- Campus admins see orders, revenue, and handovers across all canteens in real time.
+- Customers browse the stall's menu, place orders, pay the stall's UPI directly, and track their token.
+- Staff receive orders in a live queue and manage preparation and handover.
+- Owners see orders, revenue, and handovers across all their outlets in real time.
 
 ## Core pages
-- [Home](https://trayy.vercel.app/): Product overview — campus food, without the queue.
-- [Get started](https://trayy.vercel.app/get-started): Guided setup for a campus or canteen.
+- [Home](https://trayy.vercel.app/): Product overview — street food, without the queue.
+- [Get started](https://trayy.vercel.app/get-started): Guided setup for a stall, canteen, or institution.
 - [Sign up](https://trayy.vercel.app/signup): Create an account.
 - [Log in](https://trayy.vercel.app/login): Access your dashboard.
 

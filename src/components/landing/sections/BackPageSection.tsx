@@ -9,17 +9,17 @@ const ROWS = [
   {
     tag: "UPI",
     title: "Direct settlement",
-    copy: "Payments hit the canteen's merchant VPA. No platform wallet, no float sitting with Tray.",
+    copy: "Payments hit the stall's own VPA. No platform wallet, no float sitting with Tray.",
   },
   {
     tag: "RLS",
     title: "Tenant isolation",
-    copy: "Menus, orders and profiles are scoped per campus with row-level security on every Postgres query.",
+    copy: "Menus, orders and profiles are scoped per outlet with row-level security on every Postgres query.",
   },
   {
     tag: "REV",
     title: "Zero commission",
-    copy: "No per-order platform fee. The canteen keeps exactly what the student pays.",
+    copy: "No per-order platform fee. The stall keeps exactly what the customer pays.",
   },
   {
     tag: "OTP",
@@ -55,11 +55,11 @@ export function BackPageSection() {
               Serious under the hood.
             </h2>
             <p style={{ margin: "0 0 34px", fontSize: 18, lineHeight: 1.65, color: "rgba(247,241,227,.72)", maxWidth: 420, textWrap: "pretty" }}>
-              Tray is campus infrastructure, not a delivery aggregator. It never holds student money, never mixes one college&apos;s
-              data with another&apos;s, and never takes a cut of the counter.
+              Tray is street infrastructure, not a delivery aggregator. It never holds the customer&apos;s money, never mixes one
+              stall&apos;s data with another&apos;s, and never takes a cut of the counter.
             </p>
             <Link href="/get-started" className="lp-cta-gold">
-              I run a canteen — get started →
+              I run a stall — get started →
             </Link>
           </div>
           <div style={{ borderTop: "2px solid rgba(247,241,227,.9)" }}>

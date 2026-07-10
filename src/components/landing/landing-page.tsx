@@ -20,7 +20,7 @@ function Masthead() {
         <a href="#top" style={{ display: "flex", alignItems: "baseline", gap: 14, textDecoration: "none", color: "#221F18" }}>
           <span style={{ fontFamily: ROZHA, fontSize: 34, lineHeight: 1 }}>Tray</span>
           <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: ".18em", color: "rgba(34,31,24,.55)" }}>
-            CAMPUS FOOD REGISTER
+            STREET FOOD REGISTER
           </span>
         </a>
         <nav className="lp-nav" aria-label="Main navigation">
@@ -108,7 +108,7 @@ function MealToken({ college }: { college: string }) {
           ))}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 4 }}>
             <span style={{ fontFamily: MONO, fontSize: 11.5, letterSpacing: ".14em", color: "rgba(34,31,24,.6)" }}>
-              UPI · aditya-canteen@upi
+              UPI · stall-07@upi
             </span>
             <span style={{ fontFamily: ROZHA, fontSize: 22 }}>₹190</span>
           </div>
@@ -216,10 +216,10 @@ function Hero({ college }: { college: string }) {
         >
           <span style={{ fontWeight: 600 }}>ENTRY 00</span>
           <span style={{ color: "rgba(34,31,24,.45)" }}>————</span>
-          <span style={{ color: "rgba(34,31,24,.6)" }}>ONE CAMPUS · EVERY COUNTER · LIVE</span>
+          <span style={{ color: "rgba(34,31,24,.6)" }}>ONE STREET · EVERY STALL · LIVE</span>
         </div>
         <h1 className="lp-h1" style={{ animation: "lpRise .7s cubic-bezier(.22,1,.36,1) .08s both" }}>
-          Campus food,
+          Street food,
           <br />
           without{" "}
           <span style={{ position: "relative", whiteSpace: "nowrap" }}>
@@ -252,8 +252,8 @@ function Hero({ college }: { college: string }) {
             animation: "lpRise .7s cubic-bezier(.22,1,.36,1) .16s both",
           }}
         >
-          Students order ahead from any canteen on campus and collect with a four-digit code. Kitchens run one live queue instead
-          of a shouting crowd. The canteen keeps every rupee — Tray takes no commission.
+          Customers order ahead from any stall on the street and collect with a four-digit code. The counter runs one live queue
+          instead of a shouting crowd. The stall keeps every rupee — Tray takes no commission.
         </p>
         <div
           style={{
@@ -266,10 +266,10 @@ function Hero({ college }: { college: string }) {
           }}
         >
           <Link href="/demo/student" className="lp-cta">
-            Open the live demo <span style={{ fontFamily: MONO }}>→</span>
+            Open the interactive demo <span style={{ fontFamily: MONO }}>→</span>
           </Link>
           <a href="#trust" className="lp-underline-link">
-            I run a canteen
+            I run a stall
           </a>
         </div>
         <div
@@ -285,7 +285,7 @@ function Hero({ college }: { college: string }) {
         >
           {[
             ["0%", "ORDER COMMISSION"],
-            ["UPI", "DIRECT TO CANTEEN VPA"],
+            ["UPI", "DIRECT TO STALL VPA"],
             ["4-digit", "OTP AT HANDOVER"],
           ].map(([stat, label]) => (
             <div key={label}>
@@ -327,16 +327,16 @@ function Footer() {
         <div>
           <div style={{ fontFamily: ROZHA, fontSize: 30, marginBottom: 10 }}>Tray</div>
           <p style={{ margin: "0 0 18px", fontSize: 15, lineHeight: 1.6, color: "rgba(34,31,24,.65)", maxWidth: 300 }}>
-            Campus food operations for colleges that want faster handoff, cleaner billing and fewer counter bottlenecks.
+            Street food operations for stalls and tiffin centers that want faster handoff, cleaner billing and fewer counter bottlenecks.
           </p>
           <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: ".12em", color: "rgba(34,31,24,.45)" }}>
-            MADE FOR INDIA&apos;S COLLEGE CAMPUSES
+            MADE FOR INDIA&apos;S STREET FOOD STALLS
           </div>
         </div>
         <div>
           <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: ".16em", color: "#C13A2A", marginBottom: 14 }}>PRODUCT</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 9, fontSize: 15.5, fontWeight: 500, alignItems: "flex-start" }}>
-            <Link href="/demo/student" className="lp-footer-link">Student view</Link>
+            <Link href="/demo/student" className="lp-footer-link">Customer view</Link>
             <Link href="/demo/kitchen" className="lp-footer-link">Kitchen view</Link>
             <Link href="/demo/admin" className="lp-footer-link">Admin view</Link>
             <Link href="/get-started" className="lp-footer-link">Get started</Link>
@@ -388,7 +388,7 @@ function Footer() {
 }
 
 export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
-  const college = tenant?.college_name?.toUpperCase() ?? "ADITYA ENG. COLLEGE";
+  const college = tenant?.college_name?.toUpperCase() ?? "MG ROAD · STALL NO. 7";
 
   return (
     <div className={`lp ${landingFontVars}`}>

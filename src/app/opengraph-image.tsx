@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "Tray — Campus food, without the queue.";
+export const alt = "Tray — Street food, without the queue.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -22,10 +22,10 @@ export default function OpengraphImage() {
       >
         <div style={{ fontSize: 120, fontWeight: 700, letterSpacing: -4 }}>Tray</div>
         <div style={{ fontSize: 52, marginTop: 16, color: "#e6e2d9", lineHeight: 1.2 }}>
-          Campus food, without the queue.
+          Street food, without the queue.
         </div>
         <div style={{ fontSize: 30, marginTop: 32, color: "#9a958a" }}>
-          Order from any canteen. Kitchens run live queues. Admins see everything.
+          Scan the stall&apos;s QR. Pay its UPI directly. Pick up with a token.
         </div>
       </div>
     ),

@@ -9,11 +9,13 @@ export function QuoteSection() {
     <Reveal className="lp-quote">
       <blockquote style={{ margin: 0, position: "relative" }}>
         <span className="lp-section-no">06</span>
+        {/* Swap for a real, named stall-owner quote once the first pilot is live —
+            never an invented one. Until then this is honestly what it is: the pitch. */}
         <p style={{ margin: "0 0 26px", fontFamily: ROZHA, fontSize: "clamp(28px, 3.4vw, 42px)", lineHeight: 1.22, maxWidth: 760, textWrap: "balance" }}>
-          “We stopped shouting over the crowd. The board calls the order, they show a code, and lunch ends on time.”
+          “No shouting over the crowd. The phone calls the order, the customer shows a token, and the rush settles itself.”
         </p>
         <footer style={{ fontFamily: MONO, fontSize: 12, letterSpacing: ".14em", color: "rgba(34,31,24,.55)" }}>
-          KITCHEN SUPERVISOR — CAMPUS CANTEEN
+          THE PITCH WE MAKE TO EVERY STALL OWNER
         </footer>
       </blockquote>
       <div
@@ -28,7 +30,7 @@ export function QuoteSection() {
         }}
       >
         <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".16em", color: "rgba(34,31,24,.5)", marginBottom: 12 }}>
-          HANDOVER BOARD · LIVE
+          HANDOVER BOARD · SPECIMEN
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 9, fontFamily: MONO, fontSize: 13 }}>
           <div style={{ display: "flex", justifyContent: "space-between" }}>

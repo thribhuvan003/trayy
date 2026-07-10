@@ -26,7 +26,7 @@ export function CarbonSection() {
           </h2>
         </div>
         <p style={{ margin: "0 0 24px", fontSize: 18, lineHeight: 1.65, color: "rgba(34,31,24,.72)", maxWidth: 460, textWrap: "pretty" }}>
-          Mark a dish sold out in the kitchen and the student menu, the live queue and the admin&apos;s totals all move from that
+          Mark a dish sold out at the counter and the customer menu, the live queue and the admin&apos;s totals all move from that
           single write — like carbon paper, minus the smudge.
         </p>
         <p style={{ margin: 0, fontFamily: MONO, fontSize: 12, letterSpacing: ".1em", lineHeight: 2, color: "rgba(34,31,24,.55)" }}>
@@ -66,7 +66,7 @@ export function CarbonSection() {
           }}
         >
           <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".16em", color: "rgba(29,63,191,.85)", textAlign: "right" }}>
-            STUDENT COPY · 12:47:03
+            CUSTOMER COPY · 12:47:03
           </div>
         </div>
         <div
@@ -117,8 +117,8 @@ export function CarbonSection() {
             </span>
           </div>
           <p style={{ margin: 0, fontSize: 14.5, lineHeight: 1.55, color: "rgba(34,31,24,.65)" }}>
-            One row updated in Postgres. Supabase Realtime fans it out to every subscribed screen on this campus — and only this
-            campus.
+            One row updated in Postgres. Supabase Realtime fans it out to every subscribed screen for this stall — and only this
+            stall.
           </p>
           <div style={{ marginTop: "auto", fontFamily: MONO, fontSize: 11, letterSpacing: ".1em", color: "var(--ink)" }}>
             → 2 CARBON COPIES DELIVERED, 0 MS ASKED OF ANYONE
