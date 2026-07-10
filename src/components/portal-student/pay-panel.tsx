@@ -40,6 +40,7 @@ export function PayPanel({
   paymentMode = "direct_upi",
   razorpayOrderId,
   razorpayKeyId,
+  tokenMode = false,
 }: {
   tenantSlug: string;
   tenantName: string;
@@ -50,6 +51,7 @@ export function PayPanel({
   paymentMode?: "direct_upi" | "razorpay";
   razorpayOrderId?: string | null;
   razorpayKeyId?: string | null;
+  tokenMode?: boolean;
 }) {
   const router = useRouter();
   const redirectedRef = useRef(false);
@@ -298,10 +300,18 @@ export function PayPanel({
             className="leading-tight tracking-[-0.03em] mb-2"
             style={{ fontFamily: "var(--font-display-ns)", fontWeight: 700, fontSize: "clamp(1.6rem, 5vw, 2.2rem)" }}
           >
-            Order placed!
+            {tokenMode ? "Paid — you're in!" : "Order placed!"}
           </h2>
           <p className="text-[14px] opacity-65 mb-1">
-            Your order <span className="font-semibold">{order.short_code}</span> is in the kitchen.
+            {tokenMode ? (
+              <>
+                Your token is <span className="font-semibold">{order.short_code}</span> — show it at the counter.
+              </>
+            ) : (
+              <>
+                Your order <span className="font-semibold">{order.short_code}</span> is in the kitchen.
+              </>
+            )}
           </p>
 
           {/* UPI history hint — helps students verify the payment in their UPI app */}

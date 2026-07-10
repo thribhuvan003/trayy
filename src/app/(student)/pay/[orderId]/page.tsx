@@ -4,6 +4,7 @@ import { getAdminClient } from "@/lib/supabase/admin";
 import { getCurrentUser } from "@/lib/auth/get-user";
 import { PayPanel } from "@/components/portal-student/pay-panel";
 import { requireTenantContext } from "@/lib/tenant";
+import { resolveFeatures } from "@/lib/features";
 import { featureFlags, env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
@@ -97,6 +98,7 @@ export default async function PayPage({ params }: { params: Promise<{ orderId: s
       paymentMode={paymentMode}
       razorpayOrderId={razorpayOrderId}
       razorpayKeyId={paymentMode === "razorpay" ? (env.RAZORPAY_KEY_ID ?? null) : null}
+      tokenMode={!resolveFeatures(tenant).hasKitchenQueue}
     />
   );
 }

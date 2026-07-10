@@ -213,6 +213,88 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // ── Group 3: token-counter orders — auto-close as served ──────────────────
+  // In order_mode='token_prepaid' nobody works a board, so paid orders sit at
+  // `placed` forever (no kitchen transition, and the `ready` expiry above never
+  // applies). Close them as collected after 6h — stall food is handed over in
+  // minutes, so by then the order was served; keeps queues and dashboards bounded.
+  const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+  const { data: tokenTenantsRaw } = await (admin as any)
+    .from("tenants")
+    .select("id")
+    .eq("order_mode", "token_prepaid");
+  const tokenTenants = (tokenTenantsRaw ?? null) as { id: string }[] | null;
+
+  if (tokenTenants && tokenTenants.length > 0) {
+    const { data: served } = await admin
+      .from("orders")
+      .select("id, tenant_id, status")
+      .in("tenant_id", tokenTenants.map((t: { id: string }) => t.id))
+      .eq("status", "placed")
+      .lt("placed_at", sixHoursAgo)
+      .limit(200)
+      .returns<Row[]>();
+
+    if (served && served.length > 0) {
+      const servedByTenant = new Map<string, Row[]>();
+      for (const r of served) {
+        if (!servedByTenant.has(r.tenant_id)) servedByTenant.set(r.tenant_id, []);
+        servedByTenant.get(r.tenant_id)!.push(r);
+      }
+
+      for (const [tenantId, rows] of servedByTenant) {
+        const tAdmin = getAdminClient(tenantId);
+        const ids = rows.map((r) => r.id);
+
+        // CAS guard: only close orders STILL at placed — a refund/cancel racing
+        // this sweep must win.
+        await tAdmin
+          .from("orders")
+          .update({ status: "collected", collected_at: nowIso })
+          .in("id", ids)
+          .eq("status", "placed");
+
+        await tAdmin.from("order_status_logs").insert(
+          rows.map((r) => ({
+            tenant_id: r.tenant_id,
+            order_id: r.id,
+            from_status: "placed" as const,
+            to_status: "collected" as const,
+            note: "Auto-closed: token counter order assumed served",
+          }))
+        );
+
+        await tAdmin.from("audit_logs").insert(
+          rows.map((r) => ({
+            tenant_id: r.tenant_id,
+            action: "order.token_autoclosed",
+            target_type: "order",
+            target_id: r.id,
+          }))
+        );
+
+        try {
+          await (tAdmin as any).from("order_events").insert(
+            rows.map((r: { id: string; tenant_id: string }) => ({
+              tenant_id: r.tenant_id,
+              order_id: r.id,
+              event_type: "status_changed",
+              payload: { from: "placed", to: "collected", source: "token_autoclose_cron" },
+            }))
+          );
+        } catch {
+          // Non-fatal — order_status_logs already written
+        }
+
+        logger.info("expire-orders token autoclose batch", {
+          job: "expire-orders",
+          tenant_id: tenantId,
+          token_autoclosed: rows.length,
+        });
+      }
+    }
+  }
+
   const duration = Date.now() - start;
 
   logger.info("expire-orders cron completed", {

@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { resolveTenant, getTenantSlugFromHeaders } from "@/lib/tenant";
+import { resolveFeatures } from "@/lib/features";
 import { getServerClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/get-user";
 import { TrackPanel } from "@/components/portal-student/track-panel";
@@ -50,5 +51,13 @@ export default async function TrackPage({ params }: { params: Promise<{ orderId:
       price_paise_snapshot: number;
     }[]>();
 
-  return <TrackPanel tenantSlug={tenant.slug} tenantName={tenant.name} order={order} lines={lines ?? []} />;
+  return (
+    <TrackPanel
+      tenantSlug={tenant.slug}
+      tenantName={tenant.name}
+      order={order}
+      lines={lines ?? []}
+      tokenMode={!resolveFeatures(tenant).hasKitchenQueue}
+    />
+  );
 }

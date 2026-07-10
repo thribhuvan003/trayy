@@ -66,7 +66,7 @@ const STEPS: { v: Status; label: string; icon: typeof Check; copy: string }[] = 
 
 const FIVE_MIN_MS = 5 * 60 * 1000;
 
-export function TrackPanel({ tenantSlug, tenantName, order: initial, lines }: { tenantSlug: string; tenantName: string; order: Order; lines: Line[] }) {
+export function TrackPanel({ tenantSlug, tenantName, order: initial, lines, tokenMode = false }: { tenantSlug: string; tenantName: string; order: Order; lines: Line[]; tokenMode?: boolean }) {
   const [order, setOrder] = useState(initial);
   const [otp, setOtp] = useState<string | null>(null);
   const [cancelPending, startCancel] = useTransition();
@@ -102,16 +102,20 @@ export function TrackPanel({ tenantSlug, tenantName, order: initial, lines }: { 
   // poll ensures the student always sees the correct status without a manual reload.
   useEffect(() => {
     const terminal = ["collected", "rejected", "expired", "cancelled_by_kitchen", "refunded", "payment_failed"];
+    // Token mode: `placed` IS the final state (paid ⇒ done, no kitchen
+    // progression will ever arrive) — polling for one would never stop.
+    if (tokenMode) terminal.push("placed");
     if (terminal.includes(order.status)) return;
     const id = setInterval(() => {
       if (document.visibilityState === "visible") router.refresh();
     }, 10_000);
     return () => clearInterval(id);
-  }, [order.status, router]);
+  }, [order.status, router, tokenMode]);
 
   const [otpTimedOut, setOtpTimedOut] = useState(false);
   useEffect(() => {
-    if (order.status === "ready") {
+    // Token mode never reaches `ready` — the short_code is the counter token.
+    if (!tokenMode && order.status === "ready") {
       setOtpTimedOut(false);
       getMyOrderOtpWithTimeout(order.id).then((r) => {
         setOtp(r.otp);
@@ -121,7 +125,7 @@ export function TrackPanel({ tenantSlug, tenantName, order: initial, lines }: { 
       setOtp(null);
       setOtpTimedOut(false);
     }
-  }, [order.status, order.id]);
+  }, [order.status, order.id, tokenMode]);
 
   // Student-initiated cancel: only available while still `placed` and within
   // the 5-minute grace window (server re-checks this; UI is best-effort).
@@ -175,6 +179,7 @@ export function TrackPanel({ tenantSlug, tenantName, order: initial, lines }: { 
   }
 
   const isCancelled = order.status === "cancelled_by_kitchen" || order.status === "refunded";
+  const isTokenLive = tokenMode && order.status === "placed";
   const isPartiallyReady = order.status === "partially_ready";
   // Map partially_ready onto the "preparing" step so the progress stepper
   // renders correctly; it will also show a dedicated banner below.
@@ -212,6 +217,13 @@ export function TrackPanel({ tenantSlug, tenantName, order: initial, lines }: { 
                 Cancelled.{" "}
                 <span className="italic text-rose-500">Refund on its way.</span>
               </>
+            ) : tokenMode && (isTokenLive || isCollected) ? (
+              <>
+                {isCollected ? "Served." : "Paid."}{" "}
+                <span className="italic text-ocean-500">
+                  {isCollected ? "Enjoy. ☕" : "Show this token at the counter."}
+                </span>
+              </>
             ) : (
               <>
                 {STEPS[currentIdx]?.label}.{" "}
@@ -236,6 +248,52 @@ export function TrackPanel({ tenantSlug, tenantName, order: initial, lines }: { 
               {order.status === "refunded"
                 ? "Refund has been completed. It should reflect in your UPI app within 3–5 business days."
                 : "Refund has been initiated. It should reflect in your UPI app within 3–5 business days."}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {isTokenLive && (
+        <div className="mb-6 rounded-2xl bg-ocean-500 text-white p-6 sm:p-8 relative overflow-hidden" style={{ border: "var(--ns-border)", boxShadow: "var(--ns-shadow-lg)" }}>
+          <div
+            aria-hidden
+            className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.18),transparent_60%)]"
+          />
+          <div className="relative">
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <div className="text-[11px] font-mono uppercase tracking-wider text-white/75">
+                Your token · show at counter
+              </div>
+              <span
+                className="text-[13px] font-mono font-bold uppercase tracking-[0.15em] px-2.5 py-1 select-none"
+                style={{ border: "3px double rgba(255,255,255,0.9)", transform: "rotate(-8deg)" }}
+              >
+                Paid
+              </span>
+            </div>
+            {/* Same equal-width digit boxes as the pickup code, fed the order
+                number — in token mode the short_code IS the counter token. */}
+            <div className="flex gap-1.5 sm:gap-2.5 select-none">
+              {order.short_code.split("").map((ch, i) => (
+                <div
+                  key={i}
+                  className="flex-1 flex items-center justify-center rounded-xl bg-white/15"
+                  style={{
+                    fontFamily: "var(--font-num-ns)",
+                    fontWeight: 700,
+                    fontSize: "clamp(30px, 9vw, 64px)",
+                    lineHeight: 1,
+                    paddingTop: 10,
+                    paddingBottom: 10,
+                    border: "2px solid rgba(0,0,0,0.85)",
+                  }}
+                >
+                  {ch}
+                </div>
+              ))}
+            </div>
+            <p className="text-[13px] text-white/80 mt-3">
+              Paid {formatRupees(order.total_paise)} · order confirmed. Show this screen at the counter to collect.
             </p>
           </div>
         </div>
@@ -310,7 +368,7 @@ export function TrackPanel({ tenantSlug, tenantName, order: initial, lines }: { 
         </div>
       )}
 
-      {!isCancelled && (
+      {!isCancelled && !tokenMode && (
         <ol className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-6">
           {STEPS.map((s, i) => {
             const done = i < currentIdx || isCollected;

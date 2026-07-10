@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import Link from "next/link";
 import { requireTenantContext } from "@/lib/tenant";
+import { resolveFeatures } from "@/lib/features";
 import { getServerClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/get-user";
 import { KitchenBoard } from "@/components/portal-kitchen/board";
@@ -44,6 +46,37 @@ export default async function KitchenPage() {
 
   const user = await requireRole(["kitchen_staff", "canteen_admin", "super_admin"]);
   if (!user) redirect(`/c/${tenant.slug}/login?next=/c/${tenant.slug}/kitchen`);
+
+  // Token counter mode: paid orders auto-confirm and terminate at `placed` —
+  // there is nothing to work on a board. Showing it would fill Incoming with
+  // tickets nobody is meant to touch.
+  if (!resolveFeatures(tenant).hasKitchenQueue) {
+    return (
+      <div className="mx-auto max-w-lg px-6 pt-20 text-center">
+        <h1 className="font-display text-[28px] font-semibold tracking-tight">
+          Token counter mode
+        </h1>
+        <p className="text-[13.5px] opacity-70 mt-3 leading-relaxed">
+          Paid orders confirm automatically — the customer&rsquo;s phone shows a token
+          number and a PAID stamp to present at the counter. No board to work.
+        </p>
+        <div className="mt-8 flex flex-col items-center gap-3">
+          <Link
+            href={`/c/${tenant.slug}/kitchen/announce`}
+            className="inline-flex h-11 items-center px-6 rounded-full bg-lime text-graphite-900 text-[13px] font-semibold"
+          >
+            Open the order announcer
+          </Link>
+          <Link
+            href={`/c/${tenant.slug}/admin`}
+            className="text-[12.5px] underline underline-offset-4 opacity-70 hover:opacity-100"
+          >
+            Today&rsquo;s money &amp; menu → Admin
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const supabase = await getServerClient(tenant.id);
   const today = new Date();
