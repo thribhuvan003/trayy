@@ -390,6 +390,9 @@ begin
   return 'T-' || lpad(next_val::text, 4, '0');
 end $$;
 
+-- NOTE: superseded by migrations — 0028 recreates resolve_tenant with the full
+-- column set (college_slug/building/zone/is_open/tier/order_mode). This 0001-era
+-- version only matches the bootstrap table above; migrations replace it.
 create or replace function public.resolve_tenant(p_slug text)
 returns table (
   id uuid, slug text, name text, college_name text,

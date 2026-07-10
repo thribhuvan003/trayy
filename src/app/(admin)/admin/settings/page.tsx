@@ -29,10 +29,10 @@ export default async function SettingsPage() {
   const admin = getAdminClient(tenant.id);
   const { data: tenantRow } = await admin
     .from("tenants")
-    .select("is_open, opens_at, closes_at, paused_until, guest_orders_enabled, upi_vpa, payment_mode, admin_phone")
+    .select("is_open, opens_at, closes_at, paused_until, guest_orders_enabled, upi_vpa, payment_mode, admin_phone, order_mode")
     .eq("id", tenant.id)
     .single<
-      Pick<Tenant, "is_open" | "opens_at" | "closes_at" | "paused_until" | "guest_orders_enabled" | "upi_vpa"> & { payment_mode?: string; admin_phone?: string | null }
+      Pick<Tenant, "is_open" | "opens_at" | "closes_at" | "paused_until" | "guest_orders_enabled" | "upi_vpa"> & { payment_mode?: string; admin_phone?: string | null; order_mode?: string }
     >();
 
   const row = tenantRow ?? {
@@ -44,8 +44,10 @@ export default async function SettingsPage() {
     upi_vpa: null,
     payment_mode: "direct_upi" as string,
     admin_phone: null,
+    order_mode: "kitchen_flow" as string,
   };
   const currentPaymentMode = (row as any).payment_mode === "razorpay" ? "razorpay" : "direct_upi";
+  const currentOrderMode = (row as any).order_mode === "token_prepaid" ? "token_prepaid" : "kitchen_flow";
 
   const pauseCountdown = formatPausedUntil(row.paused_until);
   const isPaused = pauseCountdown !== null;
@@ -101,7 +103,8 @@ export default async function SettingsPage() {
     }
     void vpaVerified; // no longer a hard gate
     const paymentMode = (fd.get("payment_mode") as string | null) === "razorpay" ? "razorpay" : "direct_upi";
-    await updateCanteenSettings({ guestOrdersEnabled, upiVpa: rawVpa, paymentMode, adminPhone });
+    const orderMode = (fd.get("order_mode") as string | null) === "token_prepaid" ? "token_prepaid" : "kitchen_flow";
+    await updateCanteenSettings({ guestOrdersEnabled, upiVpa: rawVpa, paymentMode, adminPhone, orderMode });
   }
 
   return (
@@ -329,6 +332,49 @@ export default async function SettingsPage() {
                     </div>
                     <div className="mt-2 rounded-md px-3 py-2 text-[11px] leading-snug" style={{ background: "rgba(255,174,41,0.1)", border: "1px solid rgba(255,174,41,0.25)", color: "#ffae29" }}>
                       ⏱ <strong>Important:</strong> Money settles to your bank in <strong>1–2 business days</strong> (T+1/T+2) via Razorpay — not instantly. Students see &ldquo;Order confirmed&rdquo; right away, but the bank transfer to you takes 1–2 days. This is how Swiggy, Zomato, and all Razorpay merchants work in India.
+                    </div>
+                  </div>
+                </label>
+
+              </div>
+            </div>
+
+            {/* Order Flow selector */}
+            <div className="border-t border-graphite-200/10 pt-4">
+              <p className="text-[11px] font-mono uppercase tracking-[0.1em] text-graphite-400 mb-3">
+                Order Flow
+              </p>
+              <div className="flex flex-col gap-3">
+
+                {/* Kitchen board */}
+                <label className="flex items-start gap-3 cursor-pointer select-none rounded-lg border border-graphite-200/10 p-3 hover:border-graphite-200/25 transition-colors"
+                  style={{ background: currentOrderMode === "kitchen_flow" ? "rgba(210,251,80,0.05)" : "transparent", borderColor: currentOrderMode === "kitchen_flow" ? "rgba(210,251,80,0.3)" : undefined }}>
+                  <input type="radio" name="order_mode" value="kitchen_flow"
+                    defaultChecked={currentOrderMode === "kitchen_flow"}
+                    className="mt-0.5 accent-lime h-4 w-4 shrink-0" />
+                  <div>
+                    <div className="text-[13px] text-graphite-200 font-semibold flex items-center gap-2">
+                      Kitchen board
+                      <span className="text-[9px] font-mono bg-lime/20 text-lime px-1.5 py-0.5 rounded font-bold tracking-wide">DEFAULT</span>
+                    </div>
+                    <div className="text-[11.5px] text-graphite-400 mt-1 leading-[1.6]">
+                      Staff work each order on the kitchen screen: accept, prepare, mark ready, verify the pickup code at handover. Right for canteens and messes with kitchen staff.
+                    </div>
+                  </div>
+                </label>
+
+                {/* Token counter */}
+                <label className="flex items-start gap-3 cursor-pointer select-none rounded-lg border border-graphite-200/10 p-3 hover:border-graphite-200/25 transition-colors"
+                  style={{ background: currentOrderMode === "token_prepaid" ? "rgba(210,251,80,0.05)" : "transparent", borderColor: currentOrderMode === "token_prepaid" ? "rgba(210,251,80,0.3)" : undefined }}>
+                  <input type="radio" name="order_mode" value="token_prepaid"
+                    defaultChecked={currentOrderMode === "token_prepaid"}
+                    className="mt-0.5 accent-lime h-4 w-4 shrink-0" />
+                  <div>
+                    <div className="text-[13px] text-graphite-200 font-semibold">
+                      Token counter
+                    </div>
+                    <div className="text-[11.5px] text-graphite-400 mt-1 leading-[1.6]">
+                      No screens while you cook. Paid orders are confirmed automatically; the customer&apos;s phone shows a token number (like T-2431) and a PAID stamp — they show it at the counter, you hand over the food. Built for stalls and tiffin counters run by one or two people.
                     </div>
                   </div>
                 </label>

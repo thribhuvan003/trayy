@@ -320,6 +320,7 @@ export async function updateCanteenSettings(opts: {
   upiVpa: string | null;
   paymentMode?: "direct_upi" | "razorpay";
   adminPhone?: string | null;
+  orderMode?: "kitchen_flow" | "token_prepaid";
 }): Promise<{ ok: boolean; error?: string }> {
   const c = await adminContext();
   if (!c.ok) return { ok: false, error: c.error };
@@ -338,6 +339,7 @@ export async function updateCanteenSettings(opts: {
       upi_vpa: opts.upiVpa ? opts.upiVpa.toLowerCase() : null,
       ...(opts.paymentMode ? { payment_mode: opts.paymentMode } : {}),
       ...(opts.adminPhone !== undefined ? { admin_phone: opts.adminPhone } : {}),
+      ...(opts.orderMode ? { order_mode: opts.orderMode } : {}),
     } as any)
     .eq("id", c.tenant.id);
   if (error) return { ok: false, error: error.message };

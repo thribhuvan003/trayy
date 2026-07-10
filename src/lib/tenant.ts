@@ -6,6 +6,9 @@ import { env } from "@/lib/env";
 import { logger } from "@/lib/logging";
 import type { Database } from "@/lib/db/types";
 
+export type TenantTier = "canteen" | "street_stall";
+export type OrderMode = "kitchen_flow" | "token_prepaid";
+
 export type ResolvedTenant = {
   id: string;
   slug: string;
@@ -19,6 +22,8 @@ export type ResolvedTenant = {
   building: string | null;
   zone: string | null;
   is_open: boolean;
+  tier: TenantTier;
+  order_mode: OrderMode;
   pending_orders_count?: number;
 };
 
@@ -118,6 +123,10 @@ const fetchTenantUncached = async (slug: string): Promise<ResolvedTenant | null>
       building: string | null;
       zone: string | null;
       is_open: boolean;
+      // Street Edition fields (migration 0028). Defaulted below so the app
+      // stays correct even against a database that pre-dates the migration.
+      tier?: string | null;
+      order_mode?: string | null;
     };
     if (!row) return null;
 
@@ -134,6 +143,8 @@ const fetchTenantUncached = async (slug: string): Promise<ResolvedTenant | null>
       building: row.building ?? null,
       zone: row.zone ?? null,
       is_open: row.is_open ?? true,
+      tier: row.tier === "street_stall" ? "street_stall" : "canteen",
+      order_mode: row.order_mode === "token_prepaid" ? "token_prepaid" : "kitchen_flow",
     };
   } catch (err) {
     logger.error("resolveTenant failed", err, { slug });
@@ -178,6 +189,8 @@ export const resolveTenant = cache(async (slug: string): Promise<ResolvedTenant 
       building: "Main Block",
       zone: "Food Court",
       is_open: true,
+      tier: "canteen",
+      order_mode: "kitchen_flow",
     };
   }
 

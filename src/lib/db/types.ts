@@ -711,11 +711,13 @@ export type Database = {
           mess_type: string | null
           name: string
           opens_at: string | null
+          order_mode: string
           paused_until: string | null
           payment_mode: string
           razorpay_key_id_enc: string | null
           razorpay_key_secret_enc: string | null
           slug: string
+          tier: string
           upi_trust_enabled: boolean
           upi_vpa: string | null
           zone: string | null
@@ -736,11 +738,13 @@ export type Database = {
           mess_type?: string | null
           name: string
           opens_at?: string | null
+          order_mode?: string
           paused_until?: string | null
           payment_mode?: string
           razorpay_key_id_enc?: string | null
           razorpay_key_secret_enc?: string | null
           slug: string
+          tier?: string
           upi_trust_enabled?: boolean
           upi_vpa?: string | null
           zone?: string | null
@@ -761,11 +765,13 @@ export type Database = {
           mess_type?: string | null
           name?: string
           opens_at?: string | null
+          order_mode?: string
           paused_until?: string | null
           payment_mode?: string
           razorpay_key_id_enc?: string | null
           razorpay_key_secret_enc?: string | null
           slug?: string
+          tier?: string
           upi_trust_enabled?: boolean
           upi_vpa?: string | null
           zone?: string | null
@@ -814,14 +820,20 @@ export type Database = {
         Args: { p_slug: string }
         Returns: {
           allowed_domain: string
+          building: string
           college_name: string
+          college_slug: string
           hero_tagline: string
           id: string
           is_active: boolean
+          is_open: boolean
           logo_url: string
           name: string
+          order_mode: string
           slug: string
+          tier: string
           upi_vpa: string
+          zone: string
         }[]
       }
       show_limit: { Args: never; Returns: number }
