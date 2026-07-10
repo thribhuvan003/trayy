@@ -7,22 +7,22 @@ const ROZHA = "var(--font-rozha), serif";
 const ROWS = [
   {
     n: "№ 1",
-    title: "Student pays first",
-    copy: "A tray is built on the phone and paid by UPI before anyone stands anywhere. The money lands in the canteen's own account, not a platform wallet.",
+    title: "Customer pays first",
+    copy: "A tray is built on the phone and paid by UPI before anyone stands anywhere. The money lands in the stall's own account, not a platform wallet.",
     stamp: ["UPI CONFIRMED", "12:47:03"],
     red: false,
   },
   {
     n: "№ 2",
     title: "Ticket hits the kitchen",
-    copy: "The queue board updates the same second. Every ticket carries items, prep targets and the student's name — no paper slips, no counter shouting.",
+    copy: "The queue board updates the same second. Every ticket carries items, prep targets and the customer's name — no paper slips, no counter shouting.",
     stamp: ["TICKET T-2425", "12:47:09"],
     red: false,
   },
   {
     n: "№ 3",
-    title: "Student tracks prep live",
-    copy: "Queued, preparing, ready — the order moves on the student's screen as the kitchen works. They walk over only when it's actually ready.",
+    title: "Customer tracks prep live",
+    copy: "Queued, preparing, ready — the order moves on the customer's screen as the kitchen works. They walk over only when it's actually ready.",
     stamp: ["STATUS READY", "12:51:44"],
     red: false,
   },

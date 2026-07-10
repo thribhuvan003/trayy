@@ -69,8 +69,8 @@ export function CouponsSection() {
           Three coupons. One book.
         </h2>
         <p style={{ margin: 0, fontSize: 18, lineHeight: 1.6, color: "rgba(34,31,24,.7)", maxWidth: 620, textWrap: "pretty" }}>
-          Student, kitchen and admin all read from the same record. Tear off any coupon below — the demos are live, connected, and
-          need no sign-up.
+          Customer, kitchen and admin all read from the same record. Tear off any coupon below — each is an interactive
+          walkthrough with sample data, no sign-up needed.
         </p>
       </div>
 

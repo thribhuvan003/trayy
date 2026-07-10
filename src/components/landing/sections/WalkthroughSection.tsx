@@ -8,7 +8,7 @@ const ROZHA = "var(--font-rozha), serif";
 const SCENE_MS = 5000;
 
 const STEP_TITLES = [
-  "Student pays by UPI",
+  "Customer pays by UPI",
   "Ticket lands in kitchen",
   "OTP handover",
   "Cash book settles",
@@ -31,10 +31,10 @@ function SceneStudent() {
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
           <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".18em", color: "#E8C860" }}>
-            STUDENT · TODAY&apos;S BOARD
+            CUSTOMER · TODAY&apos;S BOARD
           </span>
           <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".12em", color: "rgba(242,238,226,.5)" }}>
-            MAIN CANTEEN
+            STALL NO. 7 · MG ROAD
           </span>
         </div>
         {[
@@ -68,7 +68,7 @@ function SceneStudent() {
           }}
         >
           <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: ".12em", color: "rgba(242,238,226,.55)" }}>
-            GOES TO ADITYA-CANTEEN@UPI
+            GOES TO STALL-07@UPI
           </span>
           <span style={{ padding: "10px 22px", borderRadius: 4, background: "#E8C860", color: "#17221C", fontWeight: 800, fontSize: 15.5 }}>
             Pay ₹120 by UPI →
@@ -187,7 +187,7 @@ function SceneOtp() {
         </div>
         <div style={{ background: "#F8F4E8", color: "#23201A", borderRadius: 5, borderLeft: "5px solid #2E7D52", padding: "18px 20px" }}>
           <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".14em", color: "rgba(35,32,26,.55)", marginBottom: 10 }}>
-            STUDENT SHOWS THEIR CODE
+            CUSTOMER SHOWS THEIR CODE
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
             {["4", "8", "2", "1"].map((d, i) => (
@@ -322,7 +322,7 @@ function SceneAdmin() {
           }}
         >
           <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".14em", color: "rgba(35,32,25,.6)" }}>
-            MAIN CANTEEN — TODAY
+            STALL NO. 7 — TODAY
           </span>
           <span style={{ fontFamily: ROZHA, fontSize: 24, color: "#1E5A3C" }}>₹18,540</span>
         </div>
@@ -342,7 +342,7 @@ function SceneAdmin() {
           }}
         >
           <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".12em", color: "#1E5A3C", fontWeight: 700 }}>
-            ALL 3 CANTEENS · ONE SIGN-IN
+            ALL 3 STALLS · ONE SIGN-IN
           </span>
           <span style={{ fontFamily: ROZHA, fontSize: 19, color: "#1E5A3C" }}>₹54,860</span>
         </div>
@@ -415,7 +415,7 @@ export function WalkthroughSection() {
             maxWidth: 780,
           }}
         >
-          One campus. Every canteen.
+          One street. Every stall.
           <br />
           Watch an order run the loop.
         </h2>
@@ -423,7 +423,7 @@ export function WalkthroughSection() {
           Twenty seconds, four screens — the actual flow playing itself, not a video. Click any step to jump.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-          {["EVERY CANTEEN ON CAMPUS, ONE APP", "ONE SIGN-IN RUNS THEM ALL"].map((chip) => (
+          {["EVERY STALL ON THE STREET, ONE APP", "ONE SIGN-IN RUNS THEM ALL"].map((chip) => (
             <span
               key={chip}
               style={{

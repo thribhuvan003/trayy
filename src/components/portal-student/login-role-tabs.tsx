@@ -17,7 +17,7 @@ const ROLES: {
 }[] = [
   {
     id: "student",
-    label: "Student",
+    label: "Customer",
     icon: "→",
     headline: "Order food,\nskip the queue.",
     accent: "Eat sooner.",
@@ -37,7 +37,7 @@ const ROLES: {
     id: "owner",
     label: "Admin",
     icon: "→",
-    headline: "Your canteen,\nyour dashboard.",
+    headline: "Your counter,\nyour dashboard.",
     accent: "Full control.",
     sub: "Any email works. Access menus, staff, payments, and live analytics.",
     cta: "Sign in to admin",
@@ -174,13 +174,13 @@ export function LoginRoleTabs({
           className="text-[13px]"
           style={{ color: "var(--color-ink, #1A1A19)", opacity: 0.5 }}
         >
-          Own a canteen?{" "}
+          Run a stall or canteen?{" "}
           <Link
             href="/get-started"
             className="font-semibold hover:underline underline-offset-2"
             style={{ color: "var(--color-ocean-500, #e60000)", opacity: 1 }}
           >
-            Set up your canteen on Tray →
+            Set up your counter on Tray →
           </Link>
         </p>
       </div>

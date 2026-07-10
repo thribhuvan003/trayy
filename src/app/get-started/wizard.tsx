@@ -61,7 +61,7 @@ function validateStep3(data: FormData): FieldErrors {
 
 function ProgressBar({ step }: { step: Step }) {
   const steps = [
-    { n: 1, label: "College" },
+    { n: 1, label: "Place" },
     { n: 2, label: "Canteen" },
     { n: 3, label: "Admin account" },
   ];
@@ -267,6 +267,7 @@ function Step1({
           error={errors.institutionType}
         >
           <option value="">Select type…</option>
+          <option value="street_stalls">Street Food Stall / Tiffin Center</option>
           <option value="college_university">College / University</option>
           <option value="school">School</option>
           <option value="corporate_campus">Corporate Campus</option>
@@ -350,9 +351,9 @@ function Step2({
         />
       </Field>
 
-      <Field label="Location on campus" error={errors.canteenBuilding}>
+      <Field label="Landmark or location" error={errors.canteenBuilding}>
         <TextInput
-          placeholder="e.g. Academic Block, Ground Floor, Building C"
+          placeholder="e.g. Near PG gate no. 2, MG Road, Building C"
           value={data.canteenBuilding}
           onChange={(e) => onChange("canteenBuilding", e.target.value)}
           error={errors.canteenBuilding}
@@ -478,8 +479,8 @@ function Sidebar() {
           <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
         </svg>
       ),
-      label: "Student portal",
-      desc: "Students browse the menu, pay by UPI, and collect with a 4-digit code.",
+      label: "Customer portal",
+      desc: "Customers browse the menu, pay by UPI, and collect with a 4-digit code.",
     },
     {
       color: "#d52821",
@@ -608,8 +609,8 @@ const INITIAL_FORM: FormData = {
 };
 
 const STEP_TITLES: Record<Step, { title: string; subtitle: string }> = {
-  1: { title: "Tell us about your college or institution", subtitle: "We'll set up your account around it." },
-  2: { title: "Set up your first canteen", subtitle: "You can add more canteens from the admin console later." },
+  1: { title: "Tell us about your place", subtitle: "A street corner, a campus, an office — we'll set up your account around it." },
+  2: { title: "Set up your first counter", subtitle: "You can add more counters from the admin console later." },
   3: { title: "Create your admin account", subtitle: "This is the account you'll use to manage everything." },
 };
 

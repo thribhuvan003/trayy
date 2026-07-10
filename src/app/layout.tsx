@@ -160,27 +160,28 @@ const SITE_URL = process.env.APP_URL ?? "https://trayy.vercel.app";
 
 export const metadata: Metadata = {
   title: {
-    default: "Tray — Campus food, without the queue.",
+    default: "Tray — Street food, without the queue.",
     template: "%s · Tray",
   },
   description:
-    "Students order from any canteen in their campus. Kitchens run live queues. Admins see orders, revenue, and handovers in real time.",
+    "Customers scan the stall's QR, order, pay the stall's UPI directly, and pick up with a token. Owners see orders and revenue in real time. Zero commission.",
   applicationName: "Tray",
   metadataBase: new URL(SITE_URL),
   alternates: { canonical: "/" },
   keywords: [
     "Tray",
-    "campus canteen ordering app",
-    "canteen ordering software",
+    "street food ordering app",
+    "food stall QR ordering",
+    "tiffin center ordering software",
+    "UPI direct payment ordering",
+    "zero commission food ordering",
     "QR menu ordering",
-    "food court ordering system",
-    "canteen management software",
-    "online food ordering for colleges",
-    "skip the canteen queue",
+    "food ordering near PG hostels",
+    "skip the queue",
   ],
   openGraph: {
-    title: "Tray — Campus food, without the queue.",
-    description: "One system, three doors. Run the canteen from one screen.",
+    title: "Tray — Street food, without the queue.",
+    description: "One register, three doors. Run the stall from one screen.",
     url: SITE_URL,
     siteName: "Tray",
     locale: "en_US",
@@ -188,8 +189,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Tray — Campus food, without the queue.",
-    description: "One system, three doors. Run the canteen from one screen.",
+    title: "Tray — Street food, without the queue.",
+    description: "One register, three doors. Run the stall from one screen.",
   },
   robots: {
     index: true,
@@ -247,7 +248,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               operatingSystem: "Web",
               url: SITE_URL,
               description:
-                "Campus canteen ordering platform. Students order from any canteen, kitchens run live queues, and admins track orders, revenue, and handovers in real time.",
+                "Zero-commission ordering platform for street food stalls, tiffin centers, and canteens. Customers order from the stall's QR, pay its UPI directly, and pick up with a token while owners track orders and revenue in real time.",
               offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
               publisher: { "@type": "Organization", name: "Tray", url: SITE_URL },
             }),
