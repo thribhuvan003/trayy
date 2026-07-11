@@ -2,10 +2,10 @@ import { describe, it, expect } from "vitest";
 import { pickVerifyPaise, finalAmountPaise } from "@/lib/payments/upi-verify";
 
 describe("pickVerifyPaise", () => {
-  it("returns a tag in 1..99 for an empty canteen", () => {
+  it("returns a tag in 1..999 for an empty stall", () => {
     const tag = pickVerifyPaise(5000, []);
     expect(tag).toBeGreaterThanOrEqual(1);
-    expect(tag).toBeLessThanOrEqual(99);
+    expect(tag).toBeLessThanOrEqual(999);
   });
 
   it("never collides with an existing final amount on the same base", () => {
@@ -16,11 +16,11 @@ describe("pickVerifyPaise", () => {
   it("ignores taken finals on a different base", () => {
     const tag = pickVerifyPaise(5000, [6043]);
     expect(tag).toBeGreaterThanOrEqual(1);
-    expect(tag).toBeLessThanOrEqual(99);
+    expect(tag).toBeLessThanOrEqual(999);
   });
 
-  it("returns 0 (manual fallback) when all 99 tags for the base are taken", () => {
-    const taken = Array.from({ length: 99 }, (_, i) => 5000 + (i + 1));
+  it("returns 0 (manual fallback) when all 999 tags for the base are taken", () => {
+    const taken = Array.from({ length: 999 }, (_, i) => 5000 + (i + 1));
     expect(pickVerifyPaise(5000, taken)).toBe(0);
   });
 });
