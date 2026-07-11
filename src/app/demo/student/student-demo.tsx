@@ -218,7 +218,7 @@ export function StudentDemo() {
               </span>
             </div>
             <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".2em", color: "rgba(242,238,226,.5)", marginTop: 6 }}>
-              STUDENT VIEW · ORDER OFF THE BOARD, SKIP THE LINE
+              CUSTOMER VIEW · ORDER OFF THE BOARD, SKIP THE LINE
             </div>
           </div>
           <div className="sd-tabs" style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" }}>
@@ -750,7 +750,7 @@ export function StudentDemo() {
               <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".16em", color: "rgba(34,31,24,.55)", marginBottom: 6 }}>
                 UPI COLLECT REQUEST · DEMO
               </div>
-              <div style={{ fontFamily: ROZHA, fontSize: 26, marginBottom: 18 }}>Paying the canteen directly</div>
+              <div style={{ fontFamily: ROZHA, fontSize: 26, marginBottom: 18 }}>Paying the stall directly</div>
               <div style={{ border: "1px solid rgba(34,31,24,.3)", borderRadius: 5, background: "#F4EEDD", padding: "14px 16px", marginBottom: 20 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
                   <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: ".1em", color: "rgba(34,31,24,.55)" }}>TO</span>

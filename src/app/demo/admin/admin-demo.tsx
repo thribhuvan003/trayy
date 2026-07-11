@@ -45,10 +45,10 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 const STAFF = [
-  { name: "Canteen owner", role: "Owner login · menus, prices, staff, payouts", scope: "THIS CANTEEN", scopeColor: "#1E5A3C" },
-  { name: "Kitchen counter 1", role: "Queue board · tickets and OTP handover only", scope: "QUEUE ONLY", scopeColor: "#2C50B0" },
-  { name: "Kitchen counter 2", role: "Queue board · tickets and OTP handover only", scope: "QUEUE ONLY", scopeColor: "#2C50B0" },
-  { name: "Campus office", role: "Read-only · cross-canteen revenue and audit", scope: "WHOLE CAMPUS", scopeColor: "#B03A2A" },
+  { name: "Stall owner", role: "Owner login · menus, prices, staff, payouts", scope: "THIS STALL", scopeColor: "#1E5A3C" },
+  { name: "Counter hand 1", role: "Queue board · tickets and OTP handover only", scope: "QUEUE ONLY", scopeColor: "#2C50B0" },
+  { name: "Counter hand 2", role: "Queue board · tickets and OTP handover only", scope: "QUEUE ONLY", scopeColor: "#2C50B0" },
+  { name: "Street office", role: "Read-only · cross-stall revenue and audit", scope: "WHOLE STREET", scopeColor: "#B03A2A" },
 ];
 
 function fmtMoney(n: number) {
@@ -118,7 +118,7 @@ export function AdminDemo() {
         .filter((x) => x && x.canteenId === c.id)
         .map((x) => ({
           id: x.id,
-          student: `${x.student || "Student"} · live from student demo`,
+          student: `${x.student || "Customer"} · live from customer demo`,
           items: (x.items || []).map((it) => `${it.name} × ${it.q || 1}`).join(", "),
           total: x.total || 0,
           status: (x.status || "incoming") as TicketStatus,
@@ -187,10 +187,10 @@ export function AdminDemo() {
               color: "rgba(35,32,25,.5)",
             }}
           >
-            <span style={{ whiteSpace: "nowrap" }}>LIVE DEMO · STUDENT ORDERS POST INTO THIS BOOK</span>
+            <span style={{ whiteSpace: "nowrap" }}>LIVE DEMO · CUSTOMER ORDERS POST INTO THIS BOOK</span>
             <span style={{ display: "flex", gap: 24 }}>
               <Link href="/" className="ad-strip-link">← LANDING</Link>
-              <Link href="/demo/student" className="ad-strip-link--green">STUDENT →</Link>
+              <Link href="/demo/student" className="ad-strip-link--green">CUSTOMER →</Link>
               <Link href="/demo/kitchen" className="ad-strip-link--green">KITCHEN →</Link>
             </span>
           </div>
@@ -200,7 +200,7 @@ export function AdminDemo() {
             <div>
               <div style={{ fontFamily: SERIF, fontWeight: 700, fontSize: 30, lineHeight: 1, color: "#1E5A3C" }}>Tray — Daily Cash Book</div>
               <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".16em", color: "rgba(35,32,25,.5)", marginTop: 8 }}>
-                CANTEEN ACCOUNTS · SETTLED DIRECT TO MERCHANT VPA · COMMISSION NIL
+                STALL ACCOUNTS · SETTLED DIRECT TO MERCHANT VPA · COMMISSION NIL
               </div>
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -292,10 +292,10 @@ export function AdminDemo() {
           {/* ============ OVERVIEW ============ */}
           {view === "overview" && (
             <div style={{ animation: "adRowIn .3s ease both" }}>
-              {/* Campus rollup */}
+              {/* Street rollup */}
               <div className="ad-rollup">
                 <span style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: ".14em", color: "#1E5A3C", whiteSpace: "nowrap" }}>
-                  WHOLE CAMPUS · {campus.n} CANTEENS · ONE SIGN-IN
+                  WHOLE STREET · {campus.n} STALLS · ONE SIGN-IN
                 </span>
                 <span style={{ flex: 1, borderTop: "1px dotted rgba(30,90,60,.45)" }} />
                 <span style={{ fontSize: 15, fontWeight: 600, whiteSpace: "nowrap" }}>
@@ -556,7 +556,7 @@ export function AdminDemo() {
                   );
                 })}
                 <p style={{ margin: "14px 0 0", fontFamily: MONO, fontSize: 10, letterSpacing: ".1em", lineHeight: 1.8, color: "rgba(35,32,25,.45)" }}>
-                  SOLD-OUT ITEMS DISAPPEAR FROM THE STUDENT MENU INSTANTLY. PRICE EDITS POST TO THE AUDIT LOG.
+                  SOLD-OUT ITEMS DISAPPEAR FROM THE CUSTOMER MENU INSTANTLY. PRICE EDITS POST TO THE AUDIT LOG.
                 </p>
               </section>
 
@@ -616,7 +616,7 @@ export function AdminDemo() {
                 <div style={{ marginTop: 22, border: "1.5px dashed rgba(30,90,60,.45)", borderRadius: 4, padding: "14px 16px" }}>
                   <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: ".14em", color: "#1E5A3C", marginBottom: 6 }}>HOW THIS SYNCS</div>
                   <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.55, color: "rgba(35,32,25,.7)" }}>
-                    Menu edits are one Postgres write. Supabase Realtime fans the change out to the student menu, the kitchen queue and this
+                    Menu edits are one Postgres write. Supabase Realtime fans the change out to the customer menu, the kitchen queue and this
                     book — no refresh anywhere.
                   </p>
                 </div>
@@ -773,7 +773,7 @@ export function AdminDemo() {
             style={{ borderTop: "2px solid #1E5A3C", padding: "14px 56px 18px", display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 16 }}
           >
             <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: ".14em", color: "rgba(35,32,25,.45)" }}>
-              BOOK BALANCED · ROW-LEVEL SECURITY KEEPS THIS CAMPUS&apos;S PAGES SEALED FROM EVERY OTHER CAMPUS
+              BOOK BALANCED · ROW-LEVEL SECURITY KEEPS THIS STALL&apos;S PAGES SEALED FROM EVERY OTHER STALL
             </span>
             <span style={{ fontFamily: SERIF, fontSize: 15, color: "rgba(35,32,25,.6)", fontStyle: "italic" }}>— entered by Tray, {ready ? today : ""}</span>
           </footer>

@@ -68,7 +68,7 @@ function buildTickets(c: Canteen, overrides: Record<string, TicketStatus>): Queu
       status: x.status || "incoming",
       placedAt: x.placedAt || nowTs,
       target: (x.items || []).reduce((a, it) => Math.max(a, it.tgt || 6), 6) * 60,
-      student: x.student || "Student",
+      student: x.student || "Customer",
       fromInbox: true,
     }));
   const seen: Record<string, boolean> = {};
@@ -256,10 +256,10 @@ export function KitchenDemo() {
             color: "rgba(237,234,224,.42)",
           }}
         >
-          <span>LIVE DEMO · ORDERS PLACED IN THE STUDENT DEMO LAND HERE</span>
+          <span>LIVE DEMO · ORDERS PLACED IN THE CUSTOMER DEMO LAND HERE</span>
           <span style={{ display: "flex", gap: 24 }}>
             <Link href="/" className="kd-strip-link">← LANDING</Link>
-            <Link href="/demo/student" className="kd-strip-link--green">STUDENT →</Link>
+            <Link href="/demo/student" className="kd-strip-link--green">CUSTOMER →</Link>
             <Link href="/demo/admin" className="kd-strip-link--green">ADMIN →</Link>
           </span>
         </div>
@@ -406,7 +406,7 @@ export function KitchenDemo() {
                   NO NEW ORDERS
                   <br />
                   <Link href="/demo/student" style={{ color: "#7FB79A", textDecoration: "none" }}>
-                    PLACE ONE IN THE STUDENT DEMO →
+                    PLACE ONE IN THE CUSTOMER DEMO →
                   </Link>
                 </div>
               )}
@@ -525,7 +525,7 @@ export function KitchenDemo() {
                     </div>
                     <div style={{ padding: "8px 16px 14px" }}>
                       <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: ".12em", color: "rgba(35,32,26,.55)", marginBottom: 7, whiteSpace: "nowrap" }}>
-                        STUDENT&apos;S CODE <span style={{ color: "rgba(35,32,26,.35)" }}>· DEMO HINT {t.otp}</span>
+                        CUSTOMER&apos;S CODE <span style={{ color: "rgba(35,32,26,.35)" }}>· DEMO HINT {t.otp}</span>
                       </div>
                       <div style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
                         <input
@@ -572,7 +572,7 @@ export function KitchenDemo() {
                       </div>
                       {err && (
                         <div style={{ marginTop: 7, fontFamily: MONO, fontSize: 10.5, letterSpacing: ".08em", color: "#C13A2A" }}>
-                          CODE DOESN&apos;T MATCH — ASK THE STUDENT AGAIN
+                          CODE DOESN&apos;T MATCH — ASK THE CUSTOMER AGAIN
                         </div>
                       )}
                     </div>
@@ -666,11 +666,11 @@ export function KitchenDemo() {
               }}
             >
               <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".14em", color: "rgba(35,32,26,.5)", marginBottom: 4 }}>
-                ONE WRITE → EVERY STUDENT SCREEN
+                ONE WRITE → EVERY CUSTOMER SCREEN
               </div>
               <div style={{ fontFamily: BSC, fontWeight: 800, fontSize: 25, marginBottom: 4 }}>Push today&apos;s special</div>
               <p style={{ margin: "0 0 20px", fontSize: 14.5, lineHeight: 1.5, color: "rgba(35,32,26,.65)" }}>
-                It appears on the student menu instantly. Open the student demo in another tab and watch it land.
+                It appears on the customer menu instantly. Open the customer demo in another tab and watch it land.
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: 13, marginBottom: 20 }}>
                 <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -752,7 +752,7 @@ export function KitchenDemo() {
               fontFamily: "var(--font-barlow), sans-serif",
             }}
           >
-            On the board — live on every student screen ✓
+            On the board — live on every customer screen ✓
           </div>
         )}
       </div>

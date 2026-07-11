@@ -1,6 +1,6 @@
 /**
- * Shared fixture data for the public Tray demos — one campus, multiple
- * canteens. Mirrors the shape used by the static demos in /public/demo so
+ * Shared fixture data for the public Tray demos — one street, multiple
+ * stalls. Mirrors the shape used by the static demos in /public/demo so
  * the demo pages stay interoperable through the same localStorage keys.
  */
 
@@ -135,12 +135,12 @@ const now = () => Date.now();
 export const CANTEENS: Record<string, Canteen> = {
   aditya: {
     id: "aditya",
-    name: "Aditya Eng. Canteen",
-    short: "Main block",
-    av: "A",
-    block: "Engineering block",
-    upi: "aditya-canteen@upi",
-    kitchenTag: "Engineering block · Lunch service",
+    name: "Sri Sai Tiffins",
+    short: "MG Road",
+    av: "S",
+    block: "MG Road · near Gate 2",
+    upi: "srisai-tiffins@upi",
+    kitchenTag: "MG Road · Tiffin service",
     openLabel: "Open now · 11:30–2:30",
     categories: [
       { id: "all", label: "All items", sub: "Full menu" },
@@ -232,12 +232,12 @@ export const CANTEENS: Record<string, Canteen> = {
   },
   "north-block": {
     id: "north-block",
-    name: "North Block Canteen",
-    short: "North campus",
-    av: "N",
-    block: "North block · Food court",
-    upi: "north-block@upi",
-    kitchenTag: "North block · Quick service",
+    name: "Anna Chaat Corner",
+    short: "5th Cross",
+    av: "A",
+    block: "5th Cross · bus stop",
+    upi: "anna-chaat@upi",
+    kitchenTag: "5th Cross · Snacks",
     openLabel: "Open now · 12:00–3:00",
     categories: [
       { id: "all", label: "All items", sub: "Full menu" },
@@ -317,13 +317,13 @@ export const CANTEENS: Record<string, Canteen> = {
   },
   "hostel-b": {
     id: "hostel-b",
-    name: "Hostel B Mess",
-    short: "Hostel dining",
-    av: "H",
-    block: "Hostel B · Ground floor",
-    upi: "hostel-b-mess@upi",
-    kitchenTag: "Hostel B · Mess lunch",
-    openLabel: "Mess open · 12:30–2:00",
+    name: "Guru Meals",
+    short: "PG Lane",
+    av: "G",
+    block: "PG Lane · near Gate 3",
+    upi: "guru-meals@upi",
+    kitchenTag: "PG Lane · Meals",
+    openLabel: "Open now · 12:30–2:00",
     categories: [
       { id: "all", label: "All items", sub: "Today's mess" },
       { id: "meal", label: "Meals", sub: "Plate service" },
