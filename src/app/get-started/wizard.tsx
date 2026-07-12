@@ -18,6 +18,7 @@ interface FormData {
   canteenName: string;
   canteenBuilding: string;
   upiVpa: string;
+  orderMode: string;
   opensAt: string;
   closesAt: string;
   adminName: string;
@@ -41,7 +42,7 @@ function validateStep1(data: FormData): FieldErrors {
 
 function validateStep2(data: FormData): FieldErrors {
   const errs: FieldErrors = {};
-  if (!data.canteenName.trim()) errs.canteenName = "Canteen name is required";
+  if (!data.canteenName.trim()) errs.canteenName = "Outlet name is required";
   return errs;
 }
 
@@ -62,7 +63,7 @@ function validateStep3(data: FormData): FieldErrors {
 function ProgressBar({ step }: { step: Step }) {
   const steps = [
     { n: 1, label: "Place" },
-    { n: 2, label: "Canteen" },
+    { n: 2, label: "Counter" },
     { n: 3, label: "Admin account" },
   ];
   return (
@@ -341,9 +342,9 @@ function Step2({
 }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <Field label="Canteen name" error={errors.canteenName}>
+      <Field label="Outlet name" error={errors.canteenName}>
         <TextInput
-          placeholder="e.g. Main Canteen, Block A Mess, Cafeteria"
+          placeholder="e.g. Guru Meals, Block A Mess, Anna's Chaat"
           value={data.canteenName}
           onChange={(e) => onChange("canteenName", e.target.value)}
           error={errors.canteenName}
@@ -362,13 +363,61 @@ function Step2({
 
       <Field
         label="UPI address (VPA)"
-        hint="e.g. canteen@okaxis — students will pay directly to this VPA. Optional."
+        hint="e.g. canteen@okaxis — customers pay directly to this VPA. Optional."
       >
         <TextInput
           placeholder="canteen@okaxis"
           value={data.upiVpa}
           onChange={(e) => onChange("upiVpa", e.target.value)}
         />
+      </Field>
+
+      <Field label="How do you run orders?">
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 10 }}>
+          {([
+            {
+              value: "kitchen_flow",
+              title: "Kitchen board",
+              desc: "Staff work each order on a screen — accept, prepare, mark ready, verify pickup. Best if you have kitchen staff.",
+            },
+            {
+              value: "token_prepaid",
+              title: "Token counter — no kitchen screen",
+              desc: "Paid orders confirm themselves; the customer's phone shows a token number to show at the counter. Best for a one- or two-person stall.",
+            },
+          ] as const).map((opt) => {
+            const active = data.orderMode === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => onChange("orderMode", opt.value)}
+                style={{
+                  textAlign: "left",
+                  padding: "13px 15px",
+                  borderRadius: 10,
+                  border: active ? "1.5px solid #1d3fbf" : "1px solid rgba(34,31,24,0.2)",
+                  background: active ? "rgba(29,63,191,0.05)" : "#fff",
+                  cursor: "pointer",
+                  transition: "border-color .15s, background .15s",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 3 }}>
+                  <span
+                    aria-hidden
+                    style={{
+                      width: 15, height: 15, borderRadius: "50%", flexShrink: 0,
+                      border: active ? "4px solid #1d3fbf" : "2px solid rgba(34,31,24,0.35)",
+                      transition: "border .15s",
+                    }}
+                  />
+                  <span style={{ fontWeight: 700, fontSize: 14.5 }}>{opt.title}</span>
+                </div>
+                <p style={{ margin: "0 0 0 24px", fontSize: 12.5, lineHeight: 1.45, color: "rgba(34,31,24,0.6)" }}>{opt.desc}</p>
+              </button>
+            );
+          })}
+        </div>
       </Field>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
@@ -601,6 +650,7 @@ const INITIAL_FORM: FormData = {
   canteenName: "",
   canteenBuilding: "",
   upiVpa: "",
+  orderMode: "kitchen_flow",
   opensAt: "08:00",
   closesAt: "20:00",
   adminName: "",
@@ -655,6 +705,7 @@ export function GetStartedWizard({ isNewUser = false, isSignedIn = false }: { is
         canteenName: formData.canteenName,
         canteenBuilding: formData.canteenBuilding.trim() || null,
         upiVpa: formData.upiVpa.trim() || null,
+        orderMode: formData.orderMode === "token_prepaid" ? "token_prepaid" : "kitchen_flow",
         opensAt: formData.opensAt || null,
         closesAt: formData.closesAt || null,
         adminEmail: formData.adminEmail,

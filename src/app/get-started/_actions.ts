@@ -59,6 +59,7 @@ export interface CreateInstitutionForm {
   canteenName: string;
   canteenBuilding: string | null;
   upiVpa: string | null;
+  orderMode: string;
   opensAt: string | null;
   closesAt: string | null;
   adminEmail: string;
@@ -202,6 +203,8 @@ export async function createInstitution(
       college_id: college.id,
       building: form.canteenBuilding || null,
       upi_vpa: form.upiVpa || null,
+      order_mode: form.orderMode === "token_prepaid" ? "token_prepaid" : "kitchen_flow",
+      tier: form.orderMode === "token_prepaid" ? "street_stall" : "canteen",
       opens_at: form.opensAt || null,
       closes_at: form.closesAt || null,
       allowed_domain: null, // never restrict by domain — open to any email
