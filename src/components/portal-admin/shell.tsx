@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, BookOpen, ClipboardList, Copy, ExternalLink, LayoutGrid, LineChart, ListOrdered, LogOut, Settings, Users } from "lucide-react";
+import { Activity, BookOpen, ClipboardList, Copy, ExternalLink, LayoutGrid, LineChart, ListOrdered, LogOut, QrCode, Settings, Users } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const NAV_ITEMS = [
@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { key: "dashboard", label: "Overview", icon: LayoutGrid, kbd: "G O" },
   { key: "orders", label: "Orders", icon: ClipboardList, kbd: "G R" },
   { key: "menu", label: "Menu", icon: BookOpen, kbd: "G M" },
+  { key: "qr", label: "QR poster", icon: QrCode, kbd: "G Q" },
   { key: "staff", label: "Staff", icon: Users, kbd: "G S" },
   { key: "analytics", label: "Insights", icon: LineChart, kbd: "G I" },
   { key: "settings", label: "Settings", icon: Settings, kbd: "G ," },
