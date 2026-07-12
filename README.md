@@ -38,7 +38,7 @@ No IT team required. No per-tenant infrastructure. No app install for customers 
 | Customer app | [trayy.vercel.app/c/aditya/menu](https://trayy.vercel.app/c/aditya/menu) |
 | Kitchen board | [trayy.vercel.app/c/aditya/kitchen](https://trayy.vercel.app/c/aditya/kitchen) |
 | Admin console | [trayy.vercel.app/c/aditya/admin/dashboard](https://trayy.vercel.app/c/aditya/admin/dashboard) |
-| College portal | [trayy.vercel.app/college/aditya](https://trayy.vercel.app/college/aditya) |
+| Area portal (multi-outlet) | [trayy.vercel.app/college/aditya](https://trayy.vercel.app/college/aditya) |
 
 No account required to explore the demo.
 
@@ -50,15 +50,15 @@ No account required to explore the demo.
 
 Every database row carries a `tenant_id`. Postgres Row Level Security enforces isolation at the database layer — not in application code. There is no scattered `WHERE tenant_id = ?` logic; a mis-scoped query returns zero rows and cannot leak another tenant's data.
 
-A single Vercel deployment serves **N colleges**, each with **M canteens**, each with their own URL, menu, payment account, and dashboard.
+A single Vercel deployment serves **N locations** (a street, a PG cluster, a campus), each with **M outlets** (stalls, tiffin counters, canteens), each with their own URL, menu, payment account, and dashboard.
 
 ### Routing
 
 ```
-/c/[slug]/menu            →  student ordering app
-/c/[slug]/kitchen         →  live kitchen queue
+/c/[slug]/menu            →  customer ordering app
+/c/[slug]/kitchen         →  live kitchen queue (+ /kitchen/announce audio counter)
 /c/[slug]/admin/...       →  business dashboard
-/college/[slug]           →  college-level multi-canteen view
+/college/[slug]           →  area-level multi-outlet view (legacy path name)
 ```
 
 `middleware.ts` resolves the tenant slug from the path before any route handler runs, then injects `x-tenant-slug` into the request headers. Route handlers never parse URLs for tenant context — they read a header.
@@ -87,7 +87,7 @@ payment.captured webhook
   → order_events INSERT             (in the same transaction)
     → kitchen board refresh         (< 1 s)
     → admin KPI update              (< 1 s)
-    → student tracking page         (< 1 s)
+    → customer tracking page        (< 1 s)
 ```
 
 All three portals stay synchronized. A 20-second poll fallback and exponential-backoff reconnect (900 ms base, 30 s cap, ±400 ms jitter) keep the kitchen board alive through 30–60 second WiFi drops.
@@ -104,10 +104,10 @@ Tray started as a campus canteen system and was repositioned for street stalls. 
 |-------|--------|-----|
 | Framework | Next.js 15 App Router + React 19 + TypeScript strict | Server components, streaming, zero-config deployment |
 | Database | Supabase Postgres + Row Level Security | Native multi-tenant isolation, no application-layer filtering |
-| Auth | Supabase Auth | Magic link for students, PIN kiosk for kitchen staff |
+| Auth | Supabase Auth | Magic link for customers, PIN kiosk for kitchen staff |
 | Realtime | Supabase Realtime — `order_events` INSERT fan-out | Append-only events = minimal WAL, no duplicate status updates |
 | Payments | Razorpay UPI | HMAC webhooks, direct VPA settlement, zero card data stored |
-| Styling | Tailwind CSS v4 | Separate design tokens per portal (cream/crimson for students, dark editorial for kitchen) |
+| Styling | Tailwind CSS v4 | Separate design tokens per portal (cream/crimson for customers, dark editorial for kitchen) |
 | State | Zustand (cart) + React Server Components (server state) | Per-tenant cart bucket in localStorage; no global client state |
 | Animation | Framer Motion + GSAP + Lenis | Scroll-triggered reveals, magnetic buttons, smooth scroll |
 | Rate limiting | Upstash Redis | Distributed across Vercel instances; in-memory fallback for local dev |
@@ -124,9 +124,9 @@ Tray started as a campus canteen system and was repositioned for street stalls. 
 ### Customer `/c/[slug]/`
 
 - Browse menu with live availability, search, and veg/egg/nonveg filter
-- Cart with takeaway or dine-in selection, persisted per canteen in localStorage
+- Cart with takeaway or dine-in selection, persisted per outlet in localStorage
 - UPI payment: `upi://` deep link on mobile, QR code on desktop
-- Real-time order tracking: Placed → Preparing → Ready → Collected
+- Two order flows per outlet: full tracking (Placed → Preparing → Ready → Collected) for kitchens, or **token counter** (paid ⇒ token shown, no kitchen step) for stalls
 - 4-digit OTP handover at the counter (3-attempt lockout)
 - 5-minute cancel window with automatic refund to source account
 - Kitchen "busy" warning when queue depth exceeds threshold
@@ -138,9 +138,9 @@ Tray started as a campus canteen system and was repositioned for street stalls. 
 - 5-second undo window after any status advance — one tap reverses a mistake
 - Order rejection with selectable reason + free text; refund triggered automatically
 - Prep totals: aggregated quantities across all active orders ("7× Biryani")
-- One-tap SOLD OUT per item; updates the student menu in under 300 ms
+- One-tap SOLD OUT per item; updates the customer menu in under 300 ms
 - Walk-in order creation: staff searches/browses menu, places order at the counter
-- New-order bell chime with mute toggle
+- New-order bell chime with mute toggle, plus an optional hands-free audio announcer (`/kitchen/announce`) that reads each paid order aloud
 - Three-state connection indicator: Online / Reconnecting / OFFLINE
 - Exponential-backoff reconnect; 20-second poll fallback; survives network drops
 - PIN kiosk for shift-based staff login
@@ -157,11 +157,11 @@ Tray started as a campus canteen system and was repositioned for street stalls. 
 - Settings: UPI VPA (Razorpay-validated at save), opening hours, pause/unpause with countdown
 - CSV export filtered by date range
 
-### College portal `/college/[slug]/`
+### Area portal `/college/[slug]/` (legacy path name)
 
-- Multi-canteen overview for a college director
+- Multi-outlet overview for an operator running several stalls/counters in one area
 - Live order counts and open/close status per outlet
-- Cross-canteen reports
+- Cross-outlet reports
 
 ---
 
@@ -190,7 +190,7 @@ tray/
 │   │   │   │   └── staff-select/ PIN kiosk login
 │   │   │   └── layout.tsx
 │   │   │
-│   │   ├── (student)/            Student portal route group
+│   │   ├── (student)/            Customer portal route group (folder name kept; serves customers)
 │   │   │   ├── _actions.ts       placeOrder, cancelOrder, verifyPayment, getOtp, initiateRefund
 │   │   │   ├── menu/             Menu browse
 │   │   │   ├── orders/           Order history
@@ -211,9 +211,9 @@ tray/
 │   │   │   └── webhooks/razorpay/        POST — HMAC-verified payment events
 │   │   │
 │   │   ├── auth/                 Supabase auth callback + staff invite handler
-│   │   ├── c/[slug]/             Canteen entry redirect
-│   │   ├── college/[slug]/       College multi-canteen portal
-│   │   ├── college-admin/        College director dashboard
+│   │   ├── c/[slug]/             Outlet entry redirect
+│   │   ├── college/[slug]/       Area multi-outlet portal (legacy folder name)
+│   │   ├── college-admin/        Area operator dashboard (legacy folder name)
 │   │   ├── get-started/          Self-serve onboarding wizard
 │   │   └── page.tsx              Landing page
 │   │
@@ -292,7 +292,7 @@ Full-row WAL replication writes the entire row on every column update. Four stat
 
 **Postgres RLS over application-layer filtering**
 
-RLS policies run at the database level under the authenticated role. A misconfigured server action that forgets a tenant filter returns zero rows — it cannot return another tenant's data. Adding a new canteen requires zero code changes.
+RLS policies run at the database level under the authenticated role. A misconfigured server action that forgets a tenant filter returns zero rows — it cannot return another tenant's data. Adding a new outlet requires zero code changes.
 
 **`safe_capture_payment()` — atomic row-locked capture with amount validation**
 
@@ -367,7 +367,7 @@ Open [http://localhost:3000/c/aditya/menu](http://localhost:3000/c/aditya/menu).
 | `QSTASH_TOKEN` + signing keys | Order expiry + payment reconciliation crons |
 | `SENTRY_DSN` + `NEXT_PUBLIC_SENTRY_DSN` | Error tracking |
 | `SENTRY_AUTH_TOKEN` | Source map uploads to Sentry |
-| `DEFAULT_TENANT_SLUG` | Default canteen for subdomain-less local dev |
+| `DEFAULT_TENANT_SLUG` | Default outlet for subdomain-less local dev |
 
 ---
 

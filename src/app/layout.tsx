@@ -76,7 +76,7 @@ const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
   display: "swap",
 });
-// Expressive typography — landing + student portal art direction
+// Expressive typography — landing + customer portal art direction
 const bebasNeue = Bebas_Neue({
   subsets: ["latin"],
   weight: "400",
@@ -138,7 +138,7 @@ const bricolage = Bricolage_Grotesque({
   variable: "--font-bricolage",
   display: "swap",
 });
-// Neobrutalist student-portal art direction — distinctive, non-generic type.
+// Neobrutalist customer-portal art direction — distinctive, non-generic type.
 const unbounded = Unbounded({
   subsets: ["latin"],
   variable: "--font-unbounded",
