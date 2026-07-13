@@ -59,6 +59,12 @@ const SENSITIVE_VALUE_PATTERNS: RegExp[] = [
 
 type Jsonish = null | boolean | number | string | Jsonish[] | { [key: string]: Jsonish };
 
+type RedactedError = {
+  name: string;
+  message: string;
+  stack?: string;
+};
+
 function redactString(value: string) {
   const redacted = SENSITIVE_VALUE_PATTERNS.reduce(
     (current, pattern) => current.replace(pattern, REDACTED),
@@ -76,7 +82,7 @@ function redactValue(value: unknown, key?: string, depth = 0): Jsonish {
   if (typeof value === "number" || typeof value === "boolean") return value;
   if (typeof value === "bigint") return value.toString();
   if (value instanceof Date) return value.toISOString();
-  if (value instanceof Error) return redactError(value);
+  if (value instanceof Error) return redactError(value) as { [key: string]: Jsonish };
   if (depth >= 4) return "[Object]";
   if (Array.isArray(value)) return value.slice(0, 20).map((item) => redactValue(item, undefined, depth + 1));
   if (typeof value === "object") {
@@ -92,12 +98,13 @@ function redactContext(ctx?: LogContext): LogContext | undefined {
   return redactValue(ctx) as LogContext;
 }
 
-function redactError(err: Error) {
-  return {
+function redactError(err: Error): RedactedError {
+  const redacted: RedactedError = {
     name: redactString(err.name),
     message: redactString(err.message),
-    stack: err.stack ? redactString(err.stack) : undefined,
   };
+  if (err.stack) redacted.stack = redactString(err.stack);
+  return redacted;
 }
 
 function toSafeError(err: Error) {
