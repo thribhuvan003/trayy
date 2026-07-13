@@ -13,24 +13,26 @@ import "./ledger.css";
 const MONO = "var(--font-spline-mono), monospace";
 const ROZHA = "var(--font-rozha), serif";
 
-function Masthead() {
+function Masthead({ menuHref }: { menuHref: string }) {
   return (
     <header className="lp-masthead">
       <div className="lp-masthead-inner">
         <a href="#top" style={{ display: "flex", alignItems: "baseline", gap: 14, textDecoration: "none", color: "#221F18" }}>
           <span style={{ fontFamily: ROZHA, fontSize: 34, lineHeight: 1 }}>Tray</span>
           <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: ".18em", color: "rgba(34,31,24,.55)" }}>
-            STREET FOOD REGISTER
+            STREET EDITION
           </span>
         </a>
         <nav className="lp-nav" aria-label="Main navigation">
-          <a href="#demos" className="lp-nav-link">DEMOS</a>
+          <a href="#demos" className="lp-nav-link">TRY MENU</a>
           <a href="#ledger" className="lp-nav-link">HOW IT RUNS</a>
-          <a href="#sync" className="lp-nav-link">REALTIME</a>
-          <a href="#trust" className="lp-nav-link">UNDER THE HOOD</a>
+          <a href="#sync" className="lp-nav-link">STATUS</a>
+          <a href="#trust" className="lp-nav-link">PAYMENT SAFETY</a>
         </nav>
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: ".12em", color: "rgba(34,31,24,.5)" }}>REG. NO. TRY/2026</span>
+          <Link href={menuHref} className="lp-signin">
+            Open menu
+          </Link>
           <Link href="/login" className="lp-signin">
             Sign in
           </Link>
@@ -80,7 +82,7 @@ function MealToken({ college }: { college: string }) {
         >
           <div>
             <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".16em", color: "rgba(34,31,24,.55)" }}>{college}</div>
-            <div style={{ fontFamily: ROZHA, fontSize: 22, marginTop: 2 }}>Meal Token</div>
+            <div style={{ fontFamily: ROZHA, fontSize: 22, marginTop: 2 }}>Counter Token</div>
           </div>
           <div style={{ textAlign: "right" }}>
             <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".14em", color: "rgba(34,31,24,.55)" }}>TOKEN NO.</div>
@@ -89,8 +91,8 @@ function MealToken({ college }: { college: string }) {
         </div>
         <div style={{ padding: "18px 24px", display: "flex", flexDirection: "column", gap: 10 }}>
           {[
-            ["Chicken Biryani × 1", "₹140"],
-            ["Filter Coffee × 2", "₹50"],
+            ["Masala Dosa x 1", "₹70"],
+            ["Filter Coffee x 2", "₹50"],
           ].map(([item, price]) => (
             <div
               key={item}
@@ -108,12 +110,11 @@ function MealToken({ college }: { college: string }) {
           ))}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 4 }}>
             <span style={{ fontFamily: MONO, fontSize: 11.5, letterSpacing: ".14em", color: "rgba(34,31,24,.6)" }}>
-              UPI · stall-07@upi
+              DIRECT UPI · CHECK AT COUNTER
             </span>
-            <span style={{ fontFamily: ROZHA, fontSize: 22 }}>₹190</span>
+            <span style={{ fontFamily: ROZHA, fontSize: 22 }}>₹120</span>
           </div>
         </div>
-        {/* perforation */}
         <div style={{ position: "relative", height: 0, borderTop: "2px dashed rgba(34,31,24,.5)", margin: "4px 0" }}>
           <span
             aria-hidden
@@ -153,7 +154,7 @@ function MealToken({ college }: { college: string }) {
         >
           <div>
             <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".16em", color: "rgba(34,31,24,.55)", marginBottom: 6 }}>
-              SHOW AT COUNTER
+              SHOW AT PICKUP
             </div>
             <div style={{ display: "flex", gap: 7 }}>
               {["4", "8", "2", "1"].map((d, i) => (
@@ -164,39 +165,38 @@ function MealToken({ college }: { college: string }) {
             </div>
           </div>
           <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: ".1em", color: "rgba(34,31,24,.45)", textAlign: "right", lineHeight: 1.7 }}>
-            KITCHEN COPY
+            COUNTER COPY
             <br />
             12:47 PM
           </div>
         </div>
       </div>
-      {/* PAID stamp */}
       <div
         aria-hidden
         style={{
           position: "absolute",
           top: 96,
           right: -26,
-          padding: "8px 18px",
+          padding: "8px 16px",
           border: "3px double #C13A2A",
           borderRadius: 8,
           color: "#C13A2A",
           fontFamily: MONO,
           fontWeight: 700,
-          fontSize: 22,
-          letterSpacing: ".22em",
+          fontSize: 15,
+          letterSpacing: ".12em",
           mixBlendMode: "multiply",
           opacity: 0.88,
           animation: "lpStampIn .5s cubic-bezier(.34,1.4,.64,1) .4s both",
         }}
       >
-        PAID
+        UPI CLAIMED
       </div>
     </div>
   );
 }
 
-function Hero({ college }: { college: string }) {
+function Hero({ college, menuHref }: { college: string; menuHref: string }) {
   return (
     <section id="top" className="lp-hero">
       <div>
@@ -214,16 +214,16 @@ function Hero({ college }: { college: string }) {
             animation: "lpRise .6s cubic-bezier(.22,1,.36,1) both",
           }}
         >
-          <span style={{ fontWeight: 600 }}>ENTRY 00</span>
-          <span style={{ color: "rgba(34,31,24,.45)" }}>————</span>
-          <span style={{ color: "rgba(34,31,24,.6)" }}>ONE STREET · EVERY STALL · LIVE</span>
+          <span style={{ fontWeight: 600 }}>STREET EDITION</span>
+          <span style={{ color: "rgba(34,31,24,.45)" }}>----</span>
+          <span style={{ color: "rgba(34,31,24,.6)" }}>SCAN · ORDER · PICK UP</span>
         </div>
         <h1 className="lp-h1" style={{ animation: "lpRise .7s cubic-bezier(.22,1,.36,1) .08s both" }}>
-          Street food,
+          Order street food
           <br />
           without{" "}
           <span style={{ position: "relative", whiteSpace: "nowrap" }}>
-            the queue
+            crowding
             <span
               aria-hidden
               style={{
@@ -247,13 +247,13 @@ function Hero({ college }: { college: string }) {
             fontSize: 20,
             lineHeight: 1.6,
             color: "rgba(34,31,24,.75)",
-            maxWidth: 520,
+            maxWidth: 560,
             textWrap: "pretty",
             animation: "lpRise .7s cubic-bezier(.22,1,.36,1) .16s both",
           }}
         >
-          Customers order ahead from any stall on the street and collect with a four-digit code. The counter runs one live queue
-          instead of a shouting crowd. The stall keeps every rupee — Tray takes no commission.
+          Tray gives each stall a simple QR menu. Customers choose items, pay the stall directly by UPI or a configured gateway,
+          and collect with a token. Kitchen boards stay optional for bigger counters, not required for one-person stalls.
         </p>
         <div
           style={{
@@ -265,12 +265,12 @@ function Hero({ college }: { college: string }) {
             animation: "lpRise .7s cubic-bezier(.22,1,.36,1) .24s both",
           }}
         >
-          <Link href="/demo/student" className="lp-cta">
-            Open the interactive demo <span style={{ fontFamily: MONO }}>→</span>
+          <Link href={menuHref} className="lp-cta">
+            Open a sample menu <span style={{ fontFamily: MONO }}>→</span>
           </Link>
-          <a href="#trust" className="lp-underline-link">
-            I run a stall
-          </a>
+          <Link href="/get-started" className="lp-underline-link">
+            Set up my stall
+          </Link>
         </div>
         <div
           style={{
@@ -278,15 +278,15 @@ function Hero({ college }: { college: string }) {
             gap: 40,
             borderTop: "1.5px solid rgba(34,31,24,.8)",
             paddingTop: 18,
-            maxWidth: 560,
+            maxWidth: 620,
             flexWrap: "wrap",
             animation: "lpRise .7s cubic-bezier(.22,1,.36,1) .32s both",
           }}
         >
           {[
-            ["0%", "ORDER COMMISSION"],
-            ["UPI", "DIRECT TO STALL VPA"],
-            ["4-digit", "OTP AT HANDOVER"],
+            ["₹0", "ORDER COMMISSION"],
+            ["UPI", "DIRECT TO STALL"],
+            ["OTP", "COUNTER HANDOVER"],
           ].map(([stat, label]) => (
             <div key={label}>
               <div style={{ fontFamily: ROZHA, fontSize: 30, color: "var(--ink)", lineHeight: 1.1 }}>{stat}</div>
@@ -305,29 +305,29 @@ function RegisterLine() {
   return (
     <div className="lp-register-line">
       <span>
-        12:47:03 — T-2425 <span style={{ color: "var(--ink)" }}>PAID ₹210</span>
+        12:47:03 — T-2425 <span style={{ color: "var(--ink)" }}>ORDER ₹120</span>
       </span>
-      <span>12:47:09 — KITCHEN TICKET OPENED</span>
+      <span>12:47:09 — CUSTOMER CLAIMED UPI</span>
+      <span>12:47:20 — COUNTER CHECKS PAYMENT</span>
       <span>
-        12:51:44 — T-2425 <span style={{ color: "var(--ink)" }}>READY</span>
+        12:51:44 — T-2425 <span style={{ color: "var(--ink)" }}>TOKEN READY</span>
       </span>
-      <span>12:52:30 — OTP 4821 VERIFIED</span>
       <span>
-        12:52:31 — <span style={{ color: "#C13A2A" }}>HANDED OVER</span>
+        12:52:31 — <span style={{ color: "#C13A2A" }}>OTP VERIFIED</span>
       </span>
       <span>12:52:40 — ADMIN TOTALS UPDATED</span>
     </div>
   );
 }
 
-function Footer() {
+function Footer({ menuHref }: { menuHref: string }) {
   return (
     <footer className="lp-footer">
       <div className="lp-footer-grid">
         <div>
           <div style={{ fontFamily: ROZHA, fontSize: 30, marginBottom: 10 }}>Tray</div>
           <p style={{ margin: "0 0 18px", fontSize: 15, lineHeight: 1.6, color: "rgba(34,31,24,.65)", maxWidth: 300 }}>
-            Street food operations for stalls and tiffin centers that want faster handoff, cleaner billing and fewer counter bottlenecks.
+            Street food ordering for stalls and tiffin centers that want cleaner tokens, direct payments, and fewer counter bottlenecks.
           </p>
           <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: ".12em", color: "rgba(34,31,24,.45)" }}>
             MADE FOR INDIA&apos;S STREET FOOD STALLS
@@ -336,9 +336,9 @@ function Footer() {
         <div>
           <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: ".16em", color: "#C13A2A", marginBottom: 14 }}>PRODUCT</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 9, fontSize: 15.5, fontWeight: 500, alignItems: "flex-start" }}>
-            <Link href="/demo/student" className="lp-footer-link">Customer view</Link>
-            <Link href="/demo/kitchen" className="lp-footer-link">Kitchen view</Link>
+            <Link href={menuHref} className="lp-footer-link">Customer menu</Link>
             <Link href="/demo/admin" className="lp-footer-link">Admin view</Link>
+            <Link href="/demo/kitchen" className="lp-footer-link">Kitchen view (optional)</Link>
             <Link href="/get-started" className="lp-footer-link">Get started</Link>
           </div>
         </div>
@@ -379,7 +379,7 @@ function Footer() {
               mixBlendMode: "multiply",
             }}
           >
-            REGISTER CLOSED · 2:30 PM
+            STREET EDITION · DIRECT UPI
           </div>
         </div>
       </div>
@@ -389,10 +389,10 @@ function Footer() {
 
 export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
   const college = tenant?.college_name?.toUpperCase() ?? "MG ROAD · STALL NO. 7";
+  const menuHref = tenant ? `/c/${tenant.slug}/menu` : "/demo/student";
 
   return (
     <div className={`lp ${landingFontVars}`}>
-      {/* Ledger ruling underlay */}
       <div
         aria-hidden
         style={{
@@ -404,13 +404,12 @@ export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
             "repeating-linear-gradient(to bottom, transparent 0px, transparent 35px, rgba(29,63,191,.075) 35px, rgba(29,63,191,.075) 36px)",
         }}
       />
-      {/* Red margin line */}
       <div aria-hidden className="lp-margin-line" />
 
       <div style={{ position: "relative", zIndex: 1 }}>
-        <Masthead />
+        <Masthead menuHref={menuHref} />
         <main id="main">
-          <Hero college={college} />
+          <Hero college={college} menuHref={menuHref} />
           <RegisterLine />
           <CouponsSection />
           <WalkthroughSection />
@@ -419,7 +418,7 @@ export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
           <BackPageSection />
           <QuoteSection />
         </main>
-        <Footer />
+        <Footer menuHref={menuHref} />
       </div>
     </div>
   );
