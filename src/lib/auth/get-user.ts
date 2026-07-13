@@ -3,6 +3,7 @@ import { cache } from "react";
 import { getServerClient } from "@/lib/supabase/server";
 import { resolveTenant, getTenantSlugFromHeaders } from "@/lib/tenant";
 import { headers } from "next/headers";
+import { logger } from "@/lib/logging";
 import type { MemberRole } from "@/lib/db/types";
 
 export type CurrentUser = {
@@ -26,14 +27,15 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   if (!tenant) return null;
 
   const supabase = await getServerClient(tenant.id);
-  // Use getSession() instead of getUser() — getUser() makes a network round-trip
-  // to Supabase's auth API on every server render which can time out and return
-  // null even with a valid session, causing the admin layout to redirect to login
-  // mid-session. getSession() reads the JWT from cookies locally and auto-refreshes
-  // via the refresh token without a blocking network call.
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.user) return null;
-  const user = session.user;
+  // Server-side authorization must validate the token with Supabase Auth.
+  // getSession() only reads local cookie state and can be stale; fail closed if
+  // the auth service cannot prove the user for this request.
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error) {
+    logger.warn("auth.getUser failed", { tenant_id: tenant.id, error: error.message });
+    return null;
+  }
+  if (!user) return null;
 
   const { data: m } = await supabase
     .from("tenant_memberships")
