@@ -50,6 +50,16 @@ if (!parsed.success) {
 
 export const env = parsed.data;
 
+const razorpayKeysConfigured = Boolean(env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_SECRET);
+const razorpayKeysPartial = Boolean(env.RAZORPAY_KEY_ID) !== Boolean(env.RAZORPAY_KEY_SECRET);
+
+if (razorpayKeysPartial) {
+  throw new Error(
+    "[Tray] RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET must be configured together. " +
+    "Leave both empty for direct-UPI/simulator mode, or set both for Razorpay gateway mode."
+  );
+}
+
 // In production, rate limiting MUST be distributed (Upstash Redis).
 // The in-memory fallback is process-local — on Vercel serverless each request
 // can land on a fresh cold instance, making per-process limits completely useless.
@@ -62,10 +72,17 @@ if (env.NODE_ENV === "production") {
       "Add these in Vercel → Project → Settings → Environment Variables."
     );
   }
+
+  if (razorpayKeysConfigured && !env.RAZORPAY_WEBHOOK_SECRET) {
+    throw new Error(
+      "[Tray] RAZORPAY_WEBHOOK_SECRET is required in production when Razorpay keys are configured. " +
+      "Without signed webhooks, paid orders cannot be safely captured."
+    );
+  }
 }
 
 export const featureFlags = {
-  razorpayLive: Boolean(env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_SECRET),
+  razorpayLive: razorpayKeysConfigured,
   resendLive: Boolean(env.RESEND_API_KEY),
   upstashLive: Boolean(env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN),
   qstashLive: Boolean(
