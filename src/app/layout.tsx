@@ -164,7 +164,7 @@ export const metadata: Metadata = {
     template: "%s · Tray",
   },
   description:
-    "Customers scan the stall's QR, order, pay the stall's UPI directly, and pick up with a token. Owners see orders and revenue in real time. Zero commission.",
+    "Zero cut. Their UPI. Your token. Street stall OS for India — scan QR, pay the stall's UPI, pick up with a token. Kitchen phone + owner hisaab board.",
   applicationName: "Tray",
   metadataBase: new URL(SITE_URL),
   alternates: { canonical: "/" },
@@ -180,8 +180,9 @@ export const metadata: Metadata = {
     "skip the queue",
   ],
   openGraph: {
-    title: "Tray — Street food, without the queue.",
-    description: "One register, three doors. Run the stall from one screen.",
+    title: "TRAY — Zero cut. Their UPI. Your token.",
+    description:
+      "Street stall OS for India. Scan QR → pay their UPI → show token. Kitchen phone for the cook. Aaj ka paisa for the owner. Zero commission.",
     url: SITE_URL,
     siteName: "Tray",
     locale: "en_US",
@@ -189,8 +190,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Tray — Street food, without the queue.",
-    description: "One register, three doors. Run the stall from one screen.",
+    title: "TRAY — Zero cut. Their UPI. Your token.",
+    description:
+      "Street stall OS for India. Scan QR → pay their UPI → show token. Kitchen phone + aaj ka paisa. Zero commission.",
   },
   robots: {
     index: true,
