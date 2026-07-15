@@ -138,22 +138,23 @@ function Hero({ label, menuHref }: { label: string; menuHref: string }) {
 
 function RegisterLine() {
   const items = [
-    <>12:47 — T-2425 <b>ORDER ₹120</b></>,
-    <>UPI OPEN</>,
-    <>PAID · STALL VPA</>,
-    <>
-      <b>TOKEN DIKHAO</b>
-    </>,
-    <span className="lp-register-accent">COLLECTED</span>,
-    <>HISAAB UPDATE</>,
+    { id: "order", node: <>12:47 — T-2425 <b>ORDER ₹120</b></> },
+    { id: "upi", node: <>UPI OPEN</> },
+    { id: "paid", node: <>PAID · STALL VPA</> },
+    { id: "token", node: <><b>TOKEN DIKHAO</b></> },
+    {
+      id: "collected",
+      node: <span className="lp-register-accent">COLLECTED</span>,
+    },
+    { id: "hisaab", node: <>HISAAB UPDATE</> },
   ];
   const track = [...items, ...items];
   return (
     <div className="lp-register" id="how" aria-label="Example order timeline">
       <div className="lp-register-track">
-        {track.map((node, i) => (
-          <span key={i} className="lp-register-item">
-            {node}
+        {track.map((item, i) => (
+          <span key={`${item.id}-${i}`} className="lp-register-item">
+            {item.node}
           </span>
         ))}
       </div>
