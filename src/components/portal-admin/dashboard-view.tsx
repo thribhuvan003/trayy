@@ -726,8 +726,8 @@ export function DashboardView({
       <div className="mb-5 flex flex-wrap gap-2">
         {(
           [
-            { href: `/c/${tenantSlug}/admin/menu`, label: "Menu · 86 stock" },
-            { href: `/c/${tenantSlug}/admin/orders`, label: "Orders ledger" },
+            { href: `/c/${tenantSlug}/admin/menu`, label: "Menu · sold out" },
+            { href: `/c/${tenantSlug}/admin/orders`, label: "Aaj ke orders" },
             { href: `/c/${tenantSlug}/admin/qr`, label: "QR poster" },
             { href: `/c/${tenantSlug}/admin/settings`, label: "UPI & hours" },
           ] as const
