@@ -20,6 +20,8 @@ import "./kitchen.css";
 const MONO = "var(--font-plex-mono), monospace";
 const BSC = "var(--font-barlow-sc), sans-serif";
 
+type Segment = "new" | "cooking" | "serve";
+
 interface QueueTicket {
   id: string;
   items: { name: string; diet: TicketDiet; tgt: number; q: number }[];
@@ -82,6 +84,33 @@ function buildTickets(c: Canteen, overrides: Record<string, TicketStatus>): Queu
     .map((t) => ({ ...t, status: overrides[t.id] || t.status }));
 }
 
+/** Short kitchen chime via Web Audio — no asset files. */
+function playChime() {
+  try {
+    const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    const now = ctx.currentTime;
+    const tones = [880, 1174.7];
+    tones.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.12, now + 0.02 + i * 0.12);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.28 + i * 0.14);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + i * 0.12);
+      osc.stop(now + 0.35 + i * 0.14);
+    });
+    window.setTimeout(() => void ctx.close(), 800);
+  } catch {
+    /* ignore — autoplay / unsupported */
+  }
+}
+
 function DietSquare({ diet }: { diet: TicketDiet }) {
   const color = diet === "nonveg" ? "#C13A2A" : "#2E7D52";
   return (
@@ -95,49 +124,20 @@ function DietSquare({ diet }: { diet: TicketDiet }) {
 
 function TicketItems({ t }: { t: QueueTicket }) {
   return (
-    <>
+    <div className="kd-ticket-items">
       {t.items.map((it, i) => (
-        <div key={i} style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 15.5, fontWeight: 600 }}>
+        <div key={i} className="kd-item">
           <DietSquare diet={it.diet} />
           <span style={{ minWidth: 0 }}>{it.name}</span>
-          <span style={{ marginLeft: "auto", fontFamily: MONO, fontSize: 13, fontWeight: 600, color: "rgba(35,32,26,.6)", whiteSpace: "nowrap" }}>
-            × {it.q}
-          </span>
+          <span className="kd-item-q">× {it.q}</span>
         </div>
       ))}
-    </>
+    </div>
   );
 }
 
-function LaneHead({
-  dot,
-  label,
-  count,
-  color,
-  border,
-}: {
-  dot?: string;
-  label: string;
-  count: number;
-  color?: string;
-  border?: string;
-}) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        marginBottom: 14,
-        paddingBottom: 10,
-        borderBottom: `2px solid ${border || "rgba(237,234,224,.25)"}`,
-      }}
-    >
-      {dot && <span style={{ width: 9, height: 9, borderRadius: "50%", background: dot }} />}
-      <span style={{ fontFamily: BSC, fontWeight: 800, fontSize: 17, letterSpacing: ".06em", color: color || "#EDEAE0" }}>{label}</span>
-      <span style={{ marginLeft: "auto", fontFamily: MONO, fontSize: 13, fontWeight: 600, color: color || "rgba(237,234,224,.6)" }}>{count}</span>
-    </div>
-  );
+function EmptyLane({ children }: { children: React.ReactNode }) {
+  return <div className="kd-empty">{children}</div>;
 }
 
 export function KitchenDemo() {
@@ -147,6 +147,10 @@ export function KitchenDemo() {
   const [otpEntries, setOtpEntries] = React.useState<Record<string, string>>({});
   const [otpErrors, setOtpErrors] = React.useState<Record<string, boolean>>({});
   const [specialOpen, setSpecialOpen] = React.useState(false);
+  const [sheetOpen, setSheetOpen] = React.useState(false);
+  const [segment, setSegment] = React.useState<Segment>("new");
+  const [soundOn, setSoundOn] = React.useState(true);
+  const [chimeFlash, setChimeFlash] = React.useState(false);
   const [spName, setSpName] = React.useState("");
   const [spDesc, setSpDesc] = React.useState("");
   const [spPrice, setSpPrice] = React.useState("120");
@@ -155,6 +159,9 @@ export function KitchenDemo() {
   const [pushedToast, setPushedToast] = React.useState(false);
   const [nowTs, setNowTs] = React.useState(() => Date.now());
   const toastT = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const chimeT = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const seenIncoming = React.useRef<Set<string>>(new Set());
+  const bootstrapped = React.useRef(false);
   const [, forceRender] = React.useReducer((x: number) => x + 1, 0);
 
   React.useEffect(() => {
@@ -176,6 +183,7 @@ export function KitchenDemo() {
       clearInterval(t);
       unsub();
       if (toastT.current) clearTimeout(toastT.current);
+      if (chimeT.current) clearTimeout(chimeT.current);
     };
   }, []);
 
@@ -194,10 +202,29 @@ export function KitchenDemo() {
   const collected = tickets
     .filter((t) => t.status === "collected")
     .sort((a, b) => b.placedAt - a.placedAt)
-    .slice(0, 7);
+    .slice(0, 8);
 
   const isLate = (t: QueueTicket) => (nowTs - t.placedAt) / 1000 > t.target;
-  const lateCount = incoming.concat(preparing).filter(isLate).length;
+
+  // New-order chime: after first paint, any new incoming id rings once.
+  const incomingKey = incoming.map((t) => t.id).join("|");
+  React.useEffect(() => {
+    if (!ready) return;
+    const ids = incomingKey ? incomingKey.split("|") : [];
+    if (!bootstrapped.current) {
+      ids.forEach((id) => seenIncoming.current.add(id));
+      bootstrapped.current = true;
+      return;
+    }
+    const fresh = ids.filter((id) => !seenIncoming.current.has(id));
+    ids.forEach((id) => seenIncoming.current.add(id));
+    if (fresh.length === 0) return;
+    if (soundOn) playChime();
+    setChimeFlash(true);
+    if (chimeT.current) clearTimeout(chimeT.current);
+    chimeT.current = setTimeout(() => setChimeFlash(false), 2400);
+    setSegment("new");
+  }, [ready, incomingKey, soundOn]);
 
   const pushSpecialNow = () => {
     const name = spName.trim();
@@ -219,9 +246,26 @@ export function KitchenDemo() {
       ])
     );
     setSpecialOpen(false);
+    setSheetOpen(false);
     setPushedToast(true);
     if (toastT.current) clearTimeout(toastT.current);
     toastT.current = setTimeout(() => setPushedToast(false), 3200);
+  };
+
+  const switchCanteen = (id: string) => {
+    setSelectedCanteenId(id);
+    setCanteenId(id);
+    setOverrides({});
+    setOtpEntries({});
+    setOtpErrors({});
+    seenIncoming.current = new Set();
+    bootstrapped.current = false;
+    const next = getCanteen(id);
+    setSpName(next.spDefaults.name);
+    setSpDesc(next.spDefaults.desc);
+    setSpPrice(String(next.spDefaults.price));
+    setSpPrep(String(next.spDefaults.prep));
+    setSpDiet(next.spDefaults.diet);
   };
 
   const spDietColor = spDiet === "nonveg" ? "#C13A2A" : "#2E7D52";
@@ -237,434 +281,281 @@ export function KitchenDemo() {
     color: "#23201A",
   };
 
+  const tabs: { id: Segment; label: string; count: number; alert?: boolean }[] = [
+    { id: "new", label: "New", count: incoming.length, alert: incoming.some(isLate) },
+    { id: "cooking", label: "Cooking", count: preparing.length, alert: preparing.some(isLate) },
+    { id: "serve", label: "Serve", count: readyLane.length },
+  ];
+
   return (
     <div className={`kd ${kitchenFontVars}`}>
       <div style={{ position: "relative", zIndex: 1 }}>
-        {/* Demo strip */}
-        <div
-          className="kd-strip"
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 20,
-            padding: "8px 28px",
-            borderBottom: "1px solid rgba(237,234,224,.1)",
-            fontFamily: MONO,
-            fontSize: 11,
-            letterSpacing: ".1em",
-            color: "rgba(237,234,224,.42)",
-          }}
-        >
-          <span>LIVE DEMO · ORDERS PLACED IN THE CUSTOMER DEMO LAND HERE</span>
-          <span style={{ display: "flex", gap: 24 }}>
-            <Link href="/" className="kd-strip-link">← LANDING</Link>
-            <Link href="/demo/student" className="kd-strip-link--green">CUSTOMER →</Link>
-            <Link href="/demo/admin" className="kd-strip-link--green">ADMIN →</Link>
+        {/* Thin demo strip */}
+        <div className="kd-strip">
+          <span className="kd-strip-label">DEMO · CUSTOMER ORDERS LAND HERE</span>
+          <span className="kd-strip-links">
+            <Link href="/" className="kd-strip-link">
+              ← LANDING
+            </Link>
+            <Link href="/demo/student" className="kd-strip-link--green">
+              CUSTOMER →
+            </Link>
+            <Link href="/demo/admin" className="kd-strip-link--green">
+              ADMIN →
+            </Link>
           </span>
         </div>
 
-        {/* Header */}
-        <header
-          className="kd-head"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 28,
-            padding: "18px 32px 16px",
-            borderBottom: "1px solid rgba(237,234,224,.14)",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 16, flexShrink: 0 }}>
-            <span style={{ fontFamily: BSC, fontWeight: 800, fontSize: 27, letterSpacing: ".02em", lineHeight: 1 }}>
-              TRAY <span style={{ color: "#7FB79A" }}>KITCHEN</span>
-            </span>
-            <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".14em", color: "rgba(237,234,224,.45)", whiteSpace: "nowrap" }}>
-              {ready ? c.kitchenTag.toUpperCase() : "LOADING…"}
-            </span>
+        {/* Compact sticky header */}
+        <header className="kd-head">
+          <div className="kd-brand">
+            TRAY <span>KITCHEN</span>
           </div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {listCanteens().map((x) => {
-              const active = x.id === c.id;
-              return (
-                <button
-                  key={x.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedCanteenId(x.id);
-                    setCanteenId(x.id);
-                    setOverrides({});
-                    setOtpEntries({});
-                    setOtpErrors({});
-                  }}
-                  style={{
-                    padding: "8px 16px",
-                    border: `1px solid ${active ? "#EDEAE0" : "rgba(237,234,224,.3)"}`,
-                    borderRadius: 4,
-                    background: active ? "#EDEAE0" : "transparent",
-                    color: active ? "#15181B" : "rgba(237,234,224,.75)",
-                    cursor: "pointer",
-                    fontFamily: BSC,
-                    fontSize: 14.5,
-                    letterSpacing: ".03em",
-                    fontWeight: 700,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {x.name}
-                </button>
-              );
-            })}
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 16, flexShrink: 0 }}>
-            <button type="button" className="kd-special-btn" onClick={() => setSpecialOpen(true)}>
-              + Today&apos;s special
+          <div className="kd-head-meta">
+            <span className="kd-clock">{ready ? fmtClockSec(nowTs) : ""}</span>
+            <button
+              type="button"
+              className="kd-sound-btn"
+              data-on={soundOn ? "true" : "false"}
+              aria-pressed={soundOn}
+              aria-label={soundOn ? "Sound on" : "Sound off"}
+              onClick={() => {
+                setSoundOn((v) => {
+                  if (!v) playChime();
+                  return !v;
+                });
+              }}
+            >
+              {soundOn ? "🔔" : "🔇"}
             </button>
-            <span style={{ fontFamily: MONO, fontSize: 14, fontWeight: 600, color: "rgba(237,234,224,.75)", whiteSpace: "nowrap" }}>
-              {ready ? fmtClockSec(nowTs) : ""}
-            </span>
+            <button type="button" className="kd-more-btn" aria-label="More options" onClick={() => setSheetOpen(true)}>
+              ···
+            </button>
           </div>
         </header>
 
-        {/* Service strip */}
-        <div className="kd-service-strip">
-          {[
-            { n: incoming.length + preparing.length, label: "IN QUEUE", color: "#EDEAE0", pad: "14px 28px 14px 0" },
-            { n: readyLane.length, label: "READY TO HAND OVER", color: "#7FB79A", pad: "14px 28px" },
-            { n: lateCount, label: "PAST TARGET", color: lateCount > 0 ? "#D96A5A" : "rgba(237,234,224,.6)", pad: "14px 28px" },
-          ].map((s) => (
-            <div
-              key={s.label}
-              style={{ display: "flex", alignItems: "baseline", gap: 10, padding: s.pad, borderRight: "1px solid rgba(237,234,224,.12)" }}
-            >
-              <span style={{ fontFamily: BSC, fontWeight: 800, fontSize: 26, color: s.color }}>{s.n}</span>
-              <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".14em", color: "rgba(237,234,224,.5)" }}>{s.label}</span>
-            </div>
-          ))}
-          <div style={{ marginLeft: "auto", fontFamily: MONO, fontSize: 10.5, letterSpacing: ".12em", color: "rgba(237,234,224,.4)", whiteSpace: "nowrap" }}>
-            EVERY TICKET IS PRE-PAID · OTP CONFIRMS THE HANDOVER
-          </div>
+        <div className="kd-chime-banner" data-show={chimeFlash ? "true" : "false"}>
+          NEW ORDER — CHECK NEW
         </div>
 
-        {/* Lanes */}
-        <main className="kd-lanes">
-          {/* NEW ORDERS */}
-          <section>
-            <LaneHead dot="#C9C4B4" label="NEW ORDERS" count={incoming.length} />
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {incoming.map((t) => {
-                const late = isLate(t);
-                return (
-                  <article
-                    key={t.id}
-                    style={{ background: "#F8F4E8", color: "#23201A", borderRadius: 5, boxShadow: "0 8px 20px -8px rgba(0,0,0,.7)", animation: "kdTicketIn .35s ease both" }}
-                  >
-                    <div
-                      style={{
-                        padding: "13px 16px 10px",
-                        borderBottom: "1.5px dashed rgba(35,32,26,.3)",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        gap: 10,
-                      }}
-                    >
-                      <span style={{ fontFamily: BSC, fontWeight: 800, fontSize: 21, letterSpacing: ".02em" }}>{t.id}</span>
-                      <span style={{ fontFamily: MONO, fontSize: 11, color: "rgba(35,32,26,.55)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {t.student}
-                      </span>
-                    </div>
-                    <div style={{ padding: "10px 16px 6px", display: "flex", flexDirection: "column", gap: 6 }}>
-                      <TicketItems t={t} />
-                    </div>
-                    <div style={{ padding: "6px 16px 13px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
-                      <span style={{ fontFamily: MONO, fontSize: 12.5, fontWeight: 700, color: late ? "#C13A2A" : "rgba(35,32,26,.65)", whiteSpace: "nowrap" }}>
-                        {fmtElapsed((nowTs - t.placedAt) / 1000)} <span style={{ color: "rgba(35,32,26,.4)", fontWeight: 400 }}>waiting</span>
-                      </span>
-                      <button type="button" className="kd-start-btn" onClick={() => setStatus(t, "preparing")}>
-                        Start prep
-                      </button>
-                    </div>
-                  </article>
-                );
-              })}
-              {ready && incoming.length === 0 && (
-                <div
-                  style={{
-                    border: "1.5px dashed rgba(237,234,224,.2)",
-                    borderRadius: 5,
-                    padding: "26px 18px",
-                    textAlign: "center",
-                    fontFamily: MONO,
-                    fontSize: 11,
-                    letterSpacing: ".12em",
-                    color: "rgba(237,234,224,.38)",
-                    lineHeight: 1.9,
-                  }}
-                >
-                  NO NEW ORDERS
-                  <br />
-                  <Link href="/demo/student" style={{ color: "#7FB79A", textDecoration: "none" }}>
-                    PLACE ONE IN THE CUSTOMER DEMO →
-                  </Link>
-                </div>
-              )}
+        {/* Segment tabs (phone) */}
+        <nav className="kd-tabs" aria-label="Queue segments">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              className="kd-tab"
+              data-seg={tab.id}
+              data-active={segment === tab.id ? "true" : "false"}
+              data-alert={tab.alert ? "true" : "false"}
+              onClick={() => setSegment(tab.id)}
+            >
+              <span>{tab.label}</span>
+              <span className="kd-tab-count">{tab.count}</span>
+            </button>
+          ))}
+        </nav>
+
+        <main className="kd-main">
+          {/* NEW */}
+          <section className="kd-lane" data-active={segment === "new" ? "true" : "false"} aria-label="New orders">
+            <div className="kd-lane-head" data-seg="new">
+              <span className="kd-lane-dot" style={{ background: "#C9C4B4" }} />
+              <span className="kd-lane-label">NEW</span>
+              <span className="kd-lane-count">{incoming.length}</span>
             </div>
+            {incoming.map((t) => {
+              const late = isLate(t);
+              return (
+                <article key={t.id} className="kd-ticket">
+                  <div className="kd-ticket-top">
+                    <span className="kd-ticket-id">{t.id}</span>
+                    <span className="kd-ticket-meta">{t.student}</span>
+                  </div>
+                  <TicketItems t={t} />
+                  <div className="kd-ticket-foot">
+                    <div className="kd-timer" data-late={late ? "true" : "false"}>
+                      {fmtElapsed((nowTs - t.placedAt) / 1000)} <span>waiting</span>
+                    </div>
+                    <button type="button" className="kd-cta kd-cta--start" onClick={() => setStatus(t, "preparing")}>
+                      START
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+            {ready && incoming.length === 0 && (
+              <EmptyLane>
+                NO NEW ORDERS
+                <br />
+                <Link href="/demo/student">PLACE ONE IN THE CUSTOMER DEMO →</Link>
+              </EmptyLane>
+            )}
           </section>
 
-          {/* PREPARING */}
-          <section>
-            <LaneHead dot="#5B8DD9" label="PREPARING" count={preparing.length} />
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {preparing.map((t) => {
-                const elapsedSec = (nowTs - t.placedAt) / 1000;
-                const late = elapsedSec > t.target;
-                return (
-                  <article key={t.id} style={{ background: "#F8F4E8", color: "#23201A", borderRadius: 5, boxShadow: "0 8px 20px -8px rgba(0,0,0,.7)" }}>
-                    <div
+          {/* COOKING */}
+          <section className="kd-lane" data-active={segment === "cooking" ? "true" : "false"} aria-label="Cooking">
+            <div className="kd-lane-head" data-seg="cooking">
+              <span className="kd-lane-dot" style={{ background: "#5B8DD9" }} />
+              <span className="kd-lane-label">COOKING</span>
+              <span className="kd-lane-count">{preparing.length}</span>
+            </div>
+            {preparing.map((t) => {
+              const elapsedSec = (nowTs - t.placedAt) / 1000;
+              const late = elapsedSec > t.target;
+              return (
+                <article key={t.id} className="kd-ticket">
+                  <div className="kd-ticket-top">
+                    <span className="kd-ticket-id">{t.id}</span>
+                    <span className="kd-badge">ON STOVE</span>
+                  </div>
+                  <TicketItems t={t} />
+                  <div className="kd-progress">
+                    <i
                       style={{
-                        padding: "13px 16px 10px",
-                        borderBottom: "1.5px dashed rgba(35,32,26,.3)",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        gap: 10,
+                        width: `${Math.min(100, (elapsedSec / t.target) * 100).toFixed(1)}%`,
+                        background: late ? "#C13A2A" : "#2E7D52",
                       }}
-                    >
-                      <span style={{ fontFamily: BSC, fontWeight: 800, fontSize: 21, letterSpacing: ".02em" }}>{t.id}</span>
-                      <span
-                        style={{
-                          fontFamily: MONO,
-                          fontSize: 10,
-                          fontWeight: 700,
-                          letterSpacing: ".12em",
-                          color: "#2C50B0",
-                          border: "1.5px solid #2C50B0",
-                          borderRadius: 3,
-                          padding: "2px 8px",
-                          whiteSpace: "nowrap",
+                    />
+                  </div>
+                  <div className="kd-ticket-foot">
+                    <div className="kd-timer" data-late={late ? "true" : "false"}>
+                      {fmtElapsed(elapsedSec)} <span>/ target {fmtElapsed(t.target)}</span>
+                    </div>
+                    <button type="button" className="kd-cta kd-cta--ready" onClick={() => setStatus(t, "ready")}>
+                      READY
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+            {ready && preparing.length === 0 && <EmptyLane>NOTHING ON THE STOVE</EmptyLane>}
+          </section>
+
+          {/* SERVE */}
+          <section className="kd-lane" data-active={segment === "serve" ? "true" : "false"} aria-label="Serve">
+            <div className="kd-lane-head" data-seg="serve">
+              <span className="kd-lane-dot" style={{ background: "#37B072" }} />
+              <span className="kd-lane-label">SERVE</span>
+              <span className="kd-lane-count">{readyLane.length}</span>
+            </div>
+            {readyLane.map((t) => {
+              const entry = otpEntries[t.id] || "";
+              const err = !!otpErrors[t.id];
+              return (
+                <article key={t.id} className="kd-ticket kd-ticket--ready">
+                  <div className="kd-ticket-top">
+                    <span className="kd-ticket-id">{t.id}</span>
+                    <span className="kd-ticket-meta">{t.student}</span>
+                  </div>
+                  <TicketItems t={t} />
+                  <div className="kd-ticket-foot">
+                    <div className="kd-otp-label">
+                      CUSTOMER CODE <em>· DEMO HINT {t.otp}</em>
+                    </div>
+                    <div className="kd-otp-row">
+                      <input
+                        className="kd-otp-input"
+                        data-err={err ? "true" : "false"}
+                        value={entry}
+                        onChange={(e) => {
+                          const v = e.target.value.replace(/[^0-9]/g, "").slice(0, 4);
+                          setOtpEntries((s) => ({ ...s, [t.id]: v }));
+                          setOtpErrors((s) => ({ ...s, [t.id]: false }));
+                        }}
+                        maxLength={4}
+                        inputMode="numeric"
+                        placeholder="0000"
+                        aria-label={`OTP for ${t.id}`}
+                      />
+                      <button
+                        type="button"
+                        className="kd-cta kd-cta--serve"
+                        onClick={() => {
+                          if ((otpEntries[t.id] || "") === t.otp) {
+                            setStatus(t, "collected");
+                            setOtpErrors((s) => ({ ...s, [t.id]: false }));
+                          } else {
+                            setOtpErrors((s) => ({ ...s, [t.id]: true }));
+                          }
                         }}
                       >
-                        ON THE STOVE
-                      </span>
-                    </div>
-                    <div style={{ padding: "10px 16px 6px", display: "flex", flexDirection: "column", gap: 6 }}>
-                      <TicketItems t={t} />
-                    </div>
-                    <div style={{ margin: "6px 16px 8px", height: 5, borderRadius: 3, background: "rgba(35,32,26,.12)", overflow: "hidden" }}>
-                      <div
-                        style={{
-                          height: "100%",
-                          width: `${Math.min(100, (elapsedSec / t.target) * 100).toFixed(1)}%`,
-                          background: late ? "#C13A2A" : "#2E7D52",
-                          borderRadius: 3,
-                          transition: "width 1s linear",
-                        }}
-                      />
-                    </div>
-                    <div style={{ padding: "0 16px 13px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
-                      <span style={{ fontFamily: MONO, fontSize: 12.5, fontWeight: 700, color: late ? "#C13A2A" : "rgba(35,32,26,.65)", whiteSpace: "nowrap" }}>
-                        {fmtElapsed(elapsedSec)} <span style={{ color: "rgba(35,32,26,.4)", fontWeight: 400 }}>/ target {fmtElapsed(t.target)}</span>
-                      </span>
-                      <button type="button" className="kd-green-btn" style={{ padding: "8px 18px", fontSize: 14 }} onClick={() => setStatus(t, "ready")}>
-                        Mark ready
+                        SERVE
                       </button>
                     </div>
-                  </article>
-                );
-              })}
-              {ready && preparing.length === 0 && (
-                <div
-                  style={{
-                    border: "1.5px dashed rgba(237,234,224,.2)",
-                    borderRadius: 5,
-                    padding: "26px 18px",
-                    textAlign: "center",
-                    fontFamily: MONO,
-                    fontSize: 11,
-                    letterSpacing: ".12em",
-                    color: "rgba(237,234,224,.38)",
-                  }}
-                >
-                  NOTHING ON THE STOVE
-                </div>
-              )}
-            </div>
+                    {err && <div className="kd-otp-err">CODE DOESN&apos;T MATCH — ASK AGAIN</div>}
+                  </div>
+                </article>
+              );
+            })}
+            {ready && readyLane.length === 0 && <EmptyLane>NOTHING WAITING FOR PICKUP</EmptyLane>}
           </section>
 
-          {/* READY */}
-          <section>
-            <LaneHead dot="#37B072" label="READY — VERIFY OTP" count={readyLane.length} color="#7FB79A" border="#2E7D52" />
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {readyLane.map((t) => {
-                const entry = otpEntries[t.id] || "";
-                const err = !!otpErrors[t.id];
-                return (
-                  <article
-                    key={t.id}
-                    style={{ background: "#F8F4E8", color: "#23201A", borderRadius: 5, borderLeft: "5px solid #2E7D52", animation: "kdReadyPulse 2.2s ease infinite" }}
-                  >
-                    <div
-                      style={{
-                        padding: "13px 16px 10px",
-                        borderBottom: "1.5px dashed rgba(35,32,26,.3)",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        gap: 10,
-                      }}
-                    >
-                      <span style={{ fontFamily: BSC, fontWeight: 800, fontSize: 21, letterSpacing: ".02em" }}>{t.id}</span>
-                      <span style={{ fontFamily: MONO, fontSize: 11, color: "rgba(35,32,26,.55)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {t.student}
-                      </span>
-                    </div>
-                    <div style={{ padding: "10px 16px 4px", display: "flex", flexDirection: "column", gap: 6 }}>
-                      <TicketItems t={t} />
-                    </div>
-                    <div style={{ padding: "8px 16px 14px" }}>
-                      <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: ".12em", color: "rgba(35,32,26,.55)", marginBottom: 7, whiteSpace: "nowrap" }}>
-                        CUSTOMER&apos;S CODE <span style={{ color: "rgba(35,32,26,.35)" }}>· DEMO HINT {t.otp}</span>
-                      </div>
-                      <div style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
-                        <input
-                          value={entry}
-                          onChange={(e) => {
-                            const v = e.target.value.replace(/[^0-9]/g, "").slice(0, 4);
-                            setOtpEntries((s) => ({ ...s, [t.id]: v }));
-                            setOtpErrors((s) => ({ ...s, [t.id]: false }));
-                          }}
-                          maxLength={4}
-                          inputMode="numeric"
-                          placeholder="0000"
-                          style={{
-                            width: 86,
-                            padding: "8px 6px",
-                            border: `1.5px solid ${err ? "#C13A2A" : "rgba(35,32,26,.45)"}`,
-                            borderRadius: 4,
-                            background: "#FFFDF4",
-                            outline: "none",
-                            fontFamily: MONO,
-                            fontWeight: 700,
-                            fontSize: 18,
-                            letterSpacing: ".3em",
-                            textAlign: "center",
-                            color: "#23201A",
-                            boxSizing: "border-box",
-                          }}
-                        />
-                        <button
-                          type="button"
-                          className="kd-green-btn"
-                          style={{ flex: 1, padding: "8px 0", fontSize: 14.5 }}
-                          onClick={() => {
-                            if ((otpEntries[t.id] || "") === t.otp) {
-                              setStatus(t, "collected");
-                              setOtpErrors((s) => ({ ...s, [t.id]: false }));
-                            } else {
-                              setOtpErrors((s) => ({ ...s, [t.id]: true }));
-                            }
-                          }}
-                        >
-                          Hand over ✓
-                        </button>
-                      </div>
-                      {err && (
-                        <div style={{ marginTop: 7, fontFamily: MONO, fontSize: 10.5, letterSpacing: ".08em", color: "#C13A2A" }}>
-                          CODE DOESN&apos;T MATCH — ASK THE CUSTOMER AGAIN
-                        </div>
-                      )}
-                    </div>
-                  </article>
-                );
-              })}
-              {ready && readyLane.length === 0 && (
-                <div
-                  style={{
-                    border: "1.5px dashed rgba(237,234,224,.2)",
-                    borderRadius: 5,
-                    padding: "26px 18px",
-                    textAlign: "center",
-                    fontFamily: MONO,
-                    fontSize: 11,
-                    letterSpacing: ".12em",
-                    color: "rgba(237,234,224,.38)",
-                  }}
-                >
-                  NOTHING WAITING FOR PICKUP
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* HANDED OVER */}
-          <section>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                marginBottom: 14,
-                paddingBottom: 10,
-                borderBottom: "2px solid rgba(237,234,224,.16)",
-              }}
-            >
-              <span style={{ fontFamily: BSC, fontWeight: 800, fontSize: 17, letterSpacing: ".06em", color: "rgba(237,234,224,.55)" }}>HANDED OVER</span>
-              <span style={{ marginLeft: "auto", fontFamily: MONO, fontSize: 13, fontWeight: 600, color: "rgba(237,234,224,.45)" }}>{collected.length}</span>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {collected.map((t) => (
-                <div
-                  key={t.id}
-                  style={{
-                    background: "rgba(237,234,224,.06)",
-                    border: "1px solid rgba(237,234,224,.12)",
-                    borderRadius: 4,
-                    padding: "10px 13px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 3,
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-                    <span style={{ fontFamily: BSC, fontWeight: 700, fontSize: 15.5 }}>{t.id}</span>
-                    <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 600, color: "#7FB79A", whiteSpace: "nowrap" }}>₹{t.total}</span>
+          {/* Collected — history strip only */}
+          {ready && collected.length > 0 && (
+            <div className="kd-history">
+              <div className="kd-history-head">
+                SERVED
+                <span>{collected.length}</span>
+              </div>
+              <div className="kd-history-row">
+                {collected.map((t) => (
+                  <div key={t.id} className="kd-history-chip">
+                    {t.id}
+                    <em>₹{t.total}</em>
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-                    <span style={{ fontSize: 12.5, color: "rgba(237,234,224,.5)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {t.student}
-                    </span>
-                    <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: ".08em", color: "rgba(237,234,224,.35)", whiteSpace: "nowrap" }}>OTP OK</span>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-            <div style={{ marginTop: 16, fontFamily: MONO, fontSize: 10, letterSpacing: ".12em", lineHeight: 1.9, color: "rgba(237,234,224,.32)" }}>
-              EVERY HANDOVER IS LOGGED WITH ITS OTP.
-              <br />
-              TOTALS UPDATE IN{" "}
-              <Link href="/demo/admin" style={{ color: "#7FB79A", textDecoration: "none" }}>
-                ADMIN →
-              </Link>
-            </div>
-          </section>
+          )}
         </main>
 
-        {/* ============ TODAY'S SPECIAL MODAL ============ */}
+        {/* Overflow: canteen switcher + special */}
+        {sheetOpen && (
+          <div className="kd-sheet-bg" role="dialog" aria-modal="true" aria-label="Kitchen options" onClick={() => setSheetOpen(false)}>
+            <div className="kd-sheet" onClick={(e) => e.stopPropagation()}>
+              <div className="kd-sheet-handle" />
+              <p className="kd-sheet-sub">{ready ? c.kitchenTag.toUpperCase() : "LOADING…"}</p>
+              <h2 className="kd-sheet-title" style={{ fontFamily: BSC }}>
+                Options
+              </h2>
+              <p className="kd-sheet-sub" style={{ marginTop: -8 }}>
+                CANTEEN · SPECIALS
+              </p>
+              <div className="kd-canteen-row">
+                {listCanteens().map((x) => (
+                  <button
+                    key={x.id}
+                    type="button"
+                    className="kd-canteen-btn"
+                    data-active={x.id === c.id ? "true" : "false"}
+                    onClick={() => switchCanteen(x.id)}
+                  >
+                    {x.name}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                className="kd-special-open"
+                onClick={() => {
+                  setSheetOpen(false);
+                  setSpecialOpen(true);
+                }}
+              >
+                + TODAY&apos;S SPECIAL
+              </button>
+              <button type="button" className="kd-sheet-close" onClick={() => setSheetOpen(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Today's special modal */}
         {specialOpen && (
-          <div style={{ position: "fixed", inset: 0, zIndex: 50, background: "rgba(8,10,12,.7)", display: "grid", placeItems: "center" }}>
-            <div
-              style={{
-                width: "min(430px, 92vw)",
-                background: "#F8F4E8",
-                color: "#23201A",
-                borderRadius: 6,
-                boxShadow: "0 30px 60px -12px rgba(0,0,0,.8)",
-                padding: "26px 28px",
-                boxSizing: "border-box",
-              }}
-            >
+          <div className="kd-modal-bg">
+            <div className="kd-modal">
               <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".14em", color: "rgba(35,32,26,.5)", marginBottom: 4 }}>
                 ONE WRITE → EVERY CUSTOMER SCREEN
               </div>
@@ -733,28 +624,7 @@ export function KitchenDemo() {
           </div>
         )}
 
-        {/* pushed toast */}
-        {pushedToast && (
-          <div
-            style={{
-              position: "fixed",
-              bottom: 26,
-              left: "50%",
-              transform: "translateX(-50%)",
-              zIndex: 60,
-              background: "#2E7D52",
-              color: "#F8F4E8",
-              borderRadius: 5,
-              padding: "12px 22px",
-              fontWeight: 700,
-              fontSize: 15,
-              boxShadow: "0 12px 30px -6px rgba(0,0,0,.7)",
-              fontFamily: "var(--font-barlow), sans-serif",
-            }}
-          >
-            On the board — live on every customer screen ✓
-          </div>
-        )}
+        {pushedToast && <div className="kd-toast">On the board — live on every customer screen ✓</div>}
       </div>
     </div>
   );

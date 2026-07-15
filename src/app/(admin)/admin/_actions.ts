@@ -277,6 +277,7 @@ export async function updateCanteenHours(opts: {
   });
 
   revalidatePath(`/c/${c.tenant.slug}/admin/settings`);
+  revalidatePath(`/c/${c.tenant.slug}/admin/dashboard`);
   revalidatePath(`/c/${c.tenant.slug}/menu`);
   revalidateTag("tenant");
   return { ok: true };
@@ -310,6 +311,7 @@ export async function pauseCanteen(minutes: number): Promise<{ ok: boolean; erro
   });
 
   revalidatePath(`/c/${c.tenant.slug}/admin/settings`);
+  revalidatePath(`/c/${c.tenant.slug}/admin/dashboard`);
   revalidatePath(`/c/${c.tenant.slug}/menu`);
   revalidateTag("tenant");
   return { ok: true };

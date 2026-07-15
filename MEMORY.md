@@ -36,6 +36,36 @@
 - **Why:** Readability on phones; kill soft rgba body text and cream-on-cream wash.
 - **Rejected:** Touching CarbonSection (owned by another agent); new features; reintroducing Hinglish in demos.
 
+### Kitchen demo phone-first (2026-07-15)
+- **What:** `/demo/kitchen` rewritten phone-first: sticky header (brand/clock/sound), segment tabs New|Cooking|Serve, huge START/READY/SERVE CTAs, canteen+special in overflow sheet, collected as history strip. Desktop = 3 columns (no 4th collected lane). Web Audio chime on new inbox orders.
+- **Why:** Product story — phone + speaker is enough for the cook; no multi-lane scroll on ~390 width.
+- **Rejected:** Keeping 4-column desktop with collected as primary lane; "Start prep"/"Mark ready"/"Hand over" labels.
+- **Files:** `src/app/demo/kitchen/kitchen-demo.tsx`, `kitchen.css` only. Store/inbox APIs unchanged.
+
+### Kitchen portal phone-first live board (2026-07-15)
+- **What:** Production kitchen board is phone-first: segment tabs New|Cooking|Serve; full-width tickets; verbs START → READY → SERVE (OTP); speaker control first-class + persistent pref; new order ding jumps to New; desktop 3-col (Collected → History only); specials/walk-in demoted to ⋯ tools on phone; footer hidden on phone.
+- **Why:** Differentiator vs shouting canteens — phone + speaker is enough. Backend status machine + Realtime unchanged.
+- **Rejected:** Multi-counter stations; 4-col horizontal Kanban on phone; auto-skip START; rewriting actions/Realtime.
+- **Files:** `ticket-card.tsx` (new), `order-column.tsx`, `board.tsx`, `otp-verify-dialog.tsx`, `(kitchen)/layout.tsx`.
+
+### Admin portal hisab board (2026-07-15)
+- **What:** Admin phone-first “aaj ka hisaab”: shell nav Today/Orders/Menu/QR/More; dashboard hero ₹ + Open/Pause/Close + kitchen pipeline; charts demoted on phone; settings regrouped Pay vs Service; demo admin aligned.
+- **Why:** Indian stall owner cares about today money + open/close first, not SaaS charts.
+- **Rejected:** New payment stack; college-admin redesign; full Hindi UI; admin as second KDS.
+- **Files:** `shell.tsx`, `dashboard-view.tsx`, `service-controls.tsx` (new), `dashboard/page.tsx`, `settings/page.tsx`, `_actions.ts` revalidate, demo admin.
+
+### Admin demo — aaj ka hisaab phone (2026-07-15)
+- **What:** `/demo/admin` only: tabs Today | Menu | Staff | Settings; Today hero huge ₹ + orders + Open/Pause mock + New/Cooking/Serve pipeline; live inbox orders kept; menu sold-out/price stay; desktop = 480px phone column.
+- **Why:** Match product story (stall owner phone hisaab) like kitchen demo rewrite.
+- **Rejected:** Wide cash-book ledger; OVERVIEW/PEOPLE/AUDIT ALL-CAPS; multi-col tables as primary UI.
+- **Files:** `src/app/demo/admin/admin-demo.tsx`, `admin.css` only.
+
+### Product DNA UI unify (2026-07-15)
+- **What:** Shared brand DNA: paper/ink/tomato signal/money green; type Newsreader + Jakarta + JetBrains across student/kitchen/admin. Student ocean→tomato. Admin light = warm paper ledger. Login 52px CTAs + tomato mark.
+- **Why:** Zomato-grade cohesion — one product, not three skins.
+- **Rejected:** Blue student SaaS; neon chartreuse admin on light; Fraunces-only admin display.
+- **Files:** `globals.css`, login, smart-login-form, admin shell, demo admin.css.
+
 ## Next
-- Hard refresh localhost:3000 — check demos cards, ledger lines, close CTA contrast.
-- Optional commit when user approves.
+- Multi-agent UI roast after push.
+

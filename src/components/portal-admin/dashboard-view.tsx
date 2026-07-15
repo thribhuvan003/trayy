@@ -6,11 +6,13 @@ import { ArrowDown, ArrowRight, ArrowUp, Copy, Download, IndianRupee, ListOrdere
 import dayjs from "dayjs";
 import { formatRupees, formatTimeIST, fmtElapsed } from "@/lib/utils";
 import { getBrowserClient } from "@/lib/supabase/browser";
+import Link from "next/link";
 import { KpiCard } from "./kpi-card";
 import { RevenueChart } from "./revenue-chart";
 import { PeakHeatmap } from "./peak-heatmap";
 import { TopItems } from "./top-items";
 import { ActivityFeed } from "./activity-feed";
+import { ServiceControls } from "./service-controls";
 
 // Connection state for truthful high-contrast banner (modeled on the proven kitchen board resilience).
 type ConnState = "online" | "reconnecting" | "offline";
@@ -52,6 +54,11 @@ export function DashboardView({
   lastWeekToday: initialLastWeekToday,
   logs: initialLogs,
   todayItems: initialTodayItems,
+  isOpen = true,
+  pausedUntil = null,
+  opensAt = null,
+  closesAt = null,
+  upiVpa = null,
 }: {
   tenantName: string;
   tenantSlug: string;
@@ -61,6 +68,11 @@ export function DashboardView({
   lastWeekToday: OrderRow[];
   logs: StatusLog[];
   todayItems: ItemRow[];
+  isOpen?: boolean;
+  pausedUntil?: string | null;
+  opensAt?: string | null;
+  closesAt?: string | null;
+  upiVpa?: string | null;
 }) {
   const [logs, setLogs] = useState(initialLogs);
 
@@ -555,7 +567,7 @@ export function DashboardView({
       )}
 
       <div
-        className="flex flex-wrap items-end justify-between gap-3 mb-6 pb-5"
+        className="flex flex-wrap items-end justify-between gap-3 mb-4 pb-4"
         style={{ borderBottom: "1px solid var(--admin-line)" }}
       >
         <div>
@@ -563,13 +575,13 @@ export function DashboardView({
             className="font-semibold leading-tight"
             style={{ fontSize: 24, letterSpacing: "-0.025em", color: "var(--admin-ink)" }}
           >
-            Today&rsquo;s overview
+            Today
           </h1>
           <div
             className="font-mono uppercase mt-1"
             style={{ fontSize: 11, letterSpacing: "0.06em", color: "var(--admin-ink-3)" }}
           >
-            {dayjs().format("ddd · D MMM YYYY").toUpperCase()} · {tenantName.toUpperCase()} · COUNTER 01
+            {dayjs().format("ddd · D MMM YYYY").toUpperCase()} · {tenantName.toUpperCase()} · aaj ka hisaab
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -584,16 +596,159 @@ export function DashboardView({
               fontSize: 11,
               color: "var(--admin-ink-2)",
             }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--admin-lime)"; (e.currentTarget as HTMLElement).style.color = "var(--admin-lime)"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--admin-line-2)"; (e.currentTarget as HTMLElement).style.color = "var(--admin-ink-2)"; }}
           >
             <Download size={11} /> Export CSV
           </a>
         </div>
       </div>
 
-      {/* ── KPI cards ────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+      {/* ── Hero: aaj ka paisa (phone-first) ─────────────────────────── */}
+      {!isFirstDay && (
+        <div
+          className="mb-4 rounded-2xl p-5 sm:p-6"
+          style={{
+            background: "var(--admin-bg-card)",
+            border: "2px solid var(--admin-line)",
+            boxShadow: "4px 4px 0 rgba(238,241,247,0.08)",
+          }}
+        >
+          <div
+            className="font-mono uppercase mb-2"
+            style={{ fontSize: 11, letterSpacing: "0.14em", color: "var(--admin-ink-3)" }}
+          >
+            Aaj ka paisa · paid today
+          </div>
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <div
+                className="tabular leading-none font-semibold"
+                style={{
+                  fontSize: "clamp(40px, 12vw, 56px)",
+                  letterSpacing: "-0.04em",
+                  color: "var(--admin-lime)",
+                }}
+              >
+                {formatRupees(kpis.revenue)}
+              </div>
+              <div className="mt-2 flex flex-wrap gap-3 text-[13px]" style={{ color: "var(--admin-ink-2)" }}>
+                <span>
+                  <strong style={{ color: "var(--admin-ink)" }}>{kpis.count}</strong> orders
+                </span>
+                <span style={{ color: dRev.up ? "var(--admin-lime)" : "var(--admin-rose, #f87171)" }}>
+                  {dRev.text} vs last week
+                </span>
+                <span className="font-mono text-[12px]" style={{ color: "var(--admin-ink-3)" }}>
+                  avg {formatRupees(kpis.avgTicket)}
+                </span>
+              </div>
+            </div>
+            {upiVpa && (
+              <div
+                className="rounded-lg px-3 py-2 font-mono text-[11px]"
+                style={{
+                  background: "var(--admin-bg-3)",
+                  border: "1px solid var(--admin-line)",
+                  color: "var(--admin-ink-2)",
+                  maxWidth: 220,
+                }}
+              >
+                <div style={{ fontSize: 9, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.7 }}>
+                  Students pay you
+                </div>
+                <div className="truncate font-semibold mt-0.5" style={{ color: "var(--admin-lime)" }}>
+                  {upiVpa}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Open / Pause — one tap during rush */}
+      <div className="mb-4">
+        <ServiceControls
+          isOpen={isOpen}
+          pausedUntil={pausedUntil}
+          opensAt={opensAt}
+          closesAt={closesAt}
+        />
+      </div>
+
+      {/* Pipeline → kitchen */}
+      {!isFirstDay && (
+        <div className="mb-4 grid grid-cols-3 gap-2">
+          {(
+            [
+              {
+                label: "New",
+                count: liveTodayOrders.filter((o) => o.status === "placed").length,
+                href: `/c/${tenantSlug}/kitchen`,
+              },
+              {
+                label: "Cooking",
+                count: liveTodayOrders.filter((o) => o.status === "preparing").length,
+                href: `/c/${tenantSlug}/kitchen`,
+              },
+              {
+                label: "Serve",
+                count: liveTodayOrders.filter((o) => o.status === "ready").length,
+                href: `/c/${tenantSlug}/kitchen`,
+              },
+            ] as const
+          ).map((c) => (
+            <Link
+              key={c.label}
+              href={c.href}
+              className="rounded-xl p-3 text-center transition-colors"
+              style={{
+                background: "var(--admin-bg-card)",
+                border: "1px solid var(--admin-line)",
+              }}
+            >
+              <div
+                className="tabular font-semibold leading-none"
+                style={{ fontSize: 28, color: "var(--admin-ink)" }}
+              >
+                {String(c.count).padStart(2, "0")}
+              </div>
+              <div
+                className="font-mono uppercase mt-1"
+                style={{ fontSize: 10, letterSpacing: "0.1em", color: "var(--admin-ink-3)" }}
+              >
+                {c.label}
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {/* Quick links */}
+      <div className="mb-5 flex flex-wrap gap-2">
+        {(
+          [
+            { href: `/c/${tenantSlug}/admin/menu`, label: "Menu · 86 stock" },
+            { href: `/c/${tenantSlug}/admin/orders`, label: "Orders ledger" },
+            { href: `/c/${tenantSlug}/admin/qr`, label: "QR poster" },
+            { href: `/c/${tenantSlug}/admin/settings`, label: "UPI & hours" },
+          ] as const
+        ).map((l) => (
+          <Link
+            key={l.href}
+            href={l.href}
+            className="inline-flex items-center h-10 px-3 rounded-lg text-[12px] font-semibold"
+            style={{
+              background: "var(--admin-bg-3)",
+              border: "1px solid var(--admin-line-2)",
+              color: "var(--admin-ink-2)",
+            }}
+          >
+            {l.label}
+          </Link>
+        ))}
+      </div>
+
+      {/* ── KPI cards (secondary on phone; charts further down) ──────── */}
+      <div className="hidden sm:grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
         {isFirstDay ? (
           <>
             {/* First-day setup prompts replace numeric KPIs */}
@@ -680,14 +835,37 @@ export function DashboardView({
         )}
       </div>
 
-      <div className="grid lg:grid-cols-[1.4fr_1fr] gap-2 mb-3">
+      {/* Top sellers always visible — owner 86s from Menu; this is the signal */}
+      <div className="mb-3">
+        <TopItems items={topItems} />
+      </div>
+
+      {/* Charts + feed: full on desktop; collapsible on phone so money stays hero */}
+      <details className="lg:hidden mb-3 group">
+        <summary
+          className="cursor-pointer list-none rounded-xl px-4 py-3 font-mono text-[11px] uppercase tracking-wider"
+          style={{
+            background: "var(--admin-bg-3)",
+            border: "1px solid var(--admin-line)",
+            color: "var(--admin-ink-3)",
+          }}
+        >
+          More charts & activity ▾
+        </summary>
+        <div className="mt-2 flex flex-col gap-2">
+          <RevenueChart days={dayBuckets} />
+          <PeakHeatmap grid={heatmap} />
+          <ActivityFeed logs={logs} />
+        </div>
+      </details>
+
+      <div className="hidden lg:grid lg:grid-cols-[1.4fr_1fr] gap-2 mb-3">
         <RevenueChart days={dayBuckets} />
         <PeakHeatmap grid={heatmap} />
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-2">
+      <div className="hidden lg:block mb-2">
         <ActivityFeed logs={logs} />
-        <TopItems items={topItems} />
       </div>
     </motion.div>
   );

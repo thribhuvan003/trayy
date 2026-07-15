@@ -1,27 +1,39 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, BookOpen, ClipboardList, Copy, ExternalLink, LayoutGrid, LineChart, ListOrdered, LogOut, QrCode, Settings, Users } from "lucide-react";
+import {
+  Activity,
+  BookOpen,
+  ClipboardList,
+  Copy,
+  ExternalLink,
+  LayoutGrid,
+  LineChart,
+  ListOrdered,
+  LogOut,
+  MoreHorizontal,
+  QrCode,
+  Settings,
+  Users,
+} from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
+/** Desktop sidebar — Indian owner mental model labels */
 const NAV_ITEMS = [
-  { group: "Operations" },
-  { key: "dashboard", label: "Overview", icon: LayoutGrid, kbd: "G O" },
+  { group: "Today" },
+  { key: "dashboard", label: "Today", icon: LayoutGrid, kbd: "G T" },
   { key: "orders", label: "Orders", icon: ClipboardList, kbd: "G R" },
   { key: "menu", label: "Menu", icon: BookOpen, kbd: "G M" },
   { key: "qr", label: "QR poster", icon: QrCode, kbd: "G Q" },
+  { group: "Manage" },
   { key: "staff", label: "Staff", icon: Users, kbd: "G S" },
   { key: "analytics", label: "Insights", icon: LineChart, kbd: "G I" },
   { key: "settings", label: "Settings", icon: Settings, kbd: "G ," },
 ] as const;
 
 function OrderingLinkBanner({ tenantSlug }: { tenantSlug: string }) {
-  const orderingUrl =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/c/${tenantSlug}/menu`
-      : `/c/${tenantSlug}/menu`;
-
   function copyLink() {
     const url =
       typeof window !== "undefined"
@@ -80,20 +92,29 @@ export function AdminShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const [moreOpen, setMoreOpen] = useState(false);
 
   function navHref(key: string) {
     return `/c/${tenantSlug}/admin/${key}`;
   }
   function isActive(key: string) {
-    const match = `/admin/${key}`;
-    return pathname === match || pathname?.startsWith(match + "/") ||
+    return (
+      pathname === `/admin/${key}` ||
+      pathname?.startsWith(`/admin/${key}/`) ||
       pathname === `/c/${tenantSlug}/admin/${key}` ||
-      pathname?.startsWith(`/c/${tenantSlug}/admin/${key}/`);
+      pathname?.startsWith(`/c/${tenantSlug}/admin/${key}/`)
+    );
   }
 
+  const moreActive =
+    isActive("staff") || isActive("analytics") || isActive("settings");
+
   return (
-    <div className="relative z-10 flex transition-colors duration-200" style={{ background: "var(--admin-bg)", minHeight: "100vh" }}>
-      {/* ── Sidebar ─────────────────────────────────────────── */}
+    <div
+      className="relative z-10 flex transition-colors duration-200"
+      style={{ background: "var(--admin-bg)", minHeight: "100vh" }}
+    >
+      {/* Desktop sidebar */}
       <aside
         className="hidden lg:flex w-[248px] shrink-0 sticky top-0 self-start h-screen flex-col transition-colors duration-200"
         style={{
@@ -101,44 +122,60 @@ export function AdminShell({
           borderRight: "1px solid var(--admin-line)",
         }}
       >
-        {/* Brand */}
-        <div style={{ padding: "18px 14px 14px", borderBottom: "1px solid var(--admin-line)", marginBottom: "14px" }}>
+        <div
+          style={{
+            padding: "18px 14px 14px",
+            borderBottom: "1px solid var(--admin-line)",
+            marginBottom: "14px",
+          }}
+        >
           <Link
             href={`/c/${tenantSlug}/admin/dashboard`}
             className="inline-flex items-center gap-2.5 font-semibold text-[18px] tracking-tight"
             style={{ color: "var(--admin-ink)", letterSpacing: "-0.025em" }}
           >
-            {/* 28px lime square brand mark with glow */}
             <span
-              className="inline-flex items-center justify-center font-mono font-bold text-[13px] shrink-0 transition-all duration-200"
+              className="inline-flex items-center justify-center font-bold text-[15px] shrink-0"
               style={{
-                width: 28,
-                height: 28,
-                borderRadius: 7,
-                background: "var(--admin-lime)",
-                color: "var(--admin-bg)",
-                boxShadow: "0 0 20px var(--admin-lime-soft)",
+                width: 30,
+                height: 30,
+                borderRadius: 8,
+                background: "var(--admin-rose, #d52821)",
+                color: "#fff",
+                fontFamily: "var(--portal-font-display)",
+                fontStyle: "italic",
+                boxShadow: "0 2px 0 var(--admin-ink)",
               }}
             >
               T
             </span>
-            Tray<span className="italic font-medium" style={{ color: "var(--admin-lime)", marginLeft: -2 }}>.</span>
+            <span style={{ fontFamily: "var(--portal-font-display)", fontWeight: 600 }}>
+              Tray
+              <span className="italic font-medium" style={{ color: "var(--admin-rose, #d52821)", marginLeft: -1 }}>
+                .
+              </span>
+            </span>
           </Link>
           <div
-            className="mt-2 font-mono uppercase font-semibold transition-colors duration-200"
+            className="mt-2 font-mono uppercase font-semibold"
             style={{ fontSize: 10, letterSpacing: "0.14em", color: "var(--admin-ink-3)" }}
           >
             {tenantName}
           </div>
+          <div
+            className="mt-1 font-mono"
+            style={{ fontSize: 9, letterSpacing: "0.08em", color: "var(--admin-ink-3)", opacity: 0.8 }}
+          >
+            Aaj ka hisaab · owner phone
+          </div>
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 px-[14px] flex flex-col gap-0.5 text-[13.5px]">
           {NAV_ITEMS.map((n, i) =>
             "group" in n ? (
               <div
                 key={i}
-                className="font-mono font-semibold transition-colors duration-200"
+                className="font-mono font-semibold"
                 style={{
                   padding: "14px 10px 6px",
                   fontSize: 10,
@@ -164,34 +201,20 @@ export function AdminShell({
                 <n.icon
                   size={15}
                   strokeWidth={1.6}
-                  style={{ opacity: isActive(n.key) ? 1 : 0.65, color: isActive(n.key) ? "var(--admin-lime)" : undefined, flexShrink: 0 }}
+                  style={{
+                    opacity: isActive(n.key) ? 1 : 0.65,
+                    color: isActive(n.key) ? "var(--admin-lime)" : undefined,
+                    flexShrink: 0,
+                  }}
                 />
                 <span>{n.label}</span>
-                {"kbd" in n && n.kbd && (
-                  <span
-                    className="ml-auto opacity-0 group-hover:opacity-100 transition-all duration-200 font-mono font-medium"
-                    style={{
-                      fontSize: 10,
-                      padding: "1px 5px",
-                      background: isActive(n.key) ? "var(--admin-lime-soft)" : "var(--admin-bg-3)",
-                      border: `1px solid ${isActive(n.key) ? "var(--admin-line-2)" : "var(--admin-line)"}`,
-                      borderRadius: 4,
-                      color: isActive(n.key) ? "var(--admin-lime)" : "var(--admin-ink-3)",
-                    }}
-                  >
-                    {n.kbd}
-                  </span>
-                )}
               </Link>
             )
           )}
         </nav>
 
-        {/* Bottom: ordering link + portal links + user */}
         <div style={{ marginTop: "auto" }}>
           <OrderingLinkBanner tenantSlug={tenantSlug} />
-
-          {/* Portal quick-links in mono */}
           <div style={{ borderTop: "1px solid var(--admin-line)", padding: "14px 14px 0" }}>
             {[
               { label: "Kitchen", href: `/c/${tenantSlug}/kitchen` },
@@ -209,25 +232,20 @@ export function AdminShell({
                   letterSpacing: "0.04em",
                   textTransform: "uppercase",
                 }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--admin-bg-3)"; (e.currentTarget as HTMLElement).style.color = "var(--admin-ink)"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = ""; (e.currentTarget as HTMLElement).style.color = "var(--admin-ink-3)"; }}
               >
                 <span>{pl.label}</span>
                 <ExternalLink size={10} />
               </Link>
             ))}
           </div>
-
-          {/* User row */}
           <div
-            className="flex items-center gap-2.5 mx-[14px] mb-[14px] mt-2 rounded-lg transition-all duration-200"
+            className="flex items-center gap-2.5 mx-[14px] mb-[14px] mt-2 rounded-lg"
             style={{
               padding: "8px 10px",
               background: "var(--admin-bg-3)",
               border: "1px solid var(--admin-line)",
             }}
           >
-            {/* Avatar: lime→mint gradient */}
             <div
               className="shrink-0 inline-flex items-center justify-center rounded-full font-mono font-bold text-[12px]"
               style={{
@@ -240,21 +258,22 @@ export function AdminShell({
               {(userEmail ?? "A").slice(0, 1).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0" style={{ lineHeight: 1.2 }}>
-              <div className="truncate font-semibold transition-colors duration-200" style={{ fontSize: 12.5, color: "var(--admin-ink)" }}>
+              <div className="truncate font-semibold" style={{ fontSize: 12.5, color: "var(--admin-ink)" }}>
                 {userEmail ?? "admin"}
               </div>
-              <div
-                className="font-mono transition-colors duration-200"
-                style={{ fontSize: 10, color: "var(--admin-ink-3)", letterSpacing: "0.04em" }}
-              >
+              <div className="font-mono" style={{ fontSize: 10, color: "var(--admin-ink-3)" }}>
                 {userRole ?? "canteen_admin"}
               </div>
             </div>
             <button
               type="button"
               aria-label="Sign out"
-              onClick={() => fetch("/auth/signout", { method: "POST" }).then(() => { window.location.href = "/"; })}
-              className="inline-flex items-center justify-center rounded-md transition-colors cursor-pointer"
+              onClick={() =>
+                fetch("/auth/signout", { method: "POST" }).then(() => {
+                  window.location.href = "/";
+                })
+              }
+              className="inline-flex items-center justify-center rounded-md cursor-pointer"
               style={{ height: 28, width: 28, color: "var(--admin-ink-3)", background: "transparent", border: "none" }}
             >
               <LogOut size={13} />
@@ -263,107 +282,207 @@ export function AdminShell({
         </div>
       </aside>
 
-      {/* ── Main area ───────────────────────────────────────── */}
-      <div className="flex-1 min-w-0">
-        {/* Topbar: sticky, blur backdrop, border-bottom */}
+      <div className="flex-1 min-w-0 flex flex-col">
         <header
-          className="sticky top-0 z-20 flex items-center justify-between gap-3 transition-colors duration-200"
+          className="sticky top-0 z-20 flex items-center justify-between gap-3"
           style={{
             height: 52,
-            padding: "0 32px",
+            padding: "0 16px",
             background: "var(--admin-bg)",
-            opacity: 0.95,
+            opacity: 0.97,
             backdropFilter: "blur(10px)",
-            WebkitBackdropFilter: "blur(10px)",
             borderBottom: "1px solid var(--admin-line)",
           }}
         >
-          {/* Left: tenant context */}
-          <div
-            className="flex items-center gap-2 font-mono transition-colors duration-200"
-            style={{ fontSize: 11, color: "var(--admin-ink-3)" }}
-          >
-            <span className="hidden sm:inline">
-              <span style={{ color: "var(--admin-lime)" }}>{tenantSlug}</span>.tray.app/admin
-            </span>
+          <div className="min-w-0">
+            <div className="lg:hidden font-semibold truncate" style={{ fontSize: 15, color: "var(--admin-ink)" }}>
+              {tenantName}
+            </div>
+            <div
+              className="hidden sm:block font-mono"
+              style={{ fontSize: 11, color: "var(--admin-ink-3)" }}
+            >
+              <span style={{ color: "var(--admin-lime)" }}>{tenantSlug}</span>
+              <span className="hidden md:inline"> · aaj ka hisaab</span>
+            </div>
           </div>
-          {/* Right: theme toggle + kitchen link */}
           <div className="flex items-center gap-2">
             <ThemeToggle className="text-[color:var(--admin-ink-3)] border-[color:var(--admin-line-2)] hover:bg-[color:var(--admin-bg-3)]" />
             <Link
               href={`/c/${tenantSlug}/kitchen`}
-              className="hidden md:inline-flex items-center gap-1.5 font-mono uppercase tracking-wider transition-all duration-200"
+              className="inline-flex items-center gap-1.5 font-mono uppercase tracking-wider"
               style={{
-                height: 32,
+                height: 36,
                 padding: "0 12px",
                 borderRadius: 7,
                 border: "1px solid var(--admin-line-2)",
                 fontSize: 11,
                 color: "var(--admin-ink-2)",
               }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--admin-lime)"; (e.currentTarget as HTMLElement).style.color = "var(--admin-lime)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "var(--admin-line-2)"; (e.currentTarget as HTMLElement).style.color = "var(--admin-ink-2)"; }}
             >
               <Activity size={11} /> Kitchen
             </Link>
           </div>
         </header>
 
-        <main className="px-5 sm:px-8 py-6">{children}</main>
+        {/* pb so fixed bottom nav never covers CTAs */}
+        <main className="px-4 sm:px-8 py-5 pb-28 lg:pb-8 flex-1">{children}</main>
 
-        {/* Footer */}
-        <footer
-          className="hidden lg:block border-t mt-auto"
-          style={{ borderColor: "var(--admin-line)" }}
-        >
+        <footer className="hidden lg:block border-t mt-auto" style={{ borderColor: "var(--admin-line)" }}>
           <div
             className="mx-auto max-w-7xl px-8 py-4 flex flex-wrap items-center justify-between gap-2 font-mono"
             style={{ fontSize: 11, color: "var(--admin-ink-3)" }}
           >
             <span>
               Powered by{" "}
-              <Link href="/" className="font-medium transition-colors" style={{ color: "var(--admin-ink-2)" }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--admin-lime)"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "var(--admin-ink-2)"; }}
-              >Tray</Link>
-              {" "}· Campus Edition · Payments by Razorpay
+              <Link href="/" className="font-medium" style={{ color: "var(--admin-ink-2)" }}>
+                Tray
+              </Link>
+              {" "}· phone + aaj ka hisaab
             </span>
             <span className="flex items-center gap-3">
-              <Link href="/legal/terms" className="transition-colors hover:text-[var(--admin-ink-2)]">Terms</Link>
-              <Link href="/legal/privacy" className="transition-colors hover:text-[var(--admin-ink-2)]">Privacy</Link>
+              <Link href="/legal/terms">Terms</Link>
+              <Link href="/legal/privacy">Privacy</Link>
             </span>
           </div>
         </footer>
 
-        {/* Mobile bottom nav */}
+        {/* More sheet (phone) */}
+        {moreOpen && (
+          <div
+            className="lg:hidden fixed inset-0 z-40 flex flex-col justify-end"
+            style={{ background: "rgba(0,0,0,0.55)" }}
+            onClick={() => setMoreOpen(false)}
+            role="presentation"
+          >
+            <div
+              className="rounded-t-2xl p-4 pb-8 flex flex-col gap-1"
+              style={{
+                background: "var(--admin-bg-2)",
+                borderTop: "1px solid var(--admin-line)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-label="More admin tools"
+            >
+              <div
+                className="font-mono uppercase mb-2 px-2"
+                style={{ fontSize: 10, letterSpacing: "0.14em", color: "var(--admin-ink-3)" }}
+              >
+                More
+              </div>
+              {[
+                { href: navHref("staff"), label: "Staff · invites & kitchen hands", icon: Users },
+                { href: navHref("analytics"), label: "Insights · 30-day numbers", icon: LineChart },
+                { href: navHref("settings"), label: "Settings · UPI, hours, modes", icon: Settings },
+                { href: `/c/${tenantSlug}/kitchen`, label: "Kitchen queue", icon: Activity },
+                { href: `/c/${tenantSlug}/menu`, label: "Student menu", icon: ExternalLink },
+              ].map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMoreOpen(false)}
+                  className="flex items-center gap-3 rounded-xl px-3 py-3.5 font-medium"
+                  style={{
+                    background: "var(--admin-bg-3)",
+                    color: "var(--admin-ink)",
+                    fontSize: 14,
+                    minHeight: 52,
+                  }}
+                >
+                  <item.icon size={18} style={{ color: "var(--admin-lime)", flexShrink: 0 }} />
+                  {item.label}
+                </Link>
+              ))}
+              <button
+                type="button"
+                onClick={() => setMoreOpen(false)}
+                className="mt-2 py-3 rounded-xl font-semibold"
+                style={{
+                  background: "transparent",
+                  border: "1px solid var(--admin-line-2)",
+                  color: "var(--admin-ink-2)",
+                  fontSize: 14,
+                  minHeight: 48,
+                  cursor: "pointer",
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Mobile bottom nav: Today · Orders · Menu · QR · More */}
         <nav
           className="lg:hidden fixed bottom-0 inset-x-0 z-30 border-t backdrop-blur-xl"
           style={{
             borderColor: "var(--admin-line)",
             background: "var(--admin-bg-2)",
+            paddingBottom: "env(safe-area-inset-bottom, 0)",
           }}
         >
           <div className="grid grid-cols-5">
-            {[
-              { href: `/c/${tenantSlug}/admin/dashboard`, match: `/c/${tenantSlug}/admin/dashboard`, icon: LayoutGrid, label: "Home" },
-              { href: `/c/${tenantSlug}/admin/orders`, match: `/c/${tenantSlug}/admin/orders`, icon: ListOrdered, label: "Orders" },
-              { href: `/c/${tenantSlug}/admin/menu`, match: `/c/${tenantSlug}/admin/menu`, icon: BookOpen, label: "Menu" },
-              { href: `/c/${tenantSlug}/admin/staff`, match: `/c/${tenantSlug}/admin/staff`, icon: Users, label: "Staff" },
-              { href: `/c/${tenantSlug}/admin/settings`, match: `/c/${tenantSlug}/admin/settings`, icon: Settings, label: "Settings" },
-            ].map((n) => (
+            {(
+              [
+                {
+                  href: `/c/${tenantSlug}/admin/dashboard`,
+                  match: "dashboard",
+                  icon: LayoutGrid,
+                  label: "Today",
+                },
+                {
+                  href: `/c/${tenantSlug}/admin/orders`,
+                  match: "orders",
+                  icon: ListOrdered,
+                  label: "Orders",
+                },
+                {
+                  href: `/c/${tenantSlug}/admin/menu`,
+                  match: "menu",
+                  icon: BookOpen,
+                  label: "Menu",
+                },
+                {
+                  href: `/c/${tenantSlug}/admin/qr`,
+                  match: "qr",
+                  icon: QrCode,
+                  label: "QR",
+                },
+              ] as const
+            ).map((n) => (
               <Link
                 key={n.href}
                 href={n.href}
                 className="flex flex-col items-center justify-center gap-0.5 py-2.5 font-mono uppercase tracking-wider"
                 style={{
-                  fontSize: 12,
-                  color: pathname?.startsWith(n.match) ? "var(--admin-lime)" : "var(--admin-ink-3)",
+                  fontSize: 10,
+                  minHeight: 56,
+                  color: isActive(n.match) ? "var(--admin-lime)" : "var(--admin-ink-3)",
                 }}
               >
-                <n.icon size={15} />
+                <n.icon size={16} />
                 {n.label}
               </Link>
             ))}
+            <button
+              type="button"
+              onClick={() => setMoreOpen(true)}
+              className="flex flex-col items-center justify-center gap-0.5 py-2.5 font-mono uppercase tracking-wider"
+              style={{
+                fontSize: 10,
+                minHeight: 56,
+                color: moreActive || moreOpen ? "var(--admin-lime)" : "var(--admin-ink-3)",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+              }}
+              aria-label="More"
+              aria-expanded={moreOpen}
+            >
+              <MoreHorizontal size={16} />
+              More
+            </button>
           </div>
         </nav>
       </div>

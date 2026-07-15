@@ -68,7 +68,7 @@ export function OtpVerifyDialog({
     start(async () => {
       const r = await verifyAndCollect(order.id, otp);
       if (r.ok) {
-        toast.success("Handed over");
+        toast.success("Served — no shout needed");
         onResult(true);
         return;
       }
@@ -152,7 +152,7 @@ export function OtpVerifyDialog({
                 pending && "opacity-70 cursor-not-allowed"
               )}
             >
-              {pending ? "Verifying…" : "Verify & hand over"}
+              {pending ? "Serving…" : "SERVE"}
             </button>
           </div>
         </Dialog.Content>

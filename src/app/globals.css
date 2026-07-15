@@ -165,31 +165,74 @@
   90%       { transform: translateX(3px); }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   TRAY PRODUCT DNA — one brand across student · kitchen · admin · login
+   Fight Zomato on clarity: warm paper, ink, tomato action, money green.
+   Type roles (max 3): display · body · mono — same family stack everywhere.
+   ═══════════════════════════════════════════════════════════════════════ */
+:root {
+  --tray-paper:       #fdf8f0;
+  --tray-paper-2:     #f4efe6;
+  --tray-ink:         #1a1410;
+  --tray-ink-2:       #3d342c;
+  --tray-ink-3:       #6b5f54;
+  --tray-line:        rgba(26, 20, 16, 0.10);
+  --tray-line-2:      rgba(26, 20, 16, 0.18);
+  --tray-signal:      #d52821; /* primary CTA — food red */
+  --tray-signal-2:    #a31810;
+  --tray-signal-soft: rgba(213, 40, 33, 0.10);
+  --tray-money:       #1b6b3a; /* paid / open / success */
+  --tray-money-soft:  rgba(27, 107, 58, 0.10);
+  --tray-mustard:     #c69214;
+  --tray-touch:       48px; /* min tap target */
+
+  /* Default portal type = product DNA (overridden per portal only if needed) */
+  --portal-font-sans:    var(--font-jakarta), var(--font-hanken), ui-sans-serif, system-ui;
+  --portal-font-display: var(--font-newsreader), ui-serif, Georgia;
+  --portal-font-mono:    var(--font-jetbrains), ui-monospace, Menlo, monospace;
+}
+
 /* ─── Portal overrides ─── */
 [data-portal="student"] {
-  /* Neobrutalist Winter-2026 type system — distinctive per role, not AI-generic. */
-  --portal-font-sans:    var(--font-hanken), var(--font-jakarta), ui-sans-serif, system-ui;
-  --portal-font-display: var(--font-unbounded), ui-sans-serif, system-ui;
-  --portal-font-mono:    var(--font-space-mono), ui-monospace, Menlo, monospace;
+  /* Same DNA as kitchen/admin — student menu must feel like Tray, not a blue SaaS app */
+  --portal-font-sans:    var(--font-jakarta), var(--font-hanken), ui-sans-serif, system-ui;
+  --portal-font-display: var(--font-newsreader), ui-serif, Georgia;
+  --portal-font-mono:    var(--font-jetbrains), ui-monospace, Menlo, monospace;
 
-  /* Section-role font tokens (components reference these directly) */
-  --font-display-ns: var(--font-unbounded), ui-sans-serif, system-ui;   /* hero + section titles */
-  --font-title-ns:   var(--font-bricolage), ui-sans-serif, system-ui;   /* card titles, item names, CTA labels */
-  --font-body-ns:    var(--font-hanken), ui-sans-serif, system-ui;      /* body / descriptions / helper */
-  --font-num-ns:     var(--font-space-mono), ui-monospace, monospace;   /* prices, timers, OTP, totals */
+  --font-display-ns: var(--font-newsreader), ui-serif, Georgia;
+  --font-title-ns:   var(--font-jakarta), ui-sans-serif, system-ui;
+  --font-body-ns:    var(--font-jakarta), var(--font-hanken), ui-sans-serif, system-ui;
+  --font-num-ns:     var(--font-jetbrains), ui-monospace, monospace;
 
-  --color-primary:       var(--color-ocean-500);
-  --scrollbar-thumb:       rgba(26, 26, 25, 0.18);
-  --scrollbar-thumb-hover: rgba(26, 26, 25, 0.28);
+  --color-paper:         var(--tray-paper);
+  --color-paper-dim:     var(--tray-paper-2);
+  --color-ink:           var(--tray-ink);
+  --color-line:          var(--tray-line);
+  --color-line-strong:   var(--tray-line-2);
+  --color-primary:       var(--tray-signal);
+  /* Map old ocean scale → tomato so existing student components stay coherent */
+  --color-ocean-50:      #fbe9e7;
+  --color-ocean-100:     #f7c8c2;
+  --color-ocean-200:     #f0a39b;
+  --color-ocean-300:     #e85a4f;
+  --color-ocean-400:     #df3d32;
+  --color-ocean-500:     #d52821;
+  --color-ocean-600:     #b51b15;
+  --color-ocean-700:     #8f1410;
+  --color-ocean-900:     #2a160a;
+
+  --scrollbar-thumb:       rgba(26, 20, 16, 0.18);
+  --scrollbar-thumb-hover: rgba(26, 20, 16, 0.28);
 }
 [data-portal="kitchen"] {
-  --portal-font-sans:    var(--font-jakarta), var(--font-geist), ui-sans-serif, system-ui;
+  --portal-font-sans:    var(--font-jakarta), ui-sans-serif, system-ui;
   --portal-font-display: var(--font-newsreader), ui-serif, Georgia;
+  --portal-font-mono:    var(--font-jetbrains), ui-monospace, Menlo, monospace;
   --color-primary:       var(--kt-tomato);
   --scrollbar-thumb:       rgba(42, 22, 10, 0.18);
   --scrollbar-thumb-hover: rgba(42, 22, 10, 0.28);
 
-  /* Kitchen design-spec variables — matches kitchen.html exactly */
+  /* Kitchen tickets — cream pass, same ink/signal DNA */
   --kt-cream:        #f4e6c1;
   --kt-cream-2:      #efdba4;
   --kt-cream-3:      #faecc3;
@@ -253,54 +296,54 @@
   animation: stampIn 0.35s cubic-bezier(0.5, 1.5, 0.5, 1);
 }
 [data-portal="admin"] {
-  --portal-font-sans:    var(--font-jakarta), var(--font-geist), ui-sans-serif, system-ui;
-  --portal-font-display: var(--font-fraunces), ui-serif, Georgia;
+  /* Same type stack as kitchen/student — one product, not three SaaS skins */
+  --portal-font-sans:    var(--font-jakarta), ui-sans-serif, system-ui;
+  --portal-font-display: var(--font-newsreader), ui-serif, Georgia;
   --portal-font-mono:    var(--font-jetbrains), ui-monospace, Menlo, monospace;
 
-  /* Universal scrollbar settings */
-  --scrollbar-thumb:       rgba(26, 26, 25, 0.18);
-  --scrollbar-thumb-hover: rgba(26, 26, 25, 0.28);
+  --scrollbar-thumb:       rgba(26, 20, 16, 0.18);
+  --scrollbar-thumb-hover: rgba(26, 20, 16, 0.28);
 
-  /* Primary branding */
+  /* Primary = money green on light (hisaab); signal red for danger/CTA accents */
   --color-primary:         var(--admin-lime);
 
-  /* Admin Bright (Light) Theme - Inverted Graphite & Warm Pulp */
-  --color-graphite-900: #FDFBF7; /* Dashboard background */
-  --color-graphite-800: #F6F3EB; /* Sidebar background */
-  --color-graphite-700: #EAE5DA; /* Card backgrounds/hover */
-  --color-graphite-600: #DFD9CD; /* Form elements / borders */
-  --color-graphite-500: #908879; /* Extra muted / labels */
-  --color-graphite-400: #7D766A; /* Muted text / helper text */
-  --color-graphite-300: #5E5950; /* Body text */
-  --color-graphite-200: #444440; /* Strong body / subheadings */
-  --color-graphite-100: #1A1A19; /* Primary text / headings */
+  /* Warm paper admin (street ledger) — not cold graphite SaaS */
+  --color-graphite-900: #fdf8f0;
+  --color-graphite-800: #f4efe6;
+  --color-graphite-700: #eae3d6;
+  --color-graphite-600: #ddd4c4;
+  --color-graphite-500: #908879;
+  --color-graphite-400: #6b5f54;
+  --color-graphite-300: #4a4038;
+  --color-graphite-200: #2e2822;
+  --color-graphite-100: #1a1410;
 
   --admin-bg:          var(--color-graphite-900);
   --admin-bg-2:        var(--color-graphite-800);
   --admin-bg-3:        var(--color-graphite-700);
   --admin-bg-4:        var(--color-graphite-600);
-  --admin-bg-card:     #FFFFFF;
-  --admin-line:        rgba(26, 26, 25, 0.08);
-  --admin-line-2:      rgba(26, 26, 25, 0.15);
-  --admin-line-3:      rgba(26, 26, 25, 0.25);
+  --admin-bg-card:     #fffdf8;
+  --admin-line:        rgba(26, 20, 16, 0.10);
+  --admin-line-2:      rgba(26, 20, 16, 0.16);
+  --admin-line-3:      rgba(26, 20, 16, 0.26);
   --admin-ink:         var(--color-graphite-100);
   --admin-ink-2:       var(--color-graphite-200);
   --admin-ink-3:       var(--color-graphite-400);
   --admin-ink-4:       var(--color-graphite-500);
 
-  --admin-lime:        #8fb305; /* A readable chartreuse green for light bg */
-  --admin-lime-2:      #769404;
-  --admin-lime-soft:   rgba(143, 179, 5, 0.08);
-  --admin-amber:       #d97706;
-  --admin-amber-soft:  rgba(217, 119, 6, 0.08);
-  --admin-rose:        #dc2626;
-  --admin-rose-soft:   rgba(220, 38, 38, 0.08);
-  --admin-mint:        #059669;
-  --admin-mint-soft:   rgba(5, 150, 105, 0.08);
-  --admin-sky:         #0284c7;
-  --admin-sky-soft:    rgba(2, 132, 199, 0.08);
-  --admin-violet:      #7c3aed;
-  --admin-violet-soft: rgba(124, 58, 237, 0.08);
+  --admin-lime:        #1b6b3a; /* money green — readable on paper */
+  --admin-lime-2:      #145230;
+  --admin-lime-soft:   rgba(27, 107, 58, 0.10);
+  --admin-amber:       #c69214;
+  --admin-amber-soft:  rgba(198, 146, 20, 0.12);
+  --admin-rose:        #d52821;
+  --admin-rose-soft:   rgba(213, 40, 33, 0.10);
+  --admin-mint:        #1b6b3a;
+  --admin-mint-soft:   rgba(27, 107, 58, 0.10);
+  --admin-sky:         #0c4a6e;
+  --admin-sky-soft:    rgba(12, 74, 110, 0.08);
+  --admin-violet:      #5b21b6;
+  --admin-violet-soft: rgba(91, 33, 182, 0.08);
 }
 
 /* ─── Admin DARK theme ───────────────────────────────────────────────────────
@@ -310,42 +353,57 @@
    token-based element. Components must use these tokens (not hardcoded hex) for
    the toggle to reach them. */
 html.dark [data-portal="admin"] {
-  --color-graphite-900: #0a0d12; /* dashboard background */
-  --color-graphite-800: #0f131a; /* sidebar background */
-  --color-graphite-700: #161b25; /* card background/hover */
-  --color-graphite-600: #1c2230; /* form elements / borders */
-  --color-graphite-500: #3f4756;
-  --color-graphite-400: #646d80; /* muted text */
-  --color-graphite-300: #a3acbd; /* body text */
-  --color-graphite-200: #e8ecf2; /* strong body / subheadings */
-  --color-graphite-100: #f4f6fa; /* primary text / headings */
+  --color-graphite-900: #12100e;
+  --color-graphite-800: #1a1612;
+  --color-graphite-700: #24201b;
+  --color-graphite-600: #2e2923;
+  --color-graphite-500: #5c534a;
+  --color-graphite-400: #8a7f74;
+  --color-graphite-300: #c4bbb0;
+  --color-graphite-200: #e8e2d8;
+  --color-graphite-100: #faf6ef;
 
   --admin-bg:          var(--color-graphite-900);
   --admin-bg-2:        var(--color-graphite-800);
   --admin-bg-3:        var(--color-graphite-700);
   --admin-bg-4:        var(--color-graphite-600);
-  --admin-bg-card:     #0f131b;
-  --admin-line:        rgba(255, 255, 255, 0.07);
-  --admin-line-2:      rgba(255, 255, 255, 0.13);
-  --admin-line-3:      rgba(255, 255, 255, 0.20);
+  --admin-bg-card:     #1c1814;
+  --admin-line:        rgba(250, 246, 239, 0.08);
+  --admin-line-2:      rgba(250, 246, 239, 0.14);
+  --admin-line-3:      rgba(250, 246, 239, 0.22);
   --admin-ink:         var(--color-graphite-100);
   --admin-ink-2:       var(--color-graphite-200);
   --admin-ink-3:       var(--color-graphite-400);
   --admin-ink-4:       var(--color-graphite-500);
 
-  --admin-lime:        #d2fb50; /* neon chartreuse pops on dark */
-  --admin-lime-2:      #b4dc3a;
-  --admin-lime-soft:   rgba(210, 251, 80, 0.12);
-  --admin-amber:       #ffae29;
-  --admin-amber-soft:  rgba(255, 174, 41, 0.12);
-  --admin-rose:        #ff6b6b;
-  --admin-rose-soft:   rgba(255, 107, 107, 0.12);
-  --admin-mint:        #3fe6a3;
-  --admin-mint-soft:   rgba(63, 230, 163, 0.12);
-  --admin-sky:         #5cb1ff;
-  --admin-sky-soft:    rgba(92, 177, 255, 0.12);
-  --admin-violet:      #a78bfa;
-  --admin-violet-soft: rgba(167, 139, 250, 0.12);
+  --admin-lime:        #6dca7a; /* money green on dark */
+  --admin-lime-2:      #4aad5a;
+  --admin-lime-soft:   rgba(109, 202, 122, 0.14);
+  --admin-amber:       #e3a02a;
+  --admin-amber-soft:  rgba(227, 160, 42, 0.14);
+  --admin-rose:        #ef5749;
+  --admin-rose-soft:   rgba(239, 87, 73, 0.14);
+  --admin-mint:        #6dca7a;
+  --admin-mint-soft:   rgba(109, 202, 122, 0.12);
+  --admin-sky:         #7eb8e8;
+  --admin-sky-soft:    rgba(126, 184, 232, 0.12);
+  --admin-violet:      #b4a0e8;
+  --admin-violet-soft: rgba(180, 160, 232, 0.12);
+}
+
+/* Shared product utilities — touch + type */
+[data-portal] .font-display,
+[data-portal] h1,
+[data-portal] h2 {
+  font-family: var(--portal-font-display);
+}
+[data-portal] .tabular,
+[data-portal] .font-mono {
+  font-family: var(--portal-font-mono);
+}
+[data-portal] a,
+[data-portal] button {
+  min-height: 0; /* components set their own; avoid breaking icons */
 }
 
 /* ─── Dark-mode token overrides ─── */

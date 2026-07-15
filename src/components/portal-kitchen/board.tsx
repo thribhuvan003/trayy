@@ -12,6 +12,9 @@ import { OtpVerifyDialog } from "./otp-verify-dialog";
 import { WalkInDialog } from "./walk-in-dialog";
 import { KitchenMarquee } from "./marquee";
 import { logger } from "@/lib/logging";
+import { readKitchenSoundsOn, writeKitchenSoundsOn } from "@/lib/kitchen-sounds-pref";
+
+type WorkLane = "placed" | "preparing" | "ready";
 
 type Status = "placed" | "preparing" | "ready" | "collected";
 type OrderRow = {
@@ -168,7 +171,10 @@ export function KitchenBoard({
   const [clock, setClock] = useState<string>("--:--");
   const [connState, setConnState] = useState<'online' | 'reconnecting' | 'offline'>('online');
   const [reconnectAttempt, setReconnectAttempt] = useState(0);
+  // Speaker is the product: phone + chime replaces shouting across the counter.
   const [bellOn, setBellOn] = useState(true);
+  const [mobileLane, setMobileLane] = useState<WorkLane>("placed");
+  const [toolsOpen, setToolsOpen] = useState(false);
   const [sessionExpired, setSessionExpired] = useState(false);
   const [newOrderFlash, setNewOrderFlash] = useState(false);
   const [pendingUndo, setPendingUndo] = useState<null | {
@@ -247,6 +253,7 @@ export function KitchenBoard({
 
       if (result.ok) {
         toast.success(`Undid #${shortCode}`);
+        setMobileLane(from);
         await refreshFn();
 
         logger.info("kitchen undo successful", {
@@ -269,11 +276,7 @@ export function KitchenBoard({
         order_id: orderId,
       });
     } finally {
-      setPendingUndo(null);
-      if (undoTimeoutRef.current) {
-        clearTimeout(undoTimeoutRef.current);
-        undoTimeoutRef.current = null;
-      }
+      clearUndoWindow();
     }
   };
 
@@ -290,6 +293,50 @@ export function KitchenBoard({
   useEffect(() => {
     bellOnRef.current = bellOn;
   }, [bellOn]);
+
+  // Hydrate speaker pref after mount (SSR-safe).
+  useEffect(() => {
+    const on = readKitchenSoundsOn();
+    setBellOn(on);
+    bellOnRef.current = on;
+  }, []);
+
+  const setSpeaker = (on: boolean) => {
+    setBellOn(on);
+    bellOnRef.current = on;
+    writeKitchenSoundsOn(on);
+    // Unlock Web Audio on user gesture so the first live ding actually plays (iOS/Safari).
+    if (on) {
+      try {
+        const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        if (!AC) return;
+        const ctx = new AC();
+        void ctx.resume().then(() => {
+          const o = ctx.createOscillator();
+          const g = ctx.createGain();
+          o.type = "sine";
+          o.frequency.setValueAtTime(720, ctx.currentTime);
+          g.gain.setValueAtTime(0.0001, ctx.currentTime);
+          g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.18);
+          o.connect(g).connect(ctx.destination);
+          o.start();
+          o.stop(ctx.currentTime + 0.2);
+          setTimeout(() => ctx.close().catch(() => {}), 400);
+        });
+      } catch {
+        // silent
+      }
+    }
+  };
+
+  const clearUndoWindow = () => {
+    setPendingUndo(null);
+    if (undoTimeoutRef.current) {
+      clearTimeout(undoTimeoutRef.current);
+      undoTimeoutRef.current = null;
+    }
+  };
 
   useEffect(() => {
     const tick = () => setClock(formatTimeIST(new Date()));
@@ -367,11 +414,10 @@ export function KitchenBoard({
         setLines(l ?? []);
       }
       if (newPlaced) {
-        // Real-world fix: always notify (bell + flash) when a new paid order appears in "placed".
-        // This covers the dominant student UPI/direct payment path (which emits "status_changed" to placed),
-        // not just rare literal "placed" events. The bhaiya gets the reliable ding exactly when the ticket lands.
+        // Speaker + flash = the shout replacement. Jump phone cook to New so the ticket is under the thumb.
         playBell();
         setNewOrderFlash(true);
+        setMobileLane("placed");
         setTimeout(() => setNewOrderFlash(false), 10000);
         onNewPlaced?.();
       }
@@ -968,15 +1014,15 @@ export function KitchenBoard({
             </button>
             <button
               type="button"
-              onClick={() => setBellOn((v) => !v)}
-              aria-label={bellOn ? "Mute chime" : "Unmute chime"}
-              title={bellOn ? "New-order chime: on" : "New-order chime: off"}
+              onClick={() => setSpeaker(!bellOn)}
+              aria-label={bellOn ? "Mute speaker" : "Unmute speaker"}
+              title={bellOn ? "Speaker on — new orders ding" : "Speaker muted"}
               className="inline-flex items-center justify-center transition-colors"
               style={{
                 height: "28px",
                 width: "28px",
                 borderRadius: "6px",
-                color: "var(--kt-ink-3)",
+                color: bellOn ? "var(--kt-olive)" : "var(--kt-ink-3)",
                 background: "transparent",
                 border: "none",
                 cursor: "pointer",
@@ -1037,7 +1083,7 @@ export function KitchenBoard({
           </div>
         )}
 
-        {/* Page header — matches .page-head spec */}
+        {/* Page header — phone-first cook chrome: speaker is the product, not decoration */}
         <header
           className="sticky top-0 z-30"
           style={{
@@ -1046,47 +1092,43 @@ export function KitchenBoard({
           }}
         >
           <div
-            className="flex flex-wrap items-center gap-4 justify-between"
-            style={{ padding: "16px 24px 12px" }}
+            className="flex flex-wrap items-center gap-2 justify-between"
+            style={{ padding: "10px 14px 8px" }}
           >
-            <div>
-              {/* Eyebrow — .eyebrow style from spec */}
+            <div className="min-w-0">
               <div
+                className="hidden sm:block"
                 style={{
                   fontFamily: "var(--font-jetbrains), ui-monospace, Menlo, monospace",
-                  fontSize: "11px",
-                  letterSpacing: "0.16em",
+                  fontSize: "10px",
+                  letterSpacing: "0.14em",
                   textTransform: "uppercase",
                   color: "var(--kt-ink-3)",
                   fontWeight: 500,
                 }}
               >
-                {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })} · {tenantName} · {(() => { const h = new Date().getHours(); if (h < 11) return "Breakfast Service"; if (h < 15) return "Lunch Service"; if (h < 18) return "Evening Snacks"; return "Dinner Service"; })()}
+                {tenantName} · phone + speaker · no shouting
               </div>
-              {/* H1 — matches .page-head h1 + .it italic tomato */}
               <h1
                 style={{
                   fontFamily: "var(--font-newsreader), ui-serif, Georgia",
                   fontWeight: 500,
-                  fontSize: "clamp(28px, 4vw, 48px)",
+                  fontSize: "clamp(22px, 5vw, 40px)",
                   letterSpacing: "-0.03em",
-                  margin: "6px 0 4px",
-                  lineHeight: 1,
+                  margin: "2px 0 2px",
+                  lineHeight: 1.05,
                   color: "var(--kt-ink)",
                 }}
               >
-                Kitchen <span style={{ fontStyle: "italic", color: "var(--kt-tomato)", fontWeight: 500 }}>queue.</span>
+                Live <span style={{ fontStyle: "italic", color: "var(--kt-tomato)", fontWeight: 500 }}>kitchen.</span>
               </h1>
-              {/* Sub row — clock + live dot */}
               <div
-                className="flex items-center"
+                className="flex items-center flex-wrap"
                 style={{
-                  gap: "14px",
+                  gap: "10px",
                   fontFamily: "var(--font-jetbrains), ui-monospace, Menlo, monospace",
                   fontSize: "11px",
                   color: "var(--kt-ink-3)",
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
                   fontWeight: 500,
                 }}
               >
@@ -1096,8 +1138,6 @@ export function KitchenBoard({
                   style={{
                     gap: "6px",
                     color: connState === "online" ? "var(--kt-olive)" : connState === "reconnecting" ? "var(--kt-mustard)" : "var(--kt-tomato)",
-                    textTransform: "none",
-                    letterSpacing: 0,
                     fontFamily: "var(--font-manrope), ui-sans-serif, system-ui",
                     fontWeight: 700,
                     fontSize: "12px",
@@ -1113,23 +1153,61 @@ export function KitchenBoard({
                       animation: connState !== "online" ? "blinkLive 1.1s infinite" : "none",
                     }}
                   />
-                  {connState === "online" ? "Online · WS" : connState === "reconnecting" ? `Reconnecting (${reconnectAttempt})` : "OFFLINE"}
+                  {connState === "online" ? "Live" : connState === "reconnecting" ? `…${reconnectAttempt}` : "OFFLINE"}
                 </span>
+                {newOrderFlash && (
+                  <span
+                    style={{
+                      color: "var(--kt-tomato)",
+                      fontWeight: 800,
+                      letterSpacing: "0.06em",
+                      textTransform: "uppercase",
+                      fontSize: "11px",
+                      animation: "urgent 1s infinite",
+                    }}
+                  >
+                    New ticket
+                  </span>
+                )}
               </div>
             </div>
 
-            {/* Right controls */}
             <div className="flex items-center gap-2">
-              {/* Walk-in order button — KFC-style quick counter order */}
+              {/* SPEAKER — first-class control: this is how orders "arrive" without shouting */}
+              <button
+                type="button"
+                onClick={() => setSpeaker(!bellOn)}
+                aria-label={bellOn ? "Mute speaker" : "Turn speaker on"}
+                aria-pressed={bellOn}
+                title={bellOn ? "Speaker ON — new orders ding" : "Speaker OFF — turn on for rush"}
+                className="inline-flex items-center gap-2 transition-all active:scale-[0.97]"
+                style={{
+                  height: "44px",
+                  minWidth: "44px",
+                  padding: "0 14px",
+                  borderRadius: "10px",
+                  fontSize: "13px",
+                  fontWeight: 800,
+                  border: bellOn ? "2px solid var(--kt-olive)" : "2px solid var(--kt-line-2)",
+                  background: bellOn ? "var(--kt-olive-soft)" : "var(--kt-cream-4)",
+                  color: bellOn ? "var(--kt-olive)" : "var(--kt-ink-3)",
+                  cursor: "pointer",
+                  boxShadow: bellOn ? "0 2px 0 var(--kt-ink)" : "none",
+                }}
+              >
+                {bellOn ? <Bell size={16} /> : <BellOff size={16} />}
+                <span className="hidden sm:inline">{bellOn ? "Speaker" : "Muted"}</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => setWalkInOpen(true)}
-                className="inline-flex items-center gap-2 transition-all active:scale-[0.97]"
+                className="hidden lg:inline-flex items-center gap-2 transition-all active:scale-[0.97]"
                 style={{
-                  height: "34px",
-                  padding: "0 12px",
-                  borderRadius: "7px",
-                  fontSize: "12px",
+                  height: "44px",
+                  padding: "0 14px",
+                  borderRadius: "10px",
+                  fontSize: "13px",
                   fontWeight: 700,
                   border: "2px solid var(--kt-tomato)",
                   background: "var(--kt-tomato)",
@@ -1141,92 +1219,262 @@ export function KitchenBoard({
                 + Walk-in
               </button>
 
-              {/* Bell toggle — always visible */}
+              {/* Tools on all non-xl: phone + tablet (specials aside only at xl) */}
               <button
                 type="button"
-                onClick={() => setBellOn((v) => !v)}
-                aria-label={bellOn ? "Mute new-order chime" : "Unmute new-order chime"}
-                title={bellOn ? "New-order chime: on" : "New-order chime: off"}
-                className="inline-flex items-center gap-2 transition-all"
+                onClick={() => setToolsOpen((v) => !v)}
+                className="xl:hidden inline-flex items-center justify-center transition-all"
+                aria-label="More tools"
+                aria-expanded={toolsOpen}
                 style={{
-                  height: "34px",
-                  padding: "0 12px",
-                  borderRadius: "7px",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  border: "1px solid var(--kt-line-2)",
-                  background: "var(--kt-cream-4)",
-                  color: bellOn ? "var(--kt-ink)" : "var(--kt-ink-3)",
+                  height: "44px",
+                  width: "44px",
+                  borderRadius: "10px",
+                  border: "2px solid var(--kt-line-2)",
+                  background: toolsOpen ? "var(--kt-ink)" : "var(--kt-cream-4)",
+                  color: toolsOpen ? "var(--kt-cream)" : "var(--kt-ink)",
+                  fontSize: "18px",
+                  fontWeight: 800,
                   cursor: "pointer",
                 }}
               >
-                {bellOn ? <Bell size={12} /> : <BellOff size={12} />}
-                {bellOn ? "Sounds" : "Muted"}
+                ⋯
               </button>
-              {/* Mobile-only quick links */}
-              <Link
-                href={`/c/${tenantSlug}/kitchen/history`}
-                className="lg:hidden inline-flex items-center gap-1.5 transition-colors"
-                style={{
-                  height: "34px",
-                  padding: "0 12px",
-                  borderRadius: "7px",
-                  border: "1px solid var(--kt-line-2)",
-                  background: "var(--kt-cream-4)",
-                  color: "var(--kt-ink)",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  textDecoration: "none",
-                }}
-                title="Today's completed orders"
-              >
-                <HistoryIcon size={12} /> History
-              </Link>
-              <Link
-                href={`/c/${tenantSlug}/kitchen/staff-select`}
-                className="lg:hidden inline-flex items-center gap-1.5 transition-colors"
-                style={{
-                  height: "34px",
-                  padding: "0 12px",
-                  borderRadius: "7px",
-                  border: "1px solid var(--kt-line-2)",
-                  background: "var(--kt-cream-4)",
-                  color: "var(--kt-ink)",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  textDecoration: "none",
-                }}
-                title="Switch logged-in staff member"
-              >
-                <UserRoundCog size={12} /> Staff
-              </Link>
             </div>
           </div>
 
-          {/* KPI strip */}
-          <KitchenKpiStrip orders={orders} newOrderFlash={newOrderFlash} />
+          {/* Tools sheet — phone + tablet until specials side panel appears */}
+          {toolsOpen && (
+            <div
+              className="xl:hidden flex flex-col gap-1 px-3 pb-3"
+              style={{ borderTop: "1px solid var(--kt-line)" }}
+            >
+              <Link
+                href={`/c/${tenantSlug}/kitchen/history`}
+                className="flex items-center gap-2 px-3 py-3 rounded-lg text-[14px] font-semibold"
+                style={{ color: "var(--kt-ink)", background: "var(--kt-cream-4)" }}
+                onClick={() => setToolsOpen(false)}
+              >
+                <HistoryIcon size={16} /> History · served today
+              </Link>
+              <Link
+                href={`/c/${tenantSlug}/kitchen/staff-select`}
+                className="flex items-center gap-2 px-3 py-3 rounded-lg text-[14px] font-semibold"
+                style={{ color: "var(--kt-ink)", background: "var(--kt-cream-4)" }}
+                onClick={() => setToolsOpen(false)}
+              >
+                <UserRoundCog size={16} /> Switch staff
+              </Link>
+              <button
+                type="button"
+                onClick={() => { setWalkInOpen(true); setToolsOpen(false); }}
+                className="flex items-center gap-2 px-3 py-3 rounded-lg text-[14px] font-semibold text-left"
+                style={{ color: "var(--kt-ink)", background: "var(--kt-cream-4)", border: "none", cursor: "pointer" }}
+              >
+                + Walk-in order
+              </button>
+              <button
+                type="button"
+                onClick={() => { setManageSpecialsOpen(true); setToolsOpen(false); }}
+                className="flex items-center gap-2 px-3 py-3 rounded-lg text-[14px] font-semibold text-left"
+                style={{ color: "var(--kt-ink)", background: "var(--kt-cream-4)", border: "none", cursor: "pointer" }}
+              >
+                Today&apos;s specials
+              </button>
+            </div>
+          )}
+
+          {/* Phone segment control — one lane under the thumb */}
+          <div
+            className="lg:hidden grid grid-cols-3 gap-1 px-3 pb-3"
+            role="tablist"
+            aria-label="Kitchen lanes"
+          >
+            {(
+              [
+                { id: "placed" as const, label: "New", count: groups.placed.length, flash: newOrderFlash },
+                { id: "preparing" as const, label: "Cooking", count: groups.preparing.length, flash: false },
+                { id: "ready" as const, label: "Serve", count: groups.ready.length, flash: false },
+              ] as const
+            ).map((tab) => {
+              const active = mobileLane === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  id={`kitchen-tab-${tab.id}`}
+                  aria-selected={active}
+                  aria-controls={`kitchen-lane-${tab.id}`}
+                  onClick={() => setMobileLane(tab.id)}
+                  className="flex flex-col items-center justify-center transition-all active:scale-[0.98]"
+                  style={{
+                    minHeight: "52px",
+                    borderRadius: "10px",
+                    border: active ? "2px solid var(--kt-ink)" : "2px solid var(--kt-line)",
+                    background: active ? "var(--kt-ink)" : "var(--kt-cream-4)",
+                    color: active ? "var(--kt-cream)" : "var(--kt-ink-2)",
+                    boxShadow: active ? "0 2px 0 var(--kt-tomato)" : "none",
+                    cursor: "pointer",
+                    outline: tab.flash && !active ? "2px solid var(--kt-tomato)" : "none",
+                  }}
+                >
+                  <span
+                    className="tabular"
+                    style={{
+                      fontFamily: "var(--font-newsreader), ui-serif, Georgia",
+                      fontSize: "22px",
+                      fontWeight: 600,
+                      lineHeight: 1,
+                      color: active
+                        ? tab.id === "preparing"
+                          ? "var(--kt-mustard)"
+                          : tab.id === "ready"
+                            ? "var(--kt-olive-soft)"
+                            : "var(--kt-cream)"
+                        : "var(--kt-ink)",
+                    }}
+                  >
+                    {String(tab.count).padStart(2, "0")}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: "var(--font-jetbrains), ui-monospace, Menlo, monospace",
+                      fontSize: "10px",
+                      fontWeight: 700,
+                      letterSpacing: "0.1em",
+                      textTransform: "uppercase",
+                      marginTop: 2,
+                      opacity: active ? 0.9 : 0.7,
+                    }}
+                  >
+                    {tab.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Desktop KPI only — phone uses segments */}
+          <div className="hidden lg:block">
+            <KitchenKpiStrip orders={orders} newOrderFlash={newOrderFlash} />
+          </div>
         </header>
 
-        <KitchenMarquee items={menuItems.filter(it => it.in_stock)} />
+        <div className="hidden lg:block">
+          <KitchenMarquee items={menuItems.filter((it) => it.in_stock)} />
+        </div>
 
-        {/* Main board area with 4-column queue on the left and Specials on the right */}
-        <div className="flex flex-col xl:flex-row gap-6 items-start w-full" style={{ padding: "24px 24px 64px" }}>
-          {/* Left side: 4-column queue board */}
+        {/* Main board: phone = one vertical lane; desktop = 3 work lanes (no live Collected) */}
+        <div
+          className="flex flex-col xl:flex-row gap-4 xl:gap-6 items-stretch xl:items-start w-full flex-1 min-h-0"
+          style={{ padding: "12px 12px 80px" }}
+        >
           <div
-            className="flex-1 w-full"
+            className="flex-1 w-full flex flex-col min-h-0"
             style={{
               background: "var(--kt-paper)",
               border: "1px solid var(--kt-ink)",
               borderRadius: "14px",
               overflow: "hidden",
               boxShadow: "5px 5px 0 var(--kt-ink)",
+              minHeight: "min(70vh, 640px)",
             }}
           >
-            <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-              <div className="grid grid-cols-4 min-w-[680px]" style={{ minHeight: "520px" }}>
+            {/* PHONE: single active lane */}
+            <div
+              className="lg:hidden flex flex-col flex-1 min-h-0"
+              style={{ minHeight: "55vh" }}
+              role="tabpanel"
+              id={`kitchen-lane-${mobileLane}`}
+              aria-label={mobileLane === "placed" ? "New tickets" : mobileLane === "preparing" ? "Cooking" : "Ready to serve"}
+            >
+              <OrderColumn
+                title={mobileLane === "placed" ? "New" : mobileLane === "preparing" ? "Cooking" : "Serve"}
+                status={mobileLane}
+                orders={
+                  mobileLane === "placed"
+                    ? groups.placed
+                    : mobileLane === "preparing"
+                      ? groups.preparing
+                      : groups.ready
+                }
+                linesByOrder={linesByOrder}
+                pendingActionId={pendingActionId}
+                unverifiedUpiOrders={unverifiedUpiOrders}
+                hideHeader
+                variant="phone"
+                onAction={async (id, action) => {
+                  // Route by action verb only — never by lane alone (prevents wrong transition).
+                  if (action === "start") {
+                    setPendingActionId(id);
+                    const ord = orders.find((o) => o.id === id);
+                    if (ord) {
+                      setOrders((prev) =>
+                        prev.map((o) => (o.id === id ? { ...o, status: "preparing" as const } : o))
+                      );
+                      startUndoWindow(id, ord.short_code, "placed", "preparing");
+                      // Stay on New so cook can START several tickets in a rush; toast is enough.
+                      toast.success(`#${ord.short_code} cooking`);
+                    }
+                    try {
+                      const { markPreparing } = await import("@/app/(kitchen)/_actions");
+                      const r = await markPreparing(id);
+                      if (!r.ok) {
+                        setOrders((prev) =>
+                          prev.map((o) => (o.id === id ? { ...o, status: "placed" as const } : o))
+                        );
+                        clearUndoWindow();
+                        setMobileLane("placed");
+                        handleActionError(r.error);
+                      }
+                    } finally {
+                      setPendingActionId(null);
+                    }
+                    return;
+                  }
+                  if (action === "ready") {
+                    setPendingActionId(id);
+                    const ord = orders.find((o) => o.id === id);
+                    if (ord) {
+                      setOrders((prev) =>
+                        prev.map((o) => (o.id === id ? { ...o, status: "ready" as const } : o))
+                      );
+                      startUndoWindow(id, ord.short_code, "preparing", "ready");
+                      setMobileLane("ready");
+                    }
+                    try {
+                      const { markReady } = await import("@/app/(kitchen)/_actions");
+                      const r = await markReady(id);
+                      if (!r.ok) {
+                        setOrders((prev) =>
+                          prev.map((o) => (o.id === id ? { ...o, status: "preparing" as const } : o))
+                        );
+                        clearUndoWindow();
+                        setMobileLane("preparing");
+                        handleActionError(r.error);
+                      }
+                    } finally {
+                      setPendingActionId(null);
+                    }
+                    return;
+                  }
+                  // action === "verify" → SERVE (OTP)
+                  setVerifyId(id);
+                }}
+                onReject={async (id, reason) => {
+                  const { rejectOrder } = await import("@/app/(kitchen)/_actions");
+                  const r = await rejectOrder(id, reason);
+                  if (!r.ok) handleActionError(r.error ?? "Failed to reject order");
+                }}
+              />
+            </div>
+
+            {/* DESKTOP / TABLET: 3 work lanes — New · Cooking · Serve (Collected lives in History) */}
+            <div className="hidden lg:grid grid-cols-3" style={{ minHeight: "520px" }}>
                 <OrderColumn
-                  title="Incoming"
-                  subtitle="Just paid · awaiting kitchen"
+                  title="New"
+                  subtitle="Just paid · ding lands here"
                   status="placed"
                   orders={groups.placed}
                   linesByOrder={linesByOrder}
@@ -1234,7 +1482,6 @@ export function KitchenBoard({
                   unverifiedUpiOrders={unverifiedUpiOrders}
                   onAction={async (id, action) => {
                     setPendingActionId(id);
-                    // Optimistic update: move order instantly in UI before server responds
                     const ord = orders.find((o) => o.id === id);
                     if (ord) {
                       setOrders((prev) => prev.map((o) => o.id === id ? { ...o, status: "preparing" as const } : o));
@@ -1244,8 +1491,8 @@ export function KitchenBoard({
                       const { markPreparing } = await import("@/app/(kitchen)/_actions");
                       const r = await markPreparing(id);
                       if (!r.ok) {
-                        // Revert optimistic update on error
                         setOrders((prev) => prev.map((o) => o.id === id ? { ...o, status: "placed" as const } : o));
+                        clearUndoWindow();
                         handleActionError(r.error);
                       }
                     } finally {
@@ -1259,15 +1506,14 @@ export function KitchenBoard({
                   }}
                 />
                 <OrderColumn
-                  title="Preparing"
-                  subtitle="Cooking in progress"
+                  title="Cooking"
+                  subtitle="On the flame"
                   status="preparing"
                   orders={groups.preparing}
                   linesByOrder={linesByOrder}
                   pendingActionId={pendingActionId}
                   onAction={async (id) => {
                     setPendingActionId(id);
-                    // Optimistic update: move to Ready instantly
                     const ord = orders.find((o) => o.id === id);
                     if (ord) {
                       setOrders((prev) => prev.map((o) => o.id === id ? { ...o, status: "ready" as const } : o));
@@ -1277,8 +1523,8 @@ export function KitchenBoard({
                       const { markReady } = await import("@/app/(kitchen)/_actions");
                       const r = await markReady(id);
                       if (!r.ok) {
-                        // Revert on error
                         setOrders((prev) => prev.map((o) => o.id === id ? { ...o, status: "preparing" as const } : o));
+                        clearUndoWindow();
                         handleActionError(r.error);
                       }
                     } finally {
@@ -1287,8 +1533,8 @@ export function KitchenBoard({
                   }}
                 />
                 <OrderColumn
-                  title="Ready"
-                  subtitle="Awaiting code verification"
+                  title="Serve"
+                  subtitle="OTP handover — no shout"
                   status="ready"
                   orders={groups.ready}
                   linesByOrder={linesByOrder}
@@ -1297,40 +1543,30 @@ export function KitchenBoard({
                     setVerifyId(id);
                   }}
                 />
-                <OrderColumn
-                  title="Collected"
-                  subtitle="Today's completed orders"
-                  status="collected"
-                  orders={groups.collected}
-                  linesByOrder={linesByOrder}
-                  pendingActionId={pendingActionId}
-                  onAction={() => {}}
-                />
-              </div>
             </div>
             <div
+              className="hidden lg:flex"
               style={{
-                display: "flex",
                 justifyContent: "space-between",
                 padding: "10px 16px",
                 borderTop: "1px solid var(--kt-line)",
                 background: "var(--kt-cream-4)",
                 fontFamily: "var(--font-jetbrains), ui-monospace, Menlo, monospace",
-                fontSize: "13px",
+                fontSize: "12px",
                 color: "var(--kt-ink-3)",
                 letterSpacing: "0.04em",
               }}
             >
-              <span>TAP any card to move it forward · TAP VERIFY CODE when student arrives</span>
+              <span>START → READY → SERVE · speaker dings new tickets · no shouting</span>
               <span style={{ color: "var(--kt-tomato)", fontWeight: 600 }}>
                 {groups.placed.length + groups.preparing.length} active
               </span>
             </div>
           </div>
 
-          {/* Right side: Today's Specials Sidebar Panel */}
+          {/* Specials — desktop only; phone uses tools menu + sheet */}
           <aside
-            className="w-full xl:w-[280px] shrink-0 p-5 rounded-2xl border-2 flex flex-col gap-4 text-tomato-900 select-none"
+            className="hidden xl:flex w-full xl:w-[280px] shrink-0 p-5 rounded-2xl border-2 flex-col gap-4 text-tomato-900 select-none"
             style={{
               background: "var(--kt-paper)",
               border: "2px solid var(--kt-ink)",
@@ -1546,6 +1782,89 @@ export function KitchenBoard({
             toast.success(`#${shortCode} placed — it's in the queue`);
           }}
         />
+
+        {/* Mobile specials sheet — same push form as desktop panel, without eating the cook queue */}
+        {manageSpecialsOpen && (
+          <div
+            className="xl:hidden fixed inset-0 z-[70] flex items-end sm:items-center justify-center"
+            style={{ background: "rgba(42,22,10,0.55)" }}
+            role="dialog"
+            aria-modal
+            aria-label="Today's specials"
+            onClick={() => setManageSpecialsOpen(false)}
+          >
+            <div
+              className="w-full max-w-md max-h-[85vh] overflow-y-auto p-5 rounded-t-2xl sm:rounded-2xl"
+              style={{
+                background: "var(--kt-paper)",
+                border: "2px solid var(--kt-ink)",
+                boxShadow: "0 -4px 0 var(--kt-ink)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3
+                  style={{
+                    fontFamily: "var(--font-newsreader), ui-serif, Georgia",
+                    fontSize: "22px",
+                    fontStyle: "italic",
+                    fontWeight: 600,
+                  }}
+                >
+                  Today&apos;s special
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setManageSpecialsOpen(false)}
+                  aria-label="Close"
+                  style={{
+                    height: 44,
+                    width: 44,
+                    borderRadius: 8,
+                    border: "1px solid var(--kt-line-2)",
+                    background: "var(--kt-cream-4)",
+                    fontSize: 18,
+                    cursor: "pointer",
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+              <div className="flex flex-col gap-3">
+                <input
+                  type="text"
+                  list="canteen-dishes-mobile"
+                  placeholder="Dish name"
+                  value={specialForm.name}
+                  onChange={(e) => handleNameChange(e.target.value)}
+                  className="w-full px-3 py-3 text-[15px] rounded-lg border border-tomato-900/20 bg-white"
+                />
+                <datalist id="canteen-dishes-mobile">
+                  {menuItems.map((it) => (
+                    <option key={it.id} value={it.name} />
+                  ))}
+                </datalist>
+                <input
+                  type="number"
+                  placeholder="Price ₹"
+                  value={specialForm.price}
+                  onChange={(e) => setSpecialForm((prev) => ({ ...prev, price: e.target.value }))}
+                  className="w-full px-3 py-3 text-[15px] rounded-lg border border-tomato-900/20 bg-white"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    handlePushSpecial();
+                  }}
+                  disabled={submittingSpecial}
+                  className="w-full h-12 bg-tomato-500 text-white rounded-xl text-[14px] font-bold disabled:opacity-50"
+                >
+                  {submittingSpecial ? "PUSHING…" : "PUSH TO LIVE MENU"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1563,11 +1882,11 @@ function KitchenKpiStrip({ orders, newOrderFlash }: { orders: OrderRow[]; newOrd
   }, [orders]);
 
   const cells: { label: string; value: string; accent?: boolean; icon?: React.ReactNode }[] = [
-    { label: "Incoming",       value: String(counts.placed).padStart(2, "0") },
-    { label: "Preparing",      value: String(counts.preparing).padStart(2, "0"), accent: true },
-    { label: "Ready",          value: String(counts.ready).padStart(2, "0") },
-    { label: "Collected today",value: String(counts.collected) },
-    { label: "Revenue today",  value: formatRupees(counts.revenue), icon: <ChefHat size={11} /> },
+    { label: "New", value: String(counts.placed).padStart(2, "0") },
+    { label: "Cooking", value: String(counts.preparing).padStart(2, "0"), accent: true },
+    { label: "Serve", value: String(counts.ready).padStart(2, "0") },
+    { label: "Served today", value: String(counts.collected) },
+    { label: "Revenue today", value: formatRupees(counts.revenue), icon: <ChefHat size={11} /> },
   ];
 
   return (
@@ -1583,7 +1902,7 @@ function KitchenKpiStrip({ orders, newOrderFlash }: { orders: OrderRow[]; newOrd
       {cells.map((c) => (
         <div
           key={c.label}
-          className={cn(c.label === "Incoming" && newOrderFlash && "ring-2 ring-[#d52821] ring-offset-2 animate-pulse")}
+          className={cn(c.label === "New" && newOrderFlash && "ring-2 ring-[#d52821] ring-offset-2 animate-pulse")}
           style={{
             background: "var(--kt-paper)",
             border: "1px solid var(--kt-ink)",

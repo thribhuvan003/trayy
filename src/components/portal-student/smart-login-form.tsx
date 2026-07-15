@@ -144,17 +144,17 @@ export function SmartLoginForm({ next, slug = "", hintRole }: Props) {
   };
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-3">
+    <form onSubmit={onSubmit} className="flex flex-col gap-3.5">
       {/* Google — hero CTA */}
       <button
         type="button"
         onClick={onGoogleSignIn}
         disabled={pending}
         className={cn(
-          "w-full h-12 rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-paper)] text-[color:var(--color-ink)] text-[14px] font-medium inline-flex items-center justify-center gap-2.5 transition-colors select-none",
+          "w-full h-[52px] rounded-xl border-2 border-[color:var(--color-ink)] bg-white text-[color:var(--color-ink)] text-[15px] font-semibold inline-flex items-center justify-center gap-2.5 transition-all select-none shadow-[0_3px_0_var(--color-ink)]",
           pending
             ? "cursor-wait opacity-60"
-            : "cursor-pointer hover:border-[color:var(--color-ocean-500)]/50 hover:bg-[color:var(--color-ocean-500)]/5"
+            : "cursor-pointer active:translate-y-[2px] active:shadow-none hover:bg-[color:var(--color-ocean-50)]"
         )}
       >
         {pending ? (
@@ -195,7 +195,7 @@ export function SmartLoginForm({ next, slug = "", hintRole }: Props) {
           onChange={e => setEmail(e.target.value)}
           autoComplete="email"
           placeholder="you@example.com"
-          className="w-full h-12 px-4 rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-paper)] text-[color:var(--color-ink)] placeholder:text-[color:var(--color-ink)]/40 text-[14px] focus:outline-none focus:border-[color:var(--color-ocean-500)] transition-colors"
+          className="w-full h-[52px] px-4 rounded-xl border-2 border-[color:var(--color-line)] bg-white text-[color:var(--color-ink)] placeholder:text-[color:var(--color-ink)]/40 text-[15px] focus:outline-none focus:border-[color:var(--color-ocean-500)] transition-colors"
         />
       </label>
 
@@ -209,21 +209,21 @@ export function SmartLoginForm({ next, slug = "", hintRole }: Props) {
           onChange={e => setPassword(e.target.value)}
           autoComplete="current-password"
           placeholder="Password"
-          className="w-full h-12 px-4 rounded-xl border border-[color:var(--color-line)] bg-[color:var(--color-paper)] text-[color:var(--color-ink)] placeholder:text-[color:var(--color-ink)]/40 text-[14px] focus:outline-none focus:border-[color:var(--color-ocean-500)] transition-colors"
+          className="w-full h-[52px] px-4 rounded-xl border-2 border-[color:var(--color-line)] bg-white text-[color:var(--color-ink)] placeholder:text-[color:var(--color-ink)]/40 text-[15px] focus:outline-none focus:border-[color:var(--color-ocean-500)] transition-colors"
         />
       </label>
 
-      {/* Submit */}
+      {/* Submit — tomato signal CTA */}
       <button
         type="submit"
         disabled={pending}
         className={cn(
-          "h-12 rounded-xl bg-[color:var(--color-ocean-500)] text-white text-[14px] font-medium inline-flex items-center justify-center gap-2 hover:bg-[color:var(--color-ocean-500)]/85 transition-colors",
+          "h-[52px] rounded-xl bg-[color:var(--color-ocean-500)] text-white text-[15px] font-bold inline-flex items-center justify-center gap-2 shadow-[0_3px_0_#1a1410] active:translate-y-[2px] active:shadow-none transition-all",
           pending && "opacity-60 cursor-not-allowed"
         )}
       >
         {pending ? "Signing in…" : "Sign in"}
-        {!pending && <ArrowRight size={15} />}
+        {!pending && <ArrowRight size={16} />}
       </button>
     </form>
   );

@@ -20,20 +20,20 @@ import "./admin.css";
 const MONO = "var(--font-courier), monospace";
 const SERIF = "var(--font-alegreya), serif";
 
-type ViewId = "overview" | "menu" | "people" | "audit";
+type ViewId = "today" | "menu" | "staff" | "settings";
 
 const VIEWS: { id: ViewId; label: string }[] = [
-  { id: "overview", label: "OVERVIEW" },
-  { id: "menu", label: "MENU & PRICING" },
-  { id: "people", label: "PEOPLE" },
-  { id: "audit", label: "AUDIT LOG" },
+  { id: "today", label: "Today" },
+  { id: "menu", label: "Menu" },
+  { id: "staff", label: "Staff" },
+  { id: "settings", label: "Settings" },
 ];
 
 const STATUS_META: Record<TicketStatus, { label: string; color: string }> = {
-  incoming: { label: "NEW", color: "#232019" },
-  preparing: { label: "PREPARING", color: "#2C50B0" },
-  ready: { label: "READY", color: "#1E5A3C" },
-  collected: { label: "COLLECTED", color: "rgba(35,32,25,.45)" },
+  incoming: { label: "New", color: "#232019" },
+  preparing: { label: "Cooking", color: "#2C50B0" },
+  ready: { label: "Serve", color: "#1E5A3C" },
+  collected: { label: "Done", color: "rgba(35,32,25,.45)" },
 };
 
 const TYPE_COLORS: Record<string, string> = {
@@ -45,10 +45,10 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 const STAFF = [
-  { name: "Stall owner", role: "Owner login · menus, prices, staff, payouts", scope: "THIS STALL", scopeColor: "#1E5A3C" },
-  { name: "Counter hand 1", role: "Queue board · tickets and OTP handover only", scope: "QUEUE ONLY", scopeColor: "#2C50B0" },
-  { name: "Counter hand 2", role: "Queue board · tickets and OTP handover only", scope: "QUEUE ONLY", scopeColor: "#2C50B0" },
-  { name: "Street office", role: "Read-only · cross-stall revenue and audit", scope: "WHOLE STREET", scopeColor: "#B03A2A" },
+  { name: "Stall owner", role: "Menus, prices, staff, payouts", scope: "This stall", scopeColor: "#1E5A3C" },
+  { name: "Counter hand 1", role: "Queue board · tickets & OTP only", scope: "Queue only", scopeColor: "#2C50B0" },
+  { name: "Counter hand 2", role: "Queue board · tickets & OTP only", scope: "Queue only", scopeColor: "#2C50B0" },
+  { name: "Street office", role: "Read-only · cross-stall revenue", scope: "Whole street", scopeColor: "#B03A2A" },
 ];
 
 function fmtMoney(n: number) {
@@ -57,18 +57,9 @@ function fmtMoney(n: number) {
 
 function DietSquare({ color }: { color: string }) {
   return (
-    <span style={{ width: 11, height: 11, border: `1.5px solid ${color}`, borderRadius: 2, display: "grid", placeItems: "center", flexShrink: 0 }}>
-      <span style={{ width: 5, height: 5, borderRadius: "50%", background: color }} />
+    <span className="ad-diet" style={{ borderColor: color }}>
+      <span style={{ background: color }} />
     </span>
-  );
-}
-
-function SectionHead({ title, note }: { title: string; note: string }) {
-  return (
-    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16, marginBottom: 12 }}>
-      <h2 style={{ margin: 0, fontFamily: SERIF, fontWeight: 700, fontSize: 22 }}>{title}</h2>
-      <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".12em", color: "rgba(35,32,25,.5)" }}>{note}</span>
-    </div>
   );
 }
 
@@ -82,13 +73,15 @@ interface AuditEntry {
 export function AdminDemo() {
   const [ready, setReady] = React.useState(false);
   const [canteenId, setCanteenId] = React.useState<string | null>(null);
-  const [view, setView] = React.useState<ViewId>("overview");
+  const [view, setView] = React.useState<ViewId>("today");
   const [menuState, setMenuState] = React.useState<Record<string, boolean>>({});
   const [priceDrafts, setPriceDrafts] = React.useState<Record<string, string>>({});
   const [savedPrices, setSavedPrices] = React.useState<Record<string, number>>({});
   const [editing, setEditing] = React.useState<Record<string, boolean>>({});
   const [localAudit, setLocalAudit] = React.useState<AuditEntry[]>([]);
   const [nowTs, setNowTs] = React.useState(() => Date.now());
+  const [stallOpen, setStallOpen] = React.useState(true);
+  const [paused, setPaused] = React.useState(false);
   const [, forceRender] = React.useReducer((x: number) => x + 1, 0);
 
   React.useEffect(() => {
@@ -118,7 +111,7 @@ export function AdminDemo() {
         .filter((x) => x && x.canteenId === c.id)
         .map((x) => ({
           id: x.id,
-          student: `${x.student || "Customer"} · live from customer demo`,
+          student: `${x.student || "Customer"} · live`,
           items: (x.items || []).map((it) => `${it.name} × ${it.q || 1}`).join(", "),
           total: x.total || 0,
           status: (x.status || "incoming") as TicketStatus,
@@ -127,6 +120,17 @@ export function AdminDemo() {
     : [];
   const allOrders = [...inbox.slice().reverse(), ...c.orders.map((o) => ({ ...o, student: o.student }))];
   const collectedTotal = allOrders.filter((o) => o.status === "collected").reduce((a, o) => a + (o.total || 0), 0);
+
+  // Live ₹ today = KPI base + inbox totals for this stall (demo still “feels” live)
+  const liveInboxRev = inbox.reduce((a, o) => a + (o.total || 0), 0);
+  const todayRupees = k.revenue + liveInboxRev;
+  const todayOrders = k.orders + inbox.length;
+
+  const pipeline = {
+    new: allOrders.filter((o) => o.status === "incoming").length,
+    cooking: allOrders.filter((o) => o.status === "preparing").length,
+    serve: allOrders.filter((o) => o.status === "ready").length,
+  };
 
   // ---- specials ----
   const storedSpecials = ready ? getSpecials(c.id) : [];
@@ -138,400 +142,274 @@ export function AdminDemo() {
     ...c.audit.map((a) => ({ t: a.t, type: a.type.toUpperCase(), who: a.who, msg: a.msg })),
   ];
 
-  // ---- campus rollup ----
-  const campus = listCanteens().reduce(
-    (a, x) => {
-      const kk = getCanteen(x.id).kpis;
-      a.rev += kk.revenue;
-      a.ord += kk.orders;
-      a.n += 1;
-      return a;
-    },
-    { rev: 0, ord: 0, n: 0 }
-  );
+  const today = new Date(nowTs).toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+  const stallStatusLabel = !stallOpen ? "Closed" : paused ? "Paused" : "Open";
+  const stallStatusColor = !stallOpen ? "#B03A2A" : paused ? "#9A6B00" : "#1E5A3C";
 
-  const today = new Date(nowTs).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase();
-
-  const thStyle: React.CSSProperties = { fontFamily: MONO, fontSize: 10, letterSpacing: ".14em", color: "rgba(35,32,25,.55)" };
+  const switchStall = (id: string) => {
+    setSelectedCanteenId(id);
+    setCanteenId(id);
+    setMenuState({});
+    setPriceDrafts({});
+    setSavedPrices({});
+    setEditing({});
+    setLocalAudit([]);
+  };
 
   return (
     <div className={`ad ${adminFontVars}`}>
-      <div style={{ position: "relative", overflow: "hidden" }}>
-        {/* ruled lines */}
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            inset: 0,
-            pointerEvents: "none",
-            zIndex: 0,
-            backgroundImage:
-              "repeating-linear-gradient(to bottom, transparent 0px, transparent 31px, rgba(30,90,60,.08) 31px, rgba(30,90,60,.08) 32px)",
-          }}
-        />
+      {/* Demo strip */}
+      <div className="ad-strip">
+        <span className="ad-strip-label">Demo · orders from customer land here</span>
+        <span className="ad-strip-links">
+          <Link href="/" className="ad-strip-link">
+            ← Home
+          </Link>
+          <Link href="/demo/student" className="ad-strip-link--green">
+            Customer →
+          </Link>
+          <Link href="/demo/kitchen" className="ad-strip-link--green">
+            Kitchen →
+          </Link>
+        </span>
+      </div>
 
-        <div style={{ position: "relative", zIndex: 1 }}>
-          {/* Demo strip */}
-          <div
-            className="ad-strip"
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: 20,
-              padding: "9px 56px",
-              borderBottom: "1px solid rgba(35,32,25,.3)",
-              fontFamily: MONO,
-              fontSize: 10.5,
-              letterSpacing: ".1em",
-              color: "rgba(35,32,25,.5)",
-            }}
-          >
-            <span style={{ whiteSpace: "nowrap" }}>LIVE DEMO · CUSTOMER ORDERS POST INTO THIS BOOK</span>
-            <span style={{ display: "flex", gap: 24 }}>
-              <Link href="/" className="ad-strip-link">← LANDING</Link>
-              <Link href="/demo/student" className="ad-strip-link--green">CUSTOMER →</Link>
-              <Link href="/demo/kitchen" className="ad-strip-link--green">KITCHEN →</Link>
-            </span>
+      {/* Sticky phone header — aaj ka hisaab */}
+      <header className="ad-head">
+        <div className="ad-head-main">
+          <div className="ad-brand">
+            Tray <span>· aaj ka hisaab</span>
           </div>
+          <div className="ad-head-sub">
+            {ready ? c.name : "…"} · {today} · {fmtClock(nowTs)}
+          </div>
+        </div>
+        <div className="ad-head-status" style={{ color: stallStatusColor, borderColor: stallStatusColor }}>
+          {stallStatusLabel}
+        </div>
+      </header>
 
-          {/* Book header */}
-          <header className="ad-head">
-            <div>
-              <div style={{ fontFamily: SERIF, fontWeight: 700, fontSize: 30, lineHeight: 1, color: "#1E5A3C" }}>Tray — Daily Cash Book</div>
-              <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".16em", color: "rgba(35,32,25,.5)", marginTop: 8 }}>
-                STALL ACCOUNTS · SETTLED DIRECT TO MERCHANT VPA · COMMISSION NIL
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {listCanteens().map((x) => {
-                const active = x.id === c.id;
-                return (
-                  <button
-                    key={x.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedCanteenId(x.id);
-                      setCanteenId(x.id);
-                      setMenuState({});
-                      setPriceDrafts({});
-                      setSavedPrices({});
-                      setEditing({});
-                      setLocalAudit([]);
-                    }}
-                    style={{
-                      padding: "8px 15px",
-                      border: `1.5px solid ${active ? "#1E5A3C" : "rgba(35,32,25,.4)"}`,
-                      borderRadius: 3,
-                      background: active ? "#1E5A3C" : "transparent",
-                      color: active ? "#F5F1E4" : "rgba(35,32,25,.75)",
-                      cursor: "pointer",
-                      fontSize: 13.5,
-                      fontWeight: 600,
-                      whiteSpace: "nowrap",
-                      fontFamily: "var(--font-familjen), sans-serif",
-                    }}
-                  >
-                    {x.name}
-                  </button>
-                );
-              })}
-            </div>
-            <div style={{ textAlign: "right", flexShrink: 0 }}>
-              <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: ".1em", color: "rgba(35,32,25,.55)", whiteSpace: "nowrap" }}>
-                FOLIO NO. {ready ? c.counterBase : ""}
-              </div>
-              <div style={{ fontFamily: MONO, fontSize: 13, fontWeight: 600, marginTop: 4, whiteSpace: "nowrap" }}>
-                {ready ? `${today} · ${fmtClock(nowTs)}` : ""}
-              </div>
-            </div>
-          </header>
-
-          {/* Book tabs */}
-          <nav className="ad-tabsbar">
-            {VIEWS.map((v) => {
-              const active = view === v.id;
-              return (
-                <button
-                  key={v.id}
-                  type="button"
-                  onClick={() => setView(v.id)}
-                  style={{
-                    padding: "12px 20px 10px",
-                    border: "none",
-                    borderBottom: `3px solid ${active ? "#1E5A3C" : "transparent"}`,
-                    background: "none",
-                    color: active ? "#1E5A3C" : "rgba(35,32,25,.55)",
-                    cursor: "pointer",
-                    fontFamily: MONO,
-                    fontSize: 11.5,
-                    fontWeight: 600,
-                    letterSpacing: ".12em",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {v.label}
-                </button>
-              );
-            })}
-            <span
-              style={{
-                marginLeft: "auto",
-                alignSelf: "center",
-                fontFamily: MONO,
-                fontSize: 10,
-                letterSpacing: ".12em",
-                color: "rgba(35,32,25,.4)",
-                whiteSpace: "nowrap",
-              }}
+      {/* Stall picker — horizontal chips */}
+      <div className="ad-stalls" role="tablist" aria-label="Stall">
+        {listCanteens().map((x) => {
+          const active = x.id === c.id;
+          return (
+            <button
+              key={x.id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              className={`ad-stall-chip${active ? " is-active" : ""}`}
+              onClick={() => switchStall(x.id)}
             >
-              SCOPE: {ready ? `${c.name.toUpperCase()} ONLY` : "LOADING"}
-            </span>
-          </nav>
+              {x.name}
+            </button>
+          );
+        })}
+      </div>
 
-          {/* ============ OVERVIEW ============ */}
-          {view === "overview" && (
-            <div style={{ animation: "adRowIn .3s ease both" }}>
-              {/* Street rollup */}
-              <div className="ad-rollup">
-                <span style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: ".14em", color: "#1E5A3C", whiteSpace: "nowrap" }}>
-                  WHOLE STREET · {campus.n} STALLS · ONE SIGN-IN
+      {/* Bottom-ish segment tabs (also sticky under header) */}
+      <nav className="ad-tabs" role="tablist" aria-label="Views">
+        {VIEWS.map((v) => {
+          const active = view === v.id;
+          return (
+            <button
+              key={v.id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              className={`ad-tab${active ? " is-active" : ""}`}
+              onClick={() => setView(v.id)}
+            >
+              {v.label}
+            </button>
+          );
+        })}
+      </nav>
+
+      <main className="ad-main">
+        {/* ============ TODAY ============ */}
+        {view === "today" && (
+          <div className="ad-panel" style={{ animation: "adRowIn .28s ease both" }}>
+            {/* Huge Today ₹ */}
+            <section className="ad-today-hero">
+              <div className="ad-today-label">Today ₹</div>
+              <div className="ad-today-rupees">₹{fmtMoney(todayRupees)}</div>
+              <div className="ad-today-meta">
+                <span>
+                  <b>{todayOrders}</b> orders
                 </span>
-                <span style={{ flex: 1, borderTop: "1px dotted rgba(30,90,60,.45)" }} />
-                <span style={{ fontSize: 15, fontWeight: 600, whiteSpace: "nowrap" }}>
-                  ₹{fmtMoney(campus.rev)}{" "}
-                  <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".1em", color: "rgba(35,32,25,.55)" }}>TODAY</span>
+                <span className="ad-dot" />
+                <span>
+                  avg <b>₹{k.avgTicket}</b>
                 </span>
-                <span style={{ fontSize: 15, fontWeight: 600, whiteSpace: "nowrap" }}>
-                  {campus.ord} <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".1em", color: "rgba(35,32,25,.55)" }}>ORDERS</span>
-                </span>
-                <span style={{ fontSize: 15, fontWeight: 600, color: "#B03A2A", whiteSpace: "nowrap" }}>
-                  0% <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".1em", color: "rgba(35,32,25,.55)" }}>COMMISSION</span>
-                </span>
+                <span className="ad-dot" />
+                <span className="ad-delta">{k.revenueDelta}</span>
               </div>
+            </section>
 
-              {/* KPI cells */}
-              <div className="ad-kpis">
-                {[
-                  { label: "RECEIPTS TODAY", value: `₹${fmtMoney(k.revenue)}`, delta: k.revenueDelta, valueColor: "#1E5A3C", deltaColor: "#1E5A3C", pad: "18px 24px 16px 56px" },
-                  { label: "ORDERS ENTERED", value: String(k.orders), delta: k.ordersDelta, deltaColor: "#1E5A3C", pad: "18px 24px 16px" },
-                  { label: "AVERAGE TICKET", value: `₹${k.avgTicket}`, delta: k.avgTicketDelta, deltaColor: "#1E5A3C", pad: "18px 24px 16px" },
-                  {
-                    label: "AVG PAY → PICKUP",
-                    value: `${k.avgPickupMin}:${String(k.avgPickupSec).padStart(2, "0")}`,
-                    delta: k.avgPickupDelta,
-                    deltaColor: "rgba(35,32,25,.55)",
-                    pad: "18px 56px 16px 24px",
-                    last: true,
-                  },
-                ].map((cell) => (
-                  <div key={cell.label} style={{ padding: cell.pad, borderRight: cell.last ? undefined : "1px solid rgba(35,32,25,.22)" }}>
-                    <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: ".16em", color: "rgba(35,32,25,.5)", marginBottom: 6 }}>{cell.label}</div>
-                    <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-                      <span style={{ fontFamily: SERIF, fontWeight: 700, fontSize: 38, color: cell.valueColor }}>{cell.value}</span>
-                      <span style={{ fontFamily: MONO, fontSize: 11, fontWeight: 600, color: cell.deltaColor, whiteSpace: "nowrap" }}>{cell.delta}</span>
-                    </div>
-                  </div>
-                ))}
+            {/* Open / Pause mock toggles */}
+            <section className="ad-toggles" aria-label="Stall controls">
+              <button
+                type="button"
+                className={`ad-toggle${stallOpen ? " is-on" : ""}`}
+                onClick={() => {
+                  const next = !stallOpen;
+                  setStallOpen(next);
+                  if (next) setPaused(false);
+                  logAction("MENU", next ? "opened the stall for orders" : "closed the stall");
+                }}
+              >
+                <span className="ad-toggle-title">{stallOpen ? "Open" : "Closed"}</span>
+                <span className="ad-toggle-hint">{stallOpen ? "Taking orders" : "Not taking orders"}</span>
+              </button>
+              <button
+                type="button"
+                className={`ad-toggle ad-toggle--pause${paused && stallOpen ? " is-paused" : ""}`}
+                disabled={!stallOpen}
+                onClick={() => {
+                  if (!stallOpen) return;
+                  const next = !paused;
+                  setPaused(next);
+                  logAction("MENU", next ? "paused new orders (kitchen catching up)" : "resumed new orders");
+                }}
+              >
+                <span className="ad-toggle-title">{paused && stallOpen ? "Paused" : "Pause"}</span>
+                <span className="ad-toggle-hint">{paused && stallOpen ? "Kitchen catching up" : "Stop new orders"}</span>
+              </button>
+            </section>
+
+            {/* Pipeline — same mental model as kitchen New | Cooking | Serve */}
+            <section className="ad-pipe" aria-label="Kitchen pipeline">
+              <div className="ad-pipe-head">
+                <span>In the kitchen</span>
+                <Link href="/demo/kitchen" className="ad-pipe-link">
+                  Open kitchen →
+                </Link>
               </div>
+              <div className="ad-pipe-grid">
+                <div className="ad-pipe-cell">
+                  <span className="ad-pipe-n">{pipeline.new}</span>
+                  <span className="ad-pipe-l">New</span>
+                </div>
+                <div className="ad-pipe-cell">
+                  <span className="ad-pipe-n" style={{ color: "#2C50B0" }}>
+                    {pipeline.cooking}
+                  </span>
+                  <span className="ad-pipe-l">Cooking</span>
+                </div>
+                <div className="ad-pipe-cell">
+                  <span className="ad-pipe-n" style={{ color: "#1E5A3C" }}>
+                    {pipeline.serve}
+                  </span>
+                  <span className="ad-pipe-l">Serve</span>
+                </div>
+              </div>
+            </section>
 
-              <div className="ad-overview-grid">
-                {/* Ledger table */}
-                <section style={{ padding: "24px 34px 46px 56px", borderRight: "1px solid rgba(35,32,25,.22)" }}>
-                  <SectionHead title="Order entries — live" note="NEWEST FIRST" />
-                  <div
-                    className="ad-ledger-row"
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "84px minmax(0, 1fr) 100px 100px 60px",
-                      gap: 12,
-                      padding: "8px 0",
-                      borderTop: "2px solid #1E5A3C",
-                      borderBottom: "1.5px solid rgba(35,32,25,.5)",
-                      ...thStyle,
-                    }}
-                  >
-                    <span>NO.</span>
-                    <span>PARTICULARS</span>
-                    <span>STATUS</span>
-                    <span style={{ textAlign: "right" }}>CREDIT ₹</span>
-                    <span style={{ textAlign: "right" }}>TIME</span>
-                  </div>
-                  {allOrders.map((o, i) => {
-                    const m = STATUS_META[o.status] || STATUS_META.incoming;
-                    return (
-                      <div
-                        key={`${o.id}-${i}`}
-                        className="ad-ledger-row"
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "84px minmax(0, 1fr) 100px 100px 60px",
-                          gap: 12,
-                          alignItems: "baseline",
-                          padding: "9px 0",
-                          borderBottom: "1px solid rgba(35,32,25,.18)",
-                        }}
-                      >
-                        <span style={{ fontFamily: MONO, fontSize: 12.5, fontWeight: 600 }}>{o.id}</span>
-                        <span style={{ minWidth: 0 }}>
-                          <span style={{ display: "block", fontWeight: 600, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                            {o.items}
-                          </span>
-                          <span style={{ display: "block", fontSize: 12, color: "rgba(35,32,25,.5)", whiteSpace: "nowrap" }}>{o.student}</span>
-                        </span>
-                        <span style={{ fontFamily: MONO, fontSize: 10, fontWeight: 600, letterSpacing: ".06em", color: m.color, whiteSpace: "nowrap" }}>
+            {/* Live order list */}
+            <section className="ad-section">
+              <div className="ad-section-head">
+                <h2>Orders</h2>
+                <span>Newest first</span>
+              </div>
+              <ul className="ad-order-list">
+                {allOrders.map((o, i) => {
+                  const m = STATUS_META[o.status] || STATUS_META.incoming;
+                  return (
+                    <li key={`${o.id}-${i}`} className="ad-order">
+                      <div className="ad-order-top">
+                        <span className="ad-order-id">{o.id}</span>
+                        <span className="ad-order-status" style={{ color: m.color }}>
                           {m.label}
                         </span>
-                        <span style={{ fontFamily: MONO, fontSize: 13.5, fontWeight: 600, textAlign: "right" }}>{fmtMoney(o.total)}</span>
-                        <span style={{ fontFamily: MONO, fontSize: 11.5, color: "rgba(35,32,25,.5)", textAlign: "right" }}>{o.time}</span>
+                        <span className="ad-order-amt">₹{fmtMoney(o.total)}</span>
                       </div>
-                    );
-                  })}
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, padding: "12px 0 0", borderTop: "2px solid #1E5A3C" }}>
-                    <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: ".14em", color: "rgba(35,32,25,.6)", fontWeight: 600 }}>
-                      CARRIED FORWARD — COLLECTED ONLY
-                    </span>
-                    <span style={{ fontFamily: SERIF, fontWeight: 700, fontSize: 20, color: "#1E5A3C" }}>₹{fmtMoney(collectedTotal)}</span>
-                  </div>
-                </section>
-
-                {/* Most ordered */}
-                <section style={{ padding: "24px 56px 40px 34px" }}>
-                  <h2 style={{ margin: "0 0 14px", fontFamily: SERIF, fontWeight: 700, fontSize: 22 }}>Most ordered today</h2>
-                  {c.topItems.map((t) => {
-                    const dietColor = t.diet === "nv" ? "#B03A2A" : "#1E5A3C";
-                    return (
-                      <div key={t.name} style={{ padding: "8px 0" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, marginBottom: 5 }}>
-                          <span style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 600, fontSize: 14, minWidth: 0 }}>
-                            <DietSquare color={dietColor} />
-                            <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.name}</span>
-                          </span>
-                          <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 600, color: "rgba(35,32,25,.6)", whiteSpace: "nowrap" }}>
-                            {t.orders} plates
-                          </span>
-                        </div>
-                        <div style={{ height: 7, border: "1px solid rgba(30,90,60,.5)", borderRadius: 2, overflow: "hidden" }}>
-                          <div style={{ height: "100%", width: `${t.pct}%`, background: "repeating-linear-gradient(-45deg, #1E5A3C 0 4px, #2C7A52 4px 8px)" }} />
-                        </div>
+                      <div className="ad-order-items">{o.items}</div>
+                      <div className="ad-order-foot">
+                        <span>{o.student}</span>
+                        <span>{o.time}</span>
                       </div>
-                    );
-                  })}
-                  <div style={{ marginTop: 22, border: "1.5px dashed rgba(30,90,60,.45)", borderRadius: 4, padding: "14px 16px" }}>
-                    <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: ".14em", color: "#1E5A3C", marginBottom: 6 }}>SETTLEMENT NOTE</div>
-                    <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.55, color: "rgba(35,32,25,.7)" }}>
-                      Every rupee above settled straight to <b style={{ fontFamily: MONO, fontWeight: 600 }}>{c.upi}</b>. Tray holds no float and
-                      takes no cut.
-                    </p>
-                  </div>
-                </section>
+                    </li>
+                  );
+                })}
+              </ul>
+              <div className="ad-carried">
+                <span>Collected so far</span>
+                <b>₹{fmtMoney(collectedTotal)}</b>
               </div>
-            </div>
-          )}
+            </section>
 
-          {/* ============ MENU & PRICING ============ */}
-          {view === "menu" && (
-            <div className="ad-menu-grid">
-              <section style={{ padding: "24px 34px 46px 56px", borderRight: "1px solid rgba(35,32,25,.22)" }}>
-                <SectionHead title="Menu register" note="ONE TOGGLE → EVERY SCREEN" />
-                <div
-                  className="ad-menu-row"
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "minmax(0, 1fr) 130px 120px 90px",
-                    gap: 12,
-                    padding: "8px 0",
-                    borderTop: "2px solid #1E5A3C",
-                    borderBottom: "1.5px solid rgba(35,32,25,.5)",
-                    ...thStyle,
-                  }}
-                >
-                  <span>ITEM</span>
-                  <span style={{ textAlign: "right" }}>PRICE ₹</span>
-                  <span style={{ textAlign: "center" }}>ON MENU</span>
-                  <span style={{ textAlign: "right" }}>EDIT</span>
-                </div>
+            {/* Top sellers compact */}
+            <section className="ad-section">
+              <div className="ad-section-head">
+                <h2>Selling today</h2>
+                <span>Top plates</span>
+              </div>
+              <div className="ad-tops">
+                {c.topItems.slice(0, 5).map((t) => {
+                  const dietColor = t.diet === "nv" ? "#B03A2A" : "#1E5A3C";
+                  return (
+                    <div key={t.name} className="ad-top-row">
+                      <DietSquare color={dietColor} />
+                      <span className="ad-top-name">{t.name}</span>
+                      <span className="ad-top-n">{t.orders}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="ad-note">
+                <div className="ad-note-label">Settlement</div>
+                <p>
+                  Every rupee settles to <b>{c.upi}</b>. Tray holds no float and takes no cut.
+                </p>
+              </div>
+            </section>
+          </div>
+        )}
+
+        {/* ============ MENU ============ */}
+        {view === "menu" && (
+          <div className="ad-panel" style={{ animation: "adRowIn .28s ease both" }}>
+            <section className="ad-section">
+              <div className="ad-section-head">
+                <h2>Menu</h2>
+                <span>Sold out hits every screen</span>
+              </div>
+              <ul className="ad-menu-list">
                 {c.menuModal.map((m, i) => {
                   const key = `${c.id}-${i}`;
                   const live = menuState[key] != null ? menuState[key] : m.live;
                   const price = savedPrices[key] != null ? savedPrices[key] : m.price;
                   const isEditing = !!editing[key];
                   return (
-                    <div
-                      key={key}
-                      className="ad-menu-row"
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "minmax(0, 1fr) 130px 120px 90px",
-                        gap: 12,
-                        alignItems: "center",
-                        padding: "10px 0",
-                        borderBottom: "1px solid rgba(35,32,25,.18)",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontWeight: 600,
-                          fontSize: 14.5,
-                          minWidth: 0,
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          color: live ? "#232019" : "rgba(35,32,25,.45)",
-                          textDecoration: live ? "none" : "line-through",
-                        }}
-                      >
-                        {m.name}
-                      </span>
-                      {isEditing ? (
-                        <input
-                          value={priceDrafts[key] != null ? priceDrafts[key] : String(price)}
-                          onChange={(e) => setPriceDrafts((s) => ({ ...s, [key]: e.target.value.replace(/[^0-9]/g, "") }))}
-                          inputMode="numeric"
-                          style={{
-                            width: "100%",
-                            boxSizing: "border-box",
-                            padding: "5px 8px",
-                            border: "1.5px solid #1E5A3C",
-                            borderRadius: 3,
-                            background: "#FFFDF2",
-                            outline: "none",
-                            fontFamily: MONO,
-                            fontSize: 13.5,
-                            fontWeight: 600,
-                            textAlign: "right",
-                            color: "#232019",
-                          }}
-                        />
-                      ) : (
-                        <span style={{ fontFamily: MONO, fontSize: 13.5, fontWeight: 600, textAlign: "right" }}>{fmtMoney(price)}</span>
-                      )}
-                      <span style={{ display: "flex", justifyContent: "center" }}>
+                    <li key={key} className={`ad-menu-item${live ? "" : " is-soldout"}`}>
+                      <div className="ad-menu-item-main">
+                        <span className="ad-menu-name">{m.name}</span>
+                        {isEditing ? (
+                          <input
+                            className="ad-price-input"
+                            value={priceDrafts[key] != null ? priceDrafts[key] : String(price)}
+                            onChange={(e) => setPriceDrafts((s) => ({ ...s, [key]: e.target.value.replace(/[^0-9]/g, "") }))}
+                            inputMode="numeric"
+                            aria-label={`Price for ${m.name}`}
+                          />
+                        ) : (
+                          <span className="ad-menu-price">₹{fmtMoney(price)}</span>
+                        )}
+                      </div>
+                      <div className="ad-menu-actions">
                         <button
                           type="button"
+                          className={`ad-stock-btn${live ? " is-live" : " is-out"}`}
                           onClick={() => {
                             const next = !live;
                             setMenuState((s) => ({ ...s, [key]: next }));
                             logAction("MENU", `${next ? "put " : "marked "}${m.name}${next ? " back on the menu" : " sold out"}`);
                           }}
-                          style={{
-                            width: 86,
-                            padding: "4px 0",
-                            border: `1.5px solid ${live ? "#1E5A3C" : "#B03A2A"}`,
-                            borderRadius: 999,
-                            background: live ? "rgba(30,90,60,.1)" : "rgba(176,58,42,.08)",
-                            color: live ? "#1E5A3C" : "#B03A2A",
-                            fontFamily: MONO,
-                            fontSize: 10,
-                            fontWeight: 600,
-                            letterSpacing: ".06em",
-                            cursor: "pointer",
-                          }}
                         >
-                          {live ? "ON MENU" : "SOLD OUT"}
+                          {live ? "On menu" : "Sold out"}
                         </button>
-                      </span>
-                      <span style={{ textAlign: "right" }}>
                         <button
                           type="button"
                           className="ad-edit-btn"
@@ -551,234 +429,153 @@ export function AdminDemo() {
                         >
                           {isEditing ? "Save" : "Edit ₹"}
                         </button>
-                      </span>
-                    </div>
+                      </div>
+                    </li>
                   );
                 })}
-                <p style={{ margin: "14px 0 0", fontFamily: MONO, fontSize: 10, letterSpacing: ".1em", lineHeight: 1.8, color: "rgba(35,32,25,.45)" }}>
-                  SOLD-OUT ITEMS DISAPPEAR FROM THE CUSTOMER MENU INSTANTLY. PRICE EDITS POST TO THE AUDIT LOG.
-                </p>
-              </section>
+              </ul>
+              <p className="ad-hint">Sold-out items disappear from the customer menu instantly.</p>
+            </section>
 
-              <section style={{ padding: "24px 56px 40px 34px" }}>
-                <SectionHead title="Today's specials" note="PUSHED BY THE KITCHEN" />
-                {specials.map((s) => {
-                  const dietColor = s.diet === "nonveg" ? "#B03A2A" : "#1E5A3C";
-                  return (
-                    <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 0", borderBottom: "1px solid rgba(35,32,25,.18)" }}>
-                      <DietSquare color={dietColor} />
-                      <span style={{ minWidth: 0 }}>
-                        <span style={{ display: "block", fontWeight: 600, fontSize: 14.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                          {s.name}
-                        </span>
-                        <span style={{ display: "block", fontSize: 12, color: "rgba(35,32,25,.5)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                          {s.desc}
-                        </span>
-                      </span>
-                      <span style={{ marginLeft: "auto", fontFamily: MONO, fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}>₹{s.price}</span>
-                      <button
-                        type="button"
-                        className="ad-takeoff-btn"
-                        title="Take off the board"
-                        onClick={() => {
-                          const base = storedSpecials.length ? storedSpecials : specials;
-                          setSpecials(c.id, base.filter((x) => x.id !== s.id));
-                          logAction("MENU", `took ${s.name} off the specials board`);
-                          forceRender();
-                        }}
-                      >
-                        Take off
-                      </button>
-                    </div>
-                  );
-                })}
-                {specials.length === 0 && (
-                  <div
-                    style={{
-                      border: "1.5px dashed rgba(35,32,25,.3)",
-                      borderRadius: 4,
-                      padding: "20px 16px",
-                      textAlign: "center",
-                      fontFamily: MONO,
-                      fontSize: 10.5,
-                      letterSpacing: ".12em",
-                      color: "rgba(35,32,25,.45)",
-                      lineHeight: 1.9,
-                    }}
-                  >
-                    NO SPECIALS ON THE BOARD
-                    <br />
-                    <Link href="/demo/kitchen" style={{ color: "#1E5A3C", textDecoration: "none" }}>
-                      PUSH ONE FROM THE KITCHEN →
-                    </Link>
+            <section className="ad-section">
+              <div className="ad-section-head">
+                <h2>Today&apos;s specials</h2>
+                <span>From kitchen</span>
+              </div>
+              {specials.map((s) => {
+                const dietColor = s.diet === "nonveg" ? "#B03A2A" : "#1E5A3C";
+                return (
+                  <div key={s.id} className="ad-special">
+                    <DietSquare color={dietColor} />
+                    <span className="ad-special-body">
+                      <span className="ad-special-name">{s.name}</span>
+                      <span className="ad-special-desc">{s.desc}</span>
+                    </span>
+                    <span className="ad-menu-price">₹{s.price}</span>
+                    <button
+                      type="button"
+                      className="ad-takeoff-btn"
+                      title="Take off the board"
+                      onClick={() => {
+                        const base = storedSpecials.length ? storedSpecials : specials;
+                        setSpecials(
+                          c.id,
+                          base.filter((x) => x.id !== s.id)
+                        );
+                        logAction("MENU", `took ${s.name} off the specials board`);
+                        forceRender();
+                      }}
+                    >
+                      Take off
+                    </button>
                   </div>
-                )}
-                <div style={{ marginTop: 22, border: "1.5px dashed rgba(30,90,60,.45)", borderRadius: 4, padding: "14px 16px" }}>
-                  <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: ".14em", color: "#1E5A3C", marginBottom: 6 }}>HOW THIS SYNCS</div>
-                  <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.55, color: "rgba(35,32,25,.7)" }}>
-                    Menu edits are one Postgres write. Supabase Realtime fans the change out to the customer menu, the kitchen queue and this
-                    book — no refresh anywhere.
-                  </p>
+                );
+              })}
+              {specials.length === 0 && (
+                <div className="ad-empty">
+                  No specials on the board
+                  <br />
+                  <Link href="/demo/kitchen">Push one from kitchen →</Link>
                 </div>
-              </section>
-            </div>
-          )}
+              )}
+            </section>
+          </div>
+        )}
 
-          {/* ============ PEOPLE ============ */}
-          {view === "people" && (
-            <div className="ad-people-grid">
-              <section style={{ padding: "24px 34px 46px 56px", borderRight: "1px solid rgba(35,32,25,.22)" }}>
-                <SectionHead title="Staff access" note="SCOPE-SAFE ROLES" />
+        {/* ============ STAFF ============ */}
+        {view === "staff" && (
+          <div className="ad-panel" style={{ animation: "adRowIn .28s ease both" }}>
+            <section className="ad-section">
+              <div className="ad-section-head">
+                <h2>Staff</h2>
+                <span>Who can open what</span>
+              </div>
+              <ul className="ad-staff-list">
                 {STAFF.map((st) => (
-                  <div key={st.name} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 0", borderBottom: "1px solid rgba(35,32,25,.18)" }}>
-                    <span
-                      style={{
-                        width: 34,
-                        height: 34,
-                        border: "1.5px solid #1E5A3C",
-                        borderRadius: "50%",
-                        display: "grid",
-                        placeItems: "center",
-                        fontFamily: SERIF,
-                        fontWeight: 700,
-                        fontSize: 15,
-                        color: "#1E5A3C",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {st.name.charAt(0).toUpperCase()}
+                  <li key={st.name} className="ad-staff">
+                    <span className="ad-staff-avatar">{st.name.charAt(0).toUpperCase()}</span>
+                    <span className="ad-staff-body">
+                      <span className="ad-staff-name">{st.name}</span>
+                      <span className="ad-staff-role">{st.role}</span>
                     </span>
-                    <span style={{ minWidth: 0, overflow: "hidden" }}>
-                      <span style={{ display: "block", fontWeight: 600, fontSize: 14.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{st.name}</span>
-                      <span style={{ display: "block", fontSize: 12, color: "rgba(35,32,25,.5)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{st.role}</span>
-                    </span>
-                    <span
-                      style={{
-                        marginLeft: "auto",
-                        fontFamily: MONO,
-                        fontSize: 9.5,
-                        fontWeight: 600,
-                        letterSpacing: ".08em",
-                        color: st.scopeColor,
-                        border: `1.5px solid ${st.scopeColor}`,
-                        borderRadius: 999,
-                        padding: "3px 10px",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
+                    <span className="ad-staff-scope" style={{ color: st.scopeColor, borderColor: st.scopeColor }}>
                       {st.scope}
                     </span>
-                  </div>
+                  </li>
                 ))}
-                <p style={{ margin: "14px 0 0", fontFamily: MONO, fontSize: 10, letterSpacing: ".1em", lineHeight: 1.8, color: "rgba(35,32,25,.45)" }}>
-                  KITCHEN LOGINS SEE ONLY THEIR OWN QUEUE. ROW-LEVEL SECURITY ENFORCES THE SCOPE ON EVERY QUERY.
-                </p>
-              </section>
-              <section style={{ padding: "24px 56px 40px 34px" }}>
-                <SectionHead title="Regulars this month" note="BY SPEND" />
-                <div
-                  className="ad-people-row"
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "minmax(0, 1fr) 90px 80px 110px 70px",
-                    gap: 12,
-                    padding: "8px 0",
-                    borderTop: "2px solid #1E5A3C",
-                    borderBottom: "1.5px solid rgba(35,32,25,.5)",
-                    ...thStyle,
-                    letterSpacing: ".12em",
-                  }}
-                >
-                  <span>NAME</span>
-                  <span>ROLL</span>
-                  <span style={{ textAlign: "right" }}>ORDERS</span>
-                  <span style={{ textAlign: "right" }}>SPEND ₹</span>
-                  <span style={{ textAlign: "right" }}>LAST</span>
-                </div>
-                {c.studentRows.map((sr) => (
-                  <div
-                    key={sr.roll}
-                    className="ad-people-row"
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "minmax(0, 1fr) 90px 80px 110px 70px",
-                      gap: 12,
-                      alignItems: "baseline",
-                      padding: "10px 0",
-                      borderBottom: "1px solid rgba(35,32,25,.18)",
-                    }}
-                  >
-                    <span style={{ fontWeight: 600, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sr.name}</span>
-                    <span style={{ fontFamily: MONO, fontSize: 12, color: "rgba(35,32,25,.55)", whiteSpace: "nowrap" }}>{sr.roll}</span>
-                    <span style={{ fontFamily: MONO, fontSize: 12.5, textAlign: "right" }}>{sr.orders}</span>
-                    <span style={{ fontFamily: MONO, fontSize: 12.5, fontWeight: 600, textAlign: "right" }}>{fmtMoney(sr.spend)}</span>
-                    <span style={{ fontFamily: MONO, fontSize: 11.5, color: "rgba(35,32,25,.5)", textAlign: "right" }}>{sr.last}</span>
-                  </div>
-                ))}
-              </section>
-            </div>
-          )}
+              </ul>
+              <p className="ad-hint">Kitchen logins see only their own queue.</p>
+            </section>
 
-          {/* ============ AUDIT LOG ============ */}
-          {view === "audit" && (
-            <div className="ad-audit" style={{ padding: "24px 56px 46px", animation: "adRowIn .3s ease both" }}>
-              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 16, marginBottom: 12, maxWidth: 860 }}>
-                <h2 style={{ margin: 0, fontFamily: SERIF, fontWeight: 700, fontSize: 22 }}>Audit log</h2>
-                <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".12em", color: "rgba(35,32,25,.5)" }}>EVERY WRITE, SIGNED & TIMED</span>
+            <section className="ad-section">
+              <div className="ad-section-head">
+                <h2>Regulars</h2>
+                <span>This month</span>
               </div>
-              <div style={{ maxWidth: 860, borderTop: "2px solid #1E5A3C" }}>
+              <ul className="ad-reg-list">
+                {c.studentRows.map((sr) => (
+                  <li key={sr.roll} className="ad-reg">
+                    <span className="ad-reg-name">{sr.name}</span>
+                    <span className="ad-reg-meta">
+                      {sr.orders} orders · ₹{fmtMoney(sr.spend)}
+                    </span>
+                    <span className="ad-reg-last">{sr.last}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </div>
+        )}
+
+        {/* ============ SETTINGS ============ */}
+        {view === "settings" && (
+          <div className="ad-panel" style={{ animation: "adRowIn .28s ease both" }}>
+            <section className="ad-section">
+              <div className="ad-section-head">
+                <h2>Settlement</h2>
+                <span>Direct to you</span>
+              </div>
+              <div className="ad-note">
+                <div className="ad-note-label">Merchant VPA</div>
+                <p className="ad-vpa">{c.upi}</p>
+                <p style={{ marginTop: 8 }}>Commission 0%. Tray never holds the money.</p>
+              </div>
+            </section>
+
+            <section className="ad-section">
+              <div className="ad-section-head">
+                <h2>Activity log</h2>
+                <span>What changed</span>
+              </div>
+              <ul className="ad-audit-list">
                 {auditRows.map((a, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "90px 90px minmax(0, 1fr)",
-                      gap: 16,
-                      alignItems: "baseline",
-                      padding: "12px 0",
-                      borderBottom: "1px solid rgba(35,32,25,.18)",
-                    }}
-                  >
-                    <span style={{ fontFamily: MONO, fontSize: 12, color: "rgba(35,32,25,.55)" }}>{a.t}</span>
+                  <li key={i} className="ad-audit">
+                    <span className="ad-audit-t">{a.t}</span>
                     <span
+                      className="ad-audit-type"
                       style={{
-                        fontFamily: MONO,
-                        fontSize: 9.5,
-                        fontWeight: 600,
-                        letterSpacing: ".1em",
                         color: TYPE_COLORS[a.type] || "#232019",
-                        border: `1.5px solid ${TYPE_COLORS[a.type] || "#232019"}`,
-                        borderRadius: 999,
-                        padding: "3px 0",
-                        textAlign: "center",
-                        whiteSpace: "nowrap",
+                        borderColor: TYPE_COLORS[a.type] || "#232019",
                       }}
                     >
                       {a.type}
                     </span>
-                    <span style={{ fontSize: 14.5, color: "rgba(35,32,25,.85)" }}>
+                    <span className="ad-audit-msg">
                       <b>{a.who}</b> {a.msg}
                     </span>
-                  </div>
+                  </li>
                 ))}
-              </div>
-              <p style={{ margin: "14px 0 0", fontFamily: MONO, fontSize: 10, letterSpacing: ".1em", lineHeight: 1.8, color: "rgba(35,32,25,.45)", maxWidth: 860 }}>
-                ACTIONS YOU TAKE IN THIS DEMO — PRICE EDITS, SOLD-OUT TOGGLES — ARE APPENDED TO THIS LOG LIVE.
-              </p>
-            </div>
-          )}
+              </ul>
+              <p className="ad-hint">Price edits and sold-out toggles append here live.</p>
+            </section>
+          </div>
+        )}
+      </main>
 
-          <footer
-            className="ad-footer"
-            style={{ borderTop: "2px solid #1E5A3C", padding: "14px 56px 18px", display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 16 }}
-          >
-            <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: ".14em", color: "rgba(35,32,25,.45)" }}>
-              BOOK BALANCED · ROW-LEVEL SECURITY KEEPS THIS STALL&apos;S PAGES SEALED FROM EVERY OTHER STALL
-            </span>
-            <span style={{ fontFamily: SERIF, fontSize: 15, color: "rgba(35,32,25,.6)", fontStyle: "italic" }}>— entered by Tray, {ready ? today : ""}</span>
-          </footer>
-        </div>
-      </div>
+      <footer className="ad-footer">
+        <span>This stall only · sealed from the rest of the street</span>
+        <span className="ad-footer-mark">— Tray · {ready ? today : ""}</span>
+      </footer>
     </div>
   );
 }

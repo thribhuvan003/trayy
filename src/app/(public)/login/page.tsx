@@ -25,55 +25,95 @@ export default async function LoginPage({
     sp.msg === "select-canteen"
       ? "Signed in! Share your canteen URL with students so they can start ordering."
       : sp.msg === "already-has-canteen"
-      ? "Your canteen is already set up. Sign in below to reach your dashboard."
-      : undefined;
+        ? "Your canteen is already set up. Sign in below to reach your dashboard."
+        : undefined;
+
+  const roleHint =
+    sp.role === "owner"
+      ? "Owner · aaj ka hisaab"
+      : sp.role === "kitchen"
+        ? "Kitchen · phone + speaker"
+        : "One login · right portal";
 
   return (
     <div
       data-portal="student"
       className="min-h-screen flex items-center justify-center px-5 py-12"
-      style={{ background: "var(--color-paper, #F4EFE6)" }}
+      style={{
+        background: "var(--tray-paper, #fdf8f0)",
+        color: "var(--tray-ink, #1a1410)",
+      }}
     >
       <div className="w-full max-w-[400px]">
-        {/* Brand */}
-        <Link href="/" className="inline-flex items-center gap-2 mb-10" aria-label="Tray home">
+        <Link href="/" className="inline-flex items-center gap-2.5 mb-10" aria-label="Tray home">
           <span
-            className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-white text-[13px] font-black"
-            style={{ background: "var(--color-ink, #1A1A19)", fontFamily: "var(--font-bricolage)" }}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-[12px] text-white text-[15px] font-black shrink-0"
+            style={{
+              background: "var(--tray-signal, #d52821)",
+              fontFamily: "var(--font-newsreader), Georgia, serif",
+              fontStyle: "italic",
+              boxShadow: "0 3px 0 #1a1410",
+            }}
           >
             T
           </span>
           <span
             style={{
-              fontFamily: "var(--font-bricolage)",
-              fontWeight: 800,
-              fontSize: "1.3rem",
+              fontFamily: "var(--font-newsreader), Georgia, serif",
+              fontWeight: 600,
+              fontSize: "1.55rem",
               letterSpacing: "-0.03em",
-              color: "var(--color-ink, #1A1A19)",
+              color: "var(--tray-ink, #1a1410)",
             }}
           >
             Tray
+            <span style={{ color: "var(--tray-signal, #d52821)", fontStyle: "italic" }}>.</span>
           </span>
         </Link>
 
+        <p
+          className="font-mono uppercase mb-2"
+          style={{
+            fontSize: 10,
+            letterSpacing: "0.14em",
+            color: "var(--tray-ink-3, #6b5f54)",
+            fontFamily: "var(--font-jetbrains), monospace",
+          }}
+        >
+          {roleHint}
+        </p>
+
         <h1
-          className="text-[1.65rem] font-bold tracking-tight mb-1"
-          style={{ color: "var(--color-ink)", fontFamily: "var(--font-bricolage)" }}
+          className="text-[1.75rem] font-semibold tracking-tight mb-1.5 leading-tight"
+          style={{
+            color: "var(--tray-ink, #1a1410)",
+            fontFamily: "var(--font-newsreader), Georgia, serif",
+          }}
         >
           Welcome back
         </h1>
-        <p className="text-[14px] mb-8" style={{ color: "var(--color-ink)", opacity: 0.5 }}>
-          Sign in to continue to your portal.
+        <p
+          className="text-[14.5px] mb-8 leading-relaxed"
+          style={{ color: "var(--tray-ink-2, #3d342c)", opacity: 0.85 }}
+        >
+          Sign in once. We send you to kitchen, admin, or menu — no tab dance.
         </p>
 
-        {/* Info / error banner */}
         {(infoMsg || sp.error) && (
           <div
-            className="mb-6 rounded-xl border px-4 py-3 text-[13px] leading-[1.55]"
+            className="mb-6 rounded-xl border px-4 py-3.5 text-[13px] leading-[1.55]"
             style={
               sp.error
-                ? { borderColor: "rgba(230,0,0,0.2)", background: "rgba(230,0,0,0.04)", color: "#c00" }
-                : { borderColor: "rgba(22,163,74,0.2)", background: "rgba(22,163,74,0.05)", color: "#15803d" }
+                ? {
+                    borderColor: "rgba(213,40,33,0.25)",
+                    background: "rgba(213,40,33,0.06)",
+                    color: "#a31810",
+                  }
+                : {
+                    borderColor: "rgba(27,107,58,0.25)",
+                    background: "rgba(27,107,58,0.06)",
+                    color: "#145230",
+                  }
             }
           >
             {sp.error ?? infoMsg}
@@ -82,18 +122,19 @@ export default async function LoginPage({
 
         <SmartLoginForm next={next} slug={slug} hintRole={sp.role} />
 
-        <div className="mt-8 pt-6 border-t border-[color:var(--color-line)]">
-          <p className="text-[13px] text-center" style={{ color: "var(--color-ink)", opacity: 0.45 }}>
-            Setting up a new canteen?{" "}
-            <Link
-              href="/get-started"
-              className="font-semibold hover:underline underline-offset-2"
-              style={{ color: "var(--color-ocean-500, #e60000)", opacity: 1 }}
-            >
-              Get started →
-            </Link>
-          </p>
-        </div>
+        <p
+          className="mt-8 text-center text-[12px] leading-relaxed"
+          style={{ color: "var(--tray-ink-3, #6b5f54)" }}
+        >
+          No account?{" "}
+          <Link
+            href={slug ? `/signup?tenant=${slug}` : "/get-started"}
+            className="font-semibold underline underline-offset-2"
+            style={{ color: "var(--tray-signal, #d52821)" }}
+          >
+            Set up or join a stall
+          </Link>
+        </p>
       </div>
     </div>
   );

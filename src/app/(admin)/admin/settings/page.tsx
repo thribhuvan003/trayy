@@ -115,15 +115,18 @@ export default async function SettingsPage() {
           Settings
         </h1>
         <div className="text-[11px] font-mono uppercase tracking-[0.12em] text-graphite-400 mt-0.5">
-          Canteen configuration
+          Pay · service · modes
         </div>
       </div>
 
       <div className="flex flex-col gap-6 max-w-xl">
-        {/* ── 1. Canteen status ─────────────────────────────────────── */}
+        {/* ═══ SERVICE (open / pause / hours) — also on Today home ═══ */}
+        <div className="text-[11px] font-mono uppercase tracking-[0.16em] text-lime/80 px-0.5">
+          Service · open & hours
+        </div>
         <section className="rounded-xl border border-graphite-200/10 bg-graphite-800/40 p-5">
           <h2 className="text-[13px] font-semibold uppercase tracking-[0.1em] text-graphite-300 mb-4">
-            Canteen status
+            Open / close
           </h2>
 
           {/* Open/close toggle */}
@@ -242,14 +245,20 @@ export default async function SettingsPage() {
           </form>
         </section>
 
-        {/* ── 3 & 4. Guest orders + UPI VPA (single form) ───────────── */}
+        {/* ═══ PAY — UPI & payment mode ═══ */}
+        <div className="text-[11px] font-mono uppercase tracking-[0.16em] text-lime/80 px-0.5 mt-2">
+          Pay · students pay you (zero cut on direct UPI)
+        </div>
         <section className="rounded-xl border border-graphite-200/10 bg-graphite-800/40 p-5">
           <h2 className="text-[13px] font-semibold uppercase tracking-[0.1em] text-graphite-300 mb-4">
-            Ordering settings
+            Money in
           </h2>
           <form action={handleSettings} className="flex flex-col gap-5">
-            {/* Guest orders */}
-            <div>
+            {/* key= forces remount when upi_vpa changes after save */}
+            <UpiVpaField key={row.upi_vpa ?? "__no_upi__"} currentVpa={row.upi_vpa} />
+
+            {/* Guest orders — keep in same form */}
+            <div className="border-t border-graphite-200/10 pt-4">
               <label className="flex items-start gap-3 cursor-pointer select-none">
                 <input
                   type="checkbox"
@@ -262,17 +271,11 @@ export default async function SettingsPage() {
                     Allow guest orders
                   </div>
                   <div className="text-[11px] text-graphite-400 mt-0.5">
-                    Allow visitors without a college email to order
+                    Visitors without a college email can order
                   </div>
                 </div>
               </label>
             </div>
-
-            {/* key= forces a full remount when upi_vpa changes so useState
-                reinitialises with the fresh value from the DB. Without this,
-                React keeps the stale input value even after the page re-renders
-                with the new data from the server action. */}
-            <UpiVpaField key={row.upi_vpa ?? "__no_upi__"} currentVpa={row.upi_vpa} />
 
             {/* Admin SMS notifications */}
             <div className="border-t border-graphite-200/10 pt-4">

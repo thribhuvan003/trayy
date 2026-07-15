@@ -126,6 +126,20 @@ export default async function DashboardPage({
     (o) => o.placed_at >= lwStart.toISOString() && o.placed_at < lwEnd.toISOString()
   );
 
+  // Service state for Open / Pause on Today home (Indian owner P0)
+  const admin = getAdminClient(tenant.id);
+  const { data: serviceRow } = await admin
+    .from("tenants")
+    .select("is_open, opens_at, closes_at, paused_until, upi_vpa")
+    .eq("id", tenant.id)
+    .maybeSingle<{
+      is_open: boolean;
+      opens_at: string | null;
+      closes_at: string | null;
+      paused_until: string | null;
+      upi_vpa: string | null;
+    }>();
+
   return (
     <>
       {showWelcome && (
@@ -150,6 +164,11 @@ export default async function DashboardPage({
         lastWeekToday={lastWeekToday}
         logs={logs ?? []}
         todayItems={todayItems}
+        isOpen={serviceRow?.is_open ?? true}
+        pausedUntil={serviceRow?.paused_until ?? null}
+        opensAt={serviceRow?.opens_at ?? null}
+        closesAt={serviceRow?.closes_at ?? null}
+        upiVpa={serviceRow?.upi_vpa ?? tenant.upi_vpa ?? null}
       />
     </>
   );
