@@ -48,8 +48,8 @@
   --color-graphite-300: #a3acbd;
   --color-graphite-200: #e8ecf2;
   --color-graphite-100: #f4f6fa;
-  --color-lime-DEFAULT: #d2fb50;
-  --color-lime-dim:     #b4dc3a;
+  --color-lime-DEFAULT: #1b6b3a; /* money green — not neon chartreuse */
+  --color-lime-dim:     #145230;
   --color-amber-DEFAULT:#ffae29;
   --color-mint-DEFAULT: #3fe6a3;
   --color-rose-DEFAULT: #ff6166;
@@ -747,48 +747,46 @@ select option {
   .tl-stats-marquee { animation: none; }
 }
 
-/* Student portal — Neobrutalist-Bento (Winter 2026 Cohort) */
+/* Student portal — paper + tomato DNA (must not reintroduce Cement Sky / neon SaaS) */
 [data-portal="student"] {
-  /* Neobrutalist primitives */
-  --ns-ink:        #000000;
-  --ns-paper:      #FDFBF7;            /* warm off-white canvas */
-  --ns-border:     3px solid #000000;
-  /* Softer offset shadows — light/medium, not pitch-black */
-  --ns-shadow-sm:  2px 2px 0 0 rgba(0,0,0,.14);
-  --ns-shadow:     3px 3px 0 0 rgba(0,0,0,.20);
-  --ns-shadow-lg:  5px 5px 0 0 rgba(0,0,0,.26);
-  /* Saturated cyber accents */
-  --ns-yellow: #FACC15;
-  --ns-cyan:   #22D3EE;
-  --ns-pink:   #F43F5E;
-  --ns-mint:   #4ADE80;
-  --ns-violet: #8B5CF6;
-  --ns-orange: #F97316;
+  --ns-ink:        #1a1410;
+  --ns-paper:      #fdf8f0;
+  --ns-border:     2px solid #1a1410;
+  --ns-shadow-sm:  2px 2px 0 0 rgba(26, 20, 16, 0.14);
+  --ns-shadow:     3px 3px 0 0 rgba(26, 20, 16, 0.18);
+  --ns-shadow-lg:  5px 5px 0 0 rgba(26, 20, 16, 0.22);
+  /* Accents map to DNA — no cyan/violet cyber */
+  --ns-yellow: #e3a02a;
+  --ns-cyan:   #1b6b3a;
+  --ns-pink:   #d52821;
+  --ns-mint:   #1b6b3a;
+  --ns-violet: #5c3e26;
+  --ns-orange: #d52821;
 
-  --color-paper:     #FDFBF7;
-  --color-paper-dim: #ffffff;
-  --color-ink:       #0a0a0a;
-  --color-line:      #000000;
-  --color-line-strong: #000000;
-  /* Accent ramp → "Cement Sky" — muted slate-blue, calm & premium */
-  --color-ocean-50:  #f1f4f7;
-  --color-ocean-100: #e3e9ef;
-  --color-ocean-200: #c3cfdb;
-  --color-ocean-300: #9bafc1;
-  --color-ocean-400: #6e8ca6;
-  --color-ocean-500: #4F6E8C;
-  --color-ocean-600: #415b75;
-  --color-ocean-700: #34495d;
-  --color-ocean-900: #222f3c;
+  --color-paper:     #fdf8f0;
+  --color-paper-dim: #fffdf8;
+  --color-ink:       #1a1410;
+  --color-line:      rgba(26, 20, 16, 0.12);
+  --color-line-strong: rgba(26, 20, 16, 0.22);
+  /* Accent ramp = tomato (food red), not slate-blue SaaS */
+  --color-ocean-50:  #fbe9e7;
+  --color-ocean-100: #f7c8c2;
+  --color-ocean-200: #f0a39b;
+  --color-ocean-300: #e85a4f;
+  --color-ocean-400: #df3d32;
+  --color-ocean-500: #d52821;
+  --color-ocean-600: #b51b15;
+  --color-ocean-700: #8f1410;
+  --color-ocean-900: #2a160a;
 
-  --student-muted: rgba(10, 10, 10, 0.62);
-  --student-muted2: rgba(10, 10, 10, 0.42);
-  --student-accent-dim: rgba(79, 110, 140, 0.12);
-  --student-surface: rgba(10, 10, 10, 0.04);
-  --student-surface2: rgba(10, 10, 10, 0.07);
-  --student-card-bg: #ffffff;
-  --student-special-card-bg: #FEF9C3;   /* flat cyber-yellow tint for specials */
-  --student-regular-card-bg: #ffffff;
+  --student-muted: rgba(26, 20, 16, 0.62);
+  --student-muted2: rgba(26, 20, 16, 0.42);
+  --student-accent-dim: rgba(213, 40, 33, 0.10);
+  --student-surface: rgba(26, 20, 16, 0.04);
+  --student-surface2: rgba(26, 20, 16, 0.07);
+  --student-card-bg: #fffdf8;
+  --student-special-card-bg: #fff3e0;
+  --student-regular-card-bg: #fffdf8;
 }
 
 /* ── Neobrutalist student utilities ──────────────────────────────── */
@@ -1253,4 +1251,27 @@ select option {
     width: 380px !important;
     flex-shrink: 0 !important;
   }
+}
+
+/* ── Product DNA re-assert (landing :root must not steal shared --tray-*) ── */
+:root {
+  --tray-paper:       #fdf8f0;
+  --tray-paper-2:     #f4efe6;
+  --tray-ink:         #1a1410;
+  --tray-ink-2:       #3d342c;
+  --tray-ink-3:       #6b5f54;
+  --tray-line:        rgba(26, 20, 16, 0.10);
+  --tray-line-2:      rgba(26, 20, 16, 0.18);
+  --tray-signal:      #d52821;
+  --tray-signal-2:    #a31810;
+  --tray-signal-soft: rgba(213, 40, 33, 0.10);
+  --tray-money:       #1b6b3a;
+  --tray-money-soft:  rgba(27, 107, 58, 0.10);
+  --tray-mustard:     #c69214;
+}
+.tray-landing,
+.tray-page {
+  /* Landing may use its own cool greens; product DNA above stays for portals/login */
+  --tray-ink: #101419;
+  --tray-bg: #eef2ed;
 }
