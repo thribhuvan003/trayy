@@ -26,3 +26,7 @@ plan.md
 docs/superpowers/
 docs/DEMO-SPEC.md
 .playwright-screenshots/
+
+# Local LinkedIn profile assets (not product code)
+docs/linkedin/
+
