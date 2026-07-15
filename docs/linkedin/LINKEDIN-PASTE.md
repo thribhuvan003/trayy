@@ -1,143 +1,78 @@
-# LinkedIn — Tray Featured + Project (paste-ready)
+# LinkedIn — Tray (simple, perfect)
 
-**Assets (Playwright screenshots of the real site):**  
-`D:\trayy\docs\linkedin\` and `C:\Users\ntena\docs\linkedin\`
-
-| File | Use for |
-|------|---------|
-| **`tray-featured-og.png`** | Featured · link card (1200×628 viewport of landing) |
-| **`tray-landing-hero.png`** | Featured alt · wider desktop hero |
-| **`tray-project-square.png`** | Project media · square landing shot |
-| **`tray-demos.png`** | Featured alt · three demos band |
-| **`tray-kitchen-phone.png`** | Project gallery · kitchen phone |
-| **`tray-student-phone.png`** | Project gallery · customer phone |
-| **`tray-admin-phone.png`** | Project gallery · owner hisaab |
-
-**Live links (prefer production if you have it; else GitHub):**
-- Product / landing: https://github.com/thribhuvan003/trayy (add Vercel URL when live)
-- Customer demo: `/demo/student`
-- Kitchen demo: `/demo/kitchen`
-- Admin demo: `/demo/admin`
+**Images:** `D:\trayy\docs\linkedin\`  
+**Live:** https://trayy.vercel.app  
 
 ---
 
-## 1) Featured section (add Media or Link)
+## Featured (link → trayy.vercel.app)
 
-LinkedIn → Profile → **Featured** → **+ Add** → **Media** (image) *or* **Link** (if site is public).
-
-### Option A — Media (recommended with our screenshot)
-
-1. Upload: **`tray-featured-og.png`**
-2. Title (max ~100 chars, punchy):
-
+**Title**
 ```
-TRAY — Zero cut. Their UPI. Your token.
+Tray — Zero cut. Their UPI. Your token.
 ```
 
-3. Description:
-
+**Description**
 ```
-Street stall OS for India.
+Scan. Pay the stall. Get a token. Pick up.
 
-Scan QR → pay the stall’s UPI → pick up with a token.
-Kitchen phone for the cook. Aaj ka paisa for the owner.
-No marketplace commission. Money never sits with Tray.
-
-Built: Next.js · Supabase · Razorpay/UPI · real-time kitchen board.
+Street food software. Not a delivery app.
+Orders on a phone. Money stays with the owner.
 ```
 
-4. Link (if allowed): your live Tray URL or `https://github.com/thribhuvan003/trayy`
+**Shorter options**
+```
+Dosa cart software. Zero cut.
+```
+```
+Phone orders. Stall UPI. No cut.
+```
 
-### Option B — catchy short titles (pick one)
-
-- `The stall keeps the money.`
-- `Dosa cart OS. Not a delivery app.`
-- `Phone + speaker kitchen. ₹0 cut for the owner.`
-- `Scan. Pay their UPI. Show token at the glass.`
+**Image:** `tray-featured-og.png`  
+Upload in Edit → Thumbnail if the card image is weak.
 
 ---
 
-## 2) Project section
+## Project
 
-Profile → **Projects** → **Add project**
-
-### Project name
+**Name**
 ```
 Tray — Street food stall OS (India)
 ```
 
-### Description (paste all)
-
+**Description**
 ```
-Built for the crush outside a dosa cart — not for delivery apps.
+Scan the stall. Pay their UPI. Show a token. Pick up.
 
-PROBLEM
-Street stalls and campus canteens lose money to cut-heavy marketplaces, WhatsApp chaos, and shouting queues. Owners need aaj ka hisaab. Cooks need a phone + speaker — not a second cash register.
+Customer: order on phone.
+Cook: kitchen board — big buttons, live queue, speaker for new tickets.
+Owner: aaj ka paisa — open, pause, sold out, staff, QR.
 
-WHAT TRAY DOES
-• Customer: scan QR → pay the stall’s own UPI → show a token at the counter
-• Kitchen: live orders on phone · START → READY → SERVE · speaker dings · no shouting
-• Owner: today ₹, open/pause, sold-out, staff, QR poster, order ledger
+Zero cut. Money goes to the stall, not to us.
+Run alone? Skip the kitchen phone.
 
-PRODUCT DIFFERENCE
-• Zero commission — money lands on the stall’s UPI, not Tray’s float
-• Kitchen is optional — solo carts can run token-only
-• Built for oily hands and lunch rush: big CTAs, phone-first admin “hisaab board”
+Next.js · TypeScript · Supabase · UPI
 
-STACK
-Next.js 15 · TypeScript · Supabase (RLS + Realtime) · Razorpay/UPI · multi-tenant
-
-DEMO
-Customer · Kitchen · Admin walkthroughs on the product site (sample data, not live money).
-
-ROLE
-Founder / full-stack — product design, kitchen board, admin hisaab UX, payments story, multi-tenant architecture.
+Live: trayy.vercel.app
+Code: github.com/thribhuvan003/trayy
 ```
 
-### Skills (add)
-```
-Next.js · TypeScript · Supabase · Product Design · System Design · UPI Payments · Real-time Systems · Full-Stack Development
-```
+**Skills:** Next.js · TypeScript · Supabase · Product Design · Full-Stack  
 
-### Media for Project
-1. **Primary:** `tray-project-square.png` or `tray-landing-hero.png`  
-2. **Gallery (add more):**  
-   - `tray-kitchen-phone.png` — kitchen phone board  
-   - `tray-student-phone.png` — customer board  
-   - `tray-admin-phone.png` — owner aaj ka paisa  
-   - `tray-demos.png` — three demos
-
-### Project URL
-```
-https://github.com/thribhuvan003/trayy
-```
-(Replace with live Vercel URL when ready.)
+**Media:** `tray-project-square.png` + kitchen / student / admin phone shots  
 
 ---
 
-## 3) How to upload (2 minutes)
-
-### Featured
-1. LinkedIn → you → **Featured** → pencil / **Add featured**  
-2. **Add media** → upload `tray-featured-og.png`  
-3. Paste title + description from Option A  
-4. Save · drag Featured to top of profile
-
-### Project
-1. **Add profile section** → **Recommended** → **Projects** (or edit existing)  
-2. Name + description from above  
-3. **Media** → upload square + phone shots  
-4. Skills + GitHub URL  
-5. Save
-
----
-
-## 4) One-line About (optional boost)
+## About (optional)
 
 ```
-Building Tray — street stall OS for India. Zero cut. Their UPI. Your token. Next.js · Supabase · real-time kitchen.
+Building Tray — street stall OS for India. Zero cut. Their UPI. Your token.
 ```
 
 ---
 
-*Screenshots captured with Playwright from local `http://localhost:3000` (landing, demos, kitchen, student, admin). Re-run captures after big UI changes.*
+## Rules for this copy
+- Short words. Full stops. No jargon.
+- Say what happens: scan → pay → token → pick up.
+- One promise: zero cut, money on their UPI.
+- No “SaaS”, “analytics”, “webhooks”, campus-admin filler.
