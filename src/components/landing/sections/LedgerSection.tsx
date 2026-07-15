@@ -34,7 +34,7 @@ const ROWS = [
 
 export function LedgerSection() {
   return (
-    <Reveal id="ledger" className="lp-band-ledger">
+    <Reveal id="ledger" className="lp-band-ledger" from="left" delayMs={40}>
       <div>
         <div className="lp-sec-head">
           <p className="lp-sec-kicker">03 · How a rush actually runs</p>

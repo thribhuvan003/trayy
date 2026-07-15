@@ -7,12 +7,14 @@ type RevealProps = {
   className?: string;
   children: React.ReactNode;
   delayMs?: number;
+  /** Entrance direction when section enters viewport */
   from?: "up" | "left" | "right" | "scale" | "none";
 } & React.HTMLAttributes<HTMLElement>;
 
 /**
- * Optional entrance motion. Content is ALWAYS visible (fail-open).
- * Never leaves opacity:0 — that caused missing demos / giant empty gaps.
+ * Section-to-section enter motion.
+ * Plays once when the band crosses into view.
+ * Fail-open: after safety timeout, always shows content (never stuck blank).
  */
 export function Reveal({
   as: Tag = "section",
@@ -24,7 +26,6 @@ export function Reveal({
   ...rest
 }: RevealProps) {
   const ref = React.useRef<HTMLDivElement | null>(null);
-  const [shown, setShown] = React.useState(true);
 
   React.useEffect(() => {
     const el = ref.current;
@@ -36,38 +37,61 @@ export function Reveal({
     } catch {
       /* ignore */
     }
+
     if (reduced || typeof IntersectionObserver === "undefined") {
-      setShown(true);
+      el.classList.add("lp-inview");
       return;
     }
 
-    // Start visible; only re-play motion if we want (keep shown true always)
-    setShown(true);
+    // Already on screen (e.g. tall display / deep-link): show, no hide flash
+    const rect = el.getBoundingClientRect();
+    const alreadyIn =
+      rect.top < window.innerHeight * 0.92 && rect.bottom > window.innerHeight * 0.08;
+    if (alreadyIn) {
+      el.classList.add("lp-inview");
+      return;
+    }
+
+    // Below fold: arm pre-state, then play when scrolled into view
+    el.classList.add("lp-reveal-armed");
 
     const io = new IntersectionObserver(
       (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          el.classList.add("lp-inview");
-          io.disconnect();
+        for (const entry of entries) {
+          if (entry.isIntersecting && entry.intersectionRatio > 0.06) {
+            // Double rAF so browser paints pre-state before transition
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                el.classList.add("lp-inview");
+              });
+            });
+            io.disconnect();
+            break;
+          }
         }
       },
-      { rootMargin: "0px 0px -4% 0px", threshold: 0.02 }
+      {
+        rootMargin: "0px 0px -10% 0px",
+        threshold: [0, 0.08, 0.15, 0.25],
+      }
     );
     io.observe(el);
 
-    // Safety: mark inview even if observer is flaky
-    const t = window.setTimeout(() => el.classList.add("lp-inview"), 600);
+    // Fail-open — never leave a section invisible
+    const safety = window.setTimeout(() => {
+      el.classList.add("lp-inview");
+    }, 3200);
 
     return () => {
       io.disconnect();
-      window.clearTimeout(t);
+      window.clearTimeout(safety);
     };
   }, []);
 
   return (
     <Tag
       ref={ref}
-      className={`lp-reveal lp-reveal--${from} ${shown ? "lp-revealed" : ""} ${className}`}
+      className={`lp-reveal lp-reveal--${from} ${className}`}
       style={{
         ...style,
         ["--lp-reveal-delay" as string]: `${delayMs}ms`,

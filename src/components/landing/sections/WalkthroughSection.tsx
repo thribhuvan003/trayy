@@ -407,7 +407,7 @@ export function WalkthroughSection() {
   const Scene = SCENES[scene];
 
   return (
-    <Reveal id="walkthrough" className="lp-band-walk">
+    <Reveal id="walkthrough" className="lp-band-walk" from="right">
       <div>
         <div className="lp-sec-head">
           <p className="lp-sec-kicker">02 · Watch one order</p>

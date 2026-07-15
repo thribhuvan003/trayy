@@ -7,7 +7,7 @@ import { Reveal } from "@/components/landing/reveal";
  */
 export function QuoteSection() {
   return (
-    <Reveal className="lp-band-close">
+    <Reveal className="lp-band-close" from="scale">
       <div className="lp-close">
         <div className="lp-close-mark" aria-hidden>
           <span className="lp-close-zero">10</span>

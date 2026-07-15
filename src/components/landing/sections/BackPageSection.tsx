@@ -49,8 +49,8 @@ export function BackPageSection() {
   const activePromise = PROMISES.find((p) => p.n === active) ?? PROMISES[0];
 
   return (
-    <section id="trust" className="lp-band-trust">
-      <Reveal as="div" className="lp-trust-inner">
+    <Reveal id="trust" className="lp-band-trust" from="up">
+      <div className="lp-trust-inner">
         <header className="lp-trust-head">
           <p className="lp-trust-kicker">05 · For the owner</p>
           <h2 className="lp-trust-title">
@@ -63,7 +63,7 @@ export function BackPageSection() {
           </p>
         </header>
 
-        <div className="lp-trust-promises" role="list">
+        <div className="lp-trust-promises lp-stagger" role="list">
           {PROMISES.map((p, i) => {
             const on = active === p.n;
             return (
@@ -105,7 +105,7 @@ export function BackPageSection() {
             <span aria-hidden>→</span>
           </Link>
         </div>
-      </Reveal>
-    </section>
+      </div>
+    </Reveal>
   );
 }

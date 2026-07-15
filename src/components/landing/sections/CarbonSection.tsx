@@ -86,18 +86,19 @@ export function CarbonSection() {
   }, [auto]);
 
   return (
-    <Reveal id="sync" className="lp-band-sync">
+    <Reveal id="sync" className="lp-band-sync" from="scale">
       <div className="lp-sync">
         <div className="lp-sync-copy">
-          <p className="lp-sec-kicker">04 · One write · every screen</p>
+          <p className="lp-sec-kicker">04 · Carbon · one write</p>
           <h2 className="lp-sec-title">
             Mark once.
             <br />
-            Three screens update.
+            Three sheets know.
           </h2>
           <p className="lp-sec-lede">
-            Tap <strong>Sold out</strong> on the counter card. Watch the same row land on the
-            customer phone and owner desk — no WhatsApp, no second list, no mixing stalls.
+            Like old carbon paper — one press, three copies. Tap{" "}
+            <strong>Sold out</strong> on the counter. Phone + owner desk update. No WhatsApp. No
+            second list.
           </p>
           <p className="lp-sync-log" key={pulse} aria-live="polite">
             {log}
@@ -122,6 +123,10 @@ export function CarbonSection() {
           </div>
         </div>
 
+        <div className="lp-sync-stage">
+          <p className="lp-sync-fan" aria-hidden>
+            1 write → fan-out
+          </p>
         <div className="lp-sync-board">
           <div className="lp-sync-tabs" role="tablist" aria-label="Screens">
             {SCREENS.map((s) => (
@@ -219,6 +224,7 @@ export function CarbonSection() {
               );
             })}
           </div>
+        </div>
         </div>
       </div>
     </Reveal>

@@ -103,7 +103,7 @@ function Preview({ kind }: { kind: "preview-customer" | "preview-kitchen" | "pre
 
 export function CouponsSection() {
   return (
-    <Reveal id="demos" className="lp-band-demos">
+    <Reveal id="demos" className="lp-band-demos" from="up" delayMs={0}>
       <div className="lp-demos-inner">
         <div className="lp-sec-head">
           <p className="lp-sec-kicker">01 · Try before you set up</p>
@@ -114,7 +114,7 @@ export function CouponsSection() {
           </p>
         </div>
 
-        <div className="lp-coupons-grid">
+        <div className="lp-coupons-grid lp-stagger">
           {CARDS.map((card) => (
             <Link
               key={card.href}
