@@ -3,15 +3,15 @@
 import React from "react";
 import { Reveal } from "@/components/landing/reveal";
 
-const MONO = "var(--font-spline-mono), monospace";
-const ROZHA = "var(--font-rozha), serif";
+const MONO = "var(--font-mono), monospace";
+const ROZHA = "var(--font-display), serif";
 const SCENE_MS = 5000;
 
 const STEP_TITLES = [
-  "Customer pays by UPI",
-  "Ticket lands in kitchen",
-  "OTP handover",
-  "Cash book settles",
+  "UPI pe pay",
+  "Kitchen queue (optional)",
+  "Token / hand-over",
+  "Cash book settle",
 ];
 
 function SceneStudent() {
@@ -204,7 +204,7 @@ function SceneOtp() {
                   fontFamily: MONO,
                   fontWeight: 700,
                   fontSize: 23,
-                  color: "#1D3FBF",
+                  color: "var(--ink)",
                   animation: `lpPopIn .35s ease ${0.5 + i * 0.25}s both`,
                 }}
               >
@@ -279,7 +279,17 @@ function SceneAdmin() {
           <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".18em", color: "#1E5A3C" }}>
             ADMIN · DAILY CASH BOOK
           </span>
-          <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".12em", color: "rgba(35,32,25,.5)" }}>LIVE ENTRIES</span>
+          <span
+            style={{
+              fontFamily: MONO,
+              fontSize: 10.5,
+              letterSpacing: ".12em",
+              color: "#1E5A3C",
+              animation: "lpInkBlink 1.2s ease infinite",
+            }}
+          >
+            ● LIVE
+          </span>
         </div>
         <div
           style={{
@@ -322,9 +332,9 @@ function SceneAdmin() {
           }}
         >
           <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".14em", color: "rgba(35,32,25,.6)" }}>
-            STALL NO. 7 — TODAY
+            EXAMPLE UI · NOT LIVE TOTALS
           </span>
-          <span style={{ fontFamily: ROZHA, fontSize: 24, color: "#1E5A3C" }}>₹18,540</span>
+          <span style={{ fontFamily: ROZHA, fontSize: 24, color: "#1E5A3C" }}>₹—</span>
         </div>
         <div
           style={{
@@ -342,9 +352,9 @@ function SceneAdmin() {
           }}
         >
           <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".12em", color: "#1E5A3C", fontWeight: 700 }}>
-            ALL 3 STALLS · ONE SIGN-IN
+            REAL TOTALS LIVE IN YOUR ADMIN
           </span>
-          <span style={{ fontFamily: ROZHA, fontSize: 19, color: "#1E5A3C" }}>₹54,860</span>
+          <span style={{ fontFamily: MONO, fontSize: 12, color: "#1E5A3C", fontWeight: 700 }}>₹0 commission</span>
         </div>
       </div>
       <div
@@ -397,129 +407,57 @@ export function WalkthroughSection() {
   const Scene = SCENES[scene];
 
   return (
-    <Reveal
-      id="walkthrough"
-      className="lp-pad"
-      style={{ padding: "24px 72px 96px 128px", maxWidth: 1440, boxSizing: "border-box", margin: "0 auto" }}
-    >
-      <div style={{ position: "relative", marginBottom: 40 }}>
-        <span className="lp-section-no">02</span>
-        <h2
-          style={{
-            margin: "0 0 14px",
-            fontFamily: "var(--font-anek), sans-serif",
-            fontWeight: 800,
-            fontSize: "clamp(34px, 4.2vw, 52px)",
-            letterSpacing: "-0.02em",
-            lineHeight: 1.02,
-            maxWidth: 780,
-          }}
-        >
-          One street. Every stall.
-          <br />
-          Watch an order run the loop.
-        </h2>
-        <p style={{ margin: "0 0 18px", fontSize: 18, lineHeight: 1.6, color: "rgba(34,31,24,.7)", maxWidth: 620, textWrap: "pretty" }}>
-          Twenty seconds, four screens — the actual flow playing itself, not a video. Click any step to jump.
-        </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-          {["EVERY STALL ON THE STREET, ONE APP", "ONE SIGN-IN RUNS THEM ALL"].map((chip) => (
-            <span
-              key={chip}
-              style={{
-                padding: "5px 14px",
-                border: "1.5px solid rgba(34,31,24,.7)",
-                borderRadius: 999,
-                fontFamily: MONO,
-                fontSize: 11,
-                fontWeight: 600,
-                letterSpacing: ".1em",
-                background: "#FFFDF6",
-              }}
-            >
-              {chip}
-            </span>
-          ))}
-          <span
-            style={{
-              padding: "5px 14px",
-              border: "1.5px solid var(--ink)",
-              borderRadius: 999,
-              fontFamily: MONO,
-              fontSize: 11,
-              fontWeight: 600,
-              letterSpacing: ".1em",
-              color: "var(--ink)",
-              background: "rgba(29,63,191,.05)",
-            }}
-          >
-            0% COMMISSION
-          </span>
-        </div>
-      </div>
-
-      <div
-        style={{
-          background: "#FFFDF6",
-          border: "1.5px solid rgba(34,31,24,.85)",
-          borderRadius: 8,
-          boxShadow: "4px 6px 0 rgba(34,31,24,.12)",
-          overflow: "hidden",
-        }}
-      >
-        <div className="lp-stage" style={{ position: "relative", minHeight: 380, display: "grid", placeItems: "center", padding: "40px 36px" }}>
-          <Scene key={scene} />
+    <Reveal id="walkthrough" className="lp-band-walk">
+      <div>
+        <div className="lp-sec-head">
+          <p className="lp-sec-kicker">02 · Watch one order</p>
+          <h2 className="lp-sec-title">One order, four screens</h2>
+          <p className="lp-sec-lede">
+            About 20 seconds. Real UI patterns, auto-playing. Tap a step to jump.
+          </p>
+          <div className="lp-chips">
+            <span className="lp-chip">QR → UPI → token</span>
+            <span className="lp-chip">₹0 cut</span>
+            <span className="lp-chip lp-chip--ink">Kitchen optional</span>
+          </div>
         </div>
 
-        <div className="lp-steprail">
-          {STEP_TITLES.map((title, i) => {
-            const active = scene === i;
-            return (
-              <button
-                key={title}
-                type="button"
-                className={`lp-step-btn${active ? " lp-step-btn--active" : ""}`}
-                onClick={() => {
-                  setScene(i);
-                  setPlaying(true);
-                  startTimer();
-                }}
-              >
-                <span
-                  style={{
-                    fontFamily: MONO,
-                    fontSize: 10,
-                    letterSpacing: ".14em",
-                    color: active ? "#C13A2A" : "rgba(34,31,24,.45)",
+        <div className="lp-stage-frame">
+          <div className="lp-stage">
+            <Scene key={scene} />
+          </div>
+          <div className="lp-steprail">
+            {STEP_TITLES.map((title, i) => {
+              const active = scene === i;
+              return (
+                <button
+                  key={title}
+                  type="button"
+                  className={`lp-step-btn${active ? " lp-step-btn--active" : ""}`}
+                  onClick={() => {
+                    setScene(i);
+                    setPlaying(true);
+                    startTimer();
                   }}
                 >
-                  STEP 0{i + 1}
-                </span>
-                <span style={{ fontWeight: 700, fontSize: 15.5, color: active ? "var(--ink)" : "rgba(34,31,24,.75)", whiteSpace: "nowrap" }}>
-                  {title}
-                </span>
-                <span aria-hidden style={{ position: "absolute", left: 0, bottom: 0, height: 3, background: "rgba(34,31,24,.12)", width: "100%" }} />
-                {active && (
-                  <span
-                    key={`${scene}-bar`}
-                    aria-hidden
-                    style={{
-                      position: "absolute",
-                      left: 0,
-                      bottom: 0,
-                      height: 3,
-                      background: "var(--ink)",
-                      animation: "lpFillBar 5s linear both",
-                      animationPlayState: playing ? "running" : "paused",
-                    }}
-                  />
-                )}
-              </button>
-            );
-          })}
-          <button type="button" className="lp-play-btn" onClick={() => setPlaying((p) => !p)}>
-            {playing ? "❚❚ PAUSE" : "▶ PLAY"}
-          </button>
+                  <span className="lp-step-num">Step 0{i + 1}</span>
+                  <span className="lp-step-title">{title}</span>
+                  <span className="lp-step-track" aria-hidden />
+                  {active && (
+                    <span
+                      key={`${scene}-bar`}
+                      className="lp-step-progress"
+                      aria-hidden
+                      style={{ animationPlayState: playing ? "running" : "paused" }}
+                    />
+                  )}
+                </button>
+              );
+            })}
+            <button type="button" className="lp-play-btn" onClick={() => setPlaying((p) => !p)}>
+              {playing ? "❚❚ Pause" : "▶ Play"}
+            </button>
+          </div>
         </div>
       </div>
     </Reveal>

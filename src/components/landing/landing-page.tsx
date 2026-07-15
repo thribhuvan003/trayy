@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 import type { ResolvedTenant } from "@/lib/tenant";
 import { landingFontVars } from "@/components/landing/fonts";
+import { LandingIntro } from "@/components/landing/intro";
 import { CouponsSection } from "@/components/landing/sections/CouponsSection";
 import { WalkthroughSection } from "@/components/landing/sections/WalkthroughSection";
 import { LedgerSection } from "@/components/landing/sections/LedgerSection";
@@ -10,29 +11,34 @@ import { BackPageSection } from "@/components/landing/sections/BackPageSection";
 import { QuoteSection } from "@/components/landing/sections/QuoteSection";
 import "./ledger.css";
 
-const MONO = "var(--font-spline-mono), monospace";
-const ROZHA = "var(--font-rozha), serif";
-
 function Masthead() {
   return (
     <header className="lp-masthead">
       <div className="lp-masthead-inner">
-        <a href="#top" style={{ display: "flex", alignItems: "baseline", gap: 14, textDecoration: "none", color: "#221F18" }}>
-          <span style={{ fontFamily: ROZHA, fontSize: 34, lineHeight: 1 }}>Tray</span>
-          <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: ".18em", color: "rgba(34,31,24,.55)" }}>
-            STREET FOOD REGISTER
-          </span>
+        <a href="#top" className="lp-brand">
+          <span className="lp-brand-name">Tray</span>
+          <span className="lp-brand-tag">Street edition</span>
         </a>
-        <nav className="lp-nav" aria-label="Main navigation">
-          <a href="#demos" className="lp-nav-link">DEMOS</a>
-          <a href="#ledger" className="lp-nav-link">HOW IT RUNS</a>
-          <a href="#sync" className="lp-nav-link">REALTIME</a>
-          <a href="#trust" className="lp-nav-link">UNDER THE HOOD</a>
+        <nav className="lp-nav" aria-label="Main">
+          <a href="#how" className="lp-nav-link">
+            How
+          </a>
+          <a href="#demos" className="lp-nav-link">
+            Try demos
+          </a>
+          <a href="#trust" className="lp-nav-link">
+            For owners
+          </a>
+          <Link href="/get-started" className="lp-nav-link lp-nav-link--cta">
+            Set up stall
+          </Link>
         </nav>
-        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: ".12em", color: "rgba(34,31,24,.5)" }}>REG. NO. TRY/2026</span>
+        <div className="lp-masthead-actions">
           <Link href="/login" className="lp-signin">
             Sign in
+          </Link>
+          <Link href="/get-started" className="lp-masthead-cta">
+            Set up stall
           </Link>
         </div>
       </div>
@@ -40,346 +46,171 @@ function Masthead() {
   );
 }
 
-function MealToken({ college }: { college: string }) {
-  const digitBox: React.CSSProperties = {
-    width: 36,
-    height: 42,
-    display: "grid",
-    placeItems: "center",
-    border: "1.5px solid rgba(34,31,24,.85)",
-    borderRadius: 5,
-    background: "#FFFDF6",
-    fontFamily: MONO,
-    fontWeight: 700,
-    fontSize: 20,
-    color: "var(--ink)",
-  };
+function MealToken({ label }: { label: string }) {
   return (
-    <div
-      className="lp-hero-token"
-      style={{ position: "relative", justifySelf: "end", width: 372, animation: "lpRise .8s cubic-bezier(.22,1,.36,1) .15s both" }}
-    >
-      <div
-        style={{
-          background: "#FFFDF6",
-          border: "1.5px solid rgba(34,31,24,.85)",
-          borderRadius: 6,
-          transform: "rotate(1.6deg)",
-          boxShadow: "3px 5px 0 rgba(34,31,24,.16), 0 24px 40px -20px rgba(34,31,24,.25)",
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            padding: "20px 24px 16px",
-            borderBottom: "1.5px solid rgba(34,31,24,.85)",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-          }}
-        >
-          <div>
-            <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".16em", color: "rgba(34,31,24,.55)" }}>{college}</div>
-            <div style={{ fontFamily: ROZHA, fontSize: 22, marginTop: 2 }}>Meal Token</div>
-          </div>
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".14em", color: "rgba(34,31,24,.55)" }}>TOKEN NO.</div>
-            <div style={{ fontFamily: ROZHA, fontSize: 30, color: "var(--ink)", lineHeight: 1 }}>217</div>
-          </div>
+    <aside className="lp-hero-token" aria-label="Sample counter token">
+      <div className="lp-receipt">
+        <div className="lp-receipt-head">
+          <span className="lp-receipt-brand">TRAY</span>
+          <span className="lp-receipt-loc">{label}</span>
         </div>
-        <div style={{ padding: "18px 24px", display: "flex", flexDirection: "column", gap: 10 }}>
-          {[
-            ["Chicken Biryani × 1", "₹140"],
-            ["Filter Coffee × 2", "₹50"],
-          ].map(([item, price]) => (
-            <div
-              key={item}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "baseline",
-                borderBottom: "1px dotted rgba(34,31,24,.4)",
-                paddingBottom: 8,
-              }}
-            >
-              <span style={{ fontWeight: 600, fontSize: 16 }}>{item}</span>
-              <span style={{ fontFamily: MONO, fontWeight: 600, fontSize: 15 }}>{price}</span>
-            </div>
-          ))}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 4 }}>
-            <span style={{ fontFamily: MONO, fontSize: 11.5, letterSpacing: ".14em", color: "rgba(34,31,24,.6)" }}>
-              UPI · stall-07@upi
-            </span>
-            <span style={{ fontFamily: ROZHA, fontSize: 22 }}>₹190</span>
-          </div>
+        <div className="lp-receipt-rule" aria-hidden />
+        <div className="lp-receipt-row">
+          <span>Masala Dosa ×1</span>
+          <span>₹70.00</span>
         </div>
-        {/* perforation */}
-        <div style={{ position: "relative", height: 0, borderTop: "2px dashed rgba(34,31,24,.5)", margin: "4px 0" }}>
-          <span
-            aria-hidden
-            style={{
-              position: "absolute",
-              left: -10,
-              top: -9,
-              width: 18,
-              height: 18,
-              borderRadius: "50%",
-              background: "#F7F1E3",
-              border: "1.5px solid rgba(34,31,24,.4)",
-            }}
-          />
-          <span
-            aria-hidden
-            style={{
-              position: "absolute",
-              right: -10,
-              top: -9,
-              width: 18,
-              height: 18,
-              borderRadius: "50%",
-              background: "#F7F1E3",
-              border: "1.5px solid rgba(34,31,24,.4)",
-            }}
-          />
+        <div className="lp-receipt-row">
+          <span>Filter Coffee ×2</span>
+          <span>₹50.00</span>
         </div>
-        <div
-          style={{
-            padding: "16px 24px 20px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            background: "rgba(29,63,191,.05)",
-          }}
-        >
-          <div>
-            <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".16em", color: "rgba(34,31,24,.55)", marginBottom: 6 }}>
-              SHOW AT COUNTER
-            </div>
-            <div style={{ display: "flex", gap: 7 }}>
-              {["4", "8", "2", "1"].map((d, i) => (
-                <span key={i} style={digitBox}>
-                  {d}
-                </span>
-              ))}
-            </div>
-          </div>
-          <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: ".1em", color: "rgba(34,31,24,.45)", textAlign: "right", lineHeight: 1.7 }}>
-            KITCHEN COPY
-            <br />
-            12:47 PM
-          </div>
+        <div className="lp-receipt-rule" aria-hidden />
+        <div className="lp-receipt-row lp-receipt-row--total">
+          <span>TOTAL</span>
+          <span>₹120.00</span>
         </div>
+        <div className="lp-receipt-pay">
+          <span>Paid to</span>
+          <strong>stall-07@upi</strong>
+        </div>
+        <div className="lp-receipt-token">
+          <span className="lp-receipt-token-label">Show this at the glass</span>
+          <span className="lp-receipt-token-num">217</span>
+        </div>
+        <p className="lp-receipt-foot">thermal sample · not live money</p>
       </div>
-      {/* PAID stamp */}
-      <div
-        aria-hidden
-        style={{
-          position: "absolute",
-          top: 96,
-          right: -26,
-          padding: "8px 18px",
-          border: "3px double #C13A2A",
-          borderRadius: 8,
-          color: "#C13A2A",
-          fontFamily: MONO,
-          fontWeight: 700,
-          fontSize: 22,
-          letterSpacing: ".22em",
-          mixBlendMode: "multiply",
-          opacity: 0.88,
-          animation: "lpStampIn .5s cubic-bezier(.34,1.4,.64,1) .4s both",
-        }}
-      >
-        PAID
-      </div>
-    </div>
+    </aside>
   );
 }
 
-function Hero({ college }: { college: string }) {
+function Hero({ label, menuHref }: { label: string; menuHref: string }) {
   return (
     <section id="top" className="lp-hero">
-      <div>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "baseline",
-            gap: 16,
-            fontFamily: MONO,
-            fontSize: 12.5,
-            letterSpacing: ".16em",
-            color: "var(--ink)",
-            marginBottom: 30,
-            flexWrap: "wrap",
-            animation: "lpRise .6s cubic-bezier(.22,1,.36,1) both",
-          }}
-        >
-          <span style={{ fontWeight: 600 }}>ENTRY 00</span>
-          <span style={{ color: "rgba(34,31,24,.45)" }}>————</span>
-          <span style={{ color: "rgba(34,31,24,.6)" }}>ONE STREET · EVERY STALL · LIVE</span>
+      <div className="lp-hero-copy">
+        <div className="lp-hero-plate">
+          <span className="lp-hero-plate-l">Street stalls · tiffin · carts</span>
+          <span className="lp-hero-plate-r">India</span>
         </div>
-        <h1 className="lp-h1" style={{ animation: "lpRise .7s cubic-bezier(.22,1,.36,1) .08s both" }}>
-          Street food,
-          <br />
-          without{" "}
-          <span style={{ position: "relative", whiteSpace: "nowrap" }}>
-            the queue
-            <span
-              aria-hidden
-              style={{
-                position: "absolute",
-                left: "-2%",
-                right: "-2%",
-                top: "54%",
-                height: 4,
-                background: "#C13A2A",
-                transform: "rotate(-1.2deg)",
-                borderRadius: 2,
-                opacity: 0.85,
-              }}
-            />
-          </span>
-          .
-        </h1>
-        <p
-          style={{
-            margin: "0 0 40px",
-            fontSize: 20,
-            lineHeight: 1.6,
-            color: "rgba(34,31,24,.75)",
-            maxWidth: 520,
-            textWrap: "pretty",
-            animation: "lpRise .7s cubic-bezier(.22,1,.36,1) .16s both",
-          }}
-        >
-          Customers order ahead from any stall on the street and collect with a four-digit code. The counter runs one live queue
-          instead of a shouting crowd. The stall keeps every rupee — Tray takes no commission.
-        </p>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 20,
-            marginBottom: 44,
-            flexWrap: "wrap",
-            animation: "lpRise .7s cubic-bezier(.22,1,.36,1) .24s both",
-          }}
-        >
-          <Link href="/demo/student" className="lp-cta">
-            Open the interactive demo <span style={{ fontFamily: MONO }}>→</span>
-          </Link>
-          <a href="#trust" className="lp-underline-link">
-            I run a stall
-          </a>
-        </div>
-        <div
-          style={{
-            display: "flex",
-            gap: 40,
-            borderTop: "1.5px solid rgba(34,31,24,.8)",
-            paddingTop: 18,
-            maxWidth: 560,
-            flexWrap: "wrap",
-            animation: "lpRise .7s cubic-bezier(.22,1,.36,1) .32s both",
-          }}
-        >
-          {[
-            ["0%", "ORDER COMMISSION"],
-            ["UPI", "DIRECT TO STALL VPA"],
-            ["4-digit", "OTP AT HANDOVER"],
-          ].map(([stat, label]) => (
-            <div key={label}>
-              <div style={{ fontFamily: ROZHA, fontSize: 30, color: "var(--ink)", lineHeight: 1.1 }}>{stat}</div>
-              <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: ".12em", color: "rgba(34,31,24,.55)", marginTop: 3 }}>{label}</div>
-            </div>
-          ))}
-        </div>
-      </div>
 
-      <MealToken college={college} />
+        <h1 className="lp-h1">
+          <span className="lp-h1-line">Order on the phone.</span>
+          <span className="lp-h1-line">Pay the stall&apos;s UPI.</span>
+          <span className="lp-h1-line lp-h1-line--accent">Pick up with a token.</span>
+        </h1>
+
+        <p className="lp-hero-lede">
+          Built for the crush outside a dosa cart — not for delivery apps. Zero commission. Money
+          never sits with Tray. Kitchen screen only if you need staff.
+        </p>
+
+        <ol className="lp-hero-steps" aria-label="How it works">
+          <li>
+            <b>1</b>
+            <span>Scan the stall QR</span>
+          </li>
+          <li>
+            <b>2</b>
+            <span>Pay their UPI</span>
+          </li>
+          <li>
+            <b>3</b>
+            <span>Show token at counter</span>
+          </li>
+        </ol>
+
+        <div className="lp-hero-actions">
+          <Link href="/get-started" className="lp-cta">
+            Set up my stall
+          </Link>
+          <Link href="/demo/student" className="lp-underline-link">
+            Try customer demo
+          </Link>
+        </div>
+        <p className="lp-hero-note">
+          Demos use sample data.{" "}
+          <Link href={menuHref}>Open a sample menu</Link>
+          .
+        </p>
+      </div>
+      <MealToken label={label} />
     </section>
   );
 }
 
 function RegisterLine() {
+  const items = [
+    <>12:47 — T-2425 <b>ORDER ₹120</b></>,
+    <>UPI OPEN</>,
+    <>PAID · STALL VPA</>,
+    <>
+      <b>TOKEN DIKHAO</b>
+    </>,
+    <span className="lp-register-accent">COLLECTED</span>,
+    <>HISAAB UPDATE</>,
+  ];
+  const track = [...items, ...items];
   return (
-    <div className="lp-register-line">
-      <span>
-        12:47:03 — T-2425 <span style={{ color: "var(--ink)" }}>PAID ₹210</span>
-      </span>
-      <span>12:47:09 — KITCHEN TICKET OPENED</span>
-      <span>
-        12:51:44 — T-2425 <span style={{ color: "var(--ink)" }}>READY</span>
-      </span>
-      <span>12:52:30 — OTP 4821 VERIFIED</span>
-      <span>
-        12:52:31 — <span style={{ color: "#C13A2A" }}>HANDED OVER</span>
-      </span>
-      <span>12:52:40 — ADMIN TOTALS UPDATED</span>
+    <div className="lp-register" id="how" aria-label="Example order timeline">
+      <div className="lp-register-track">
+        {track.map((node, i) => (
+          <span key={i} className="lp-register-item">
+            {node}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
 
-function Footer() {
+function Footer({ menuHref }: { menuHref: string }) {
   return (
     <footer className="lp-footer">
-      <div className="lp-footer-grid">
-        <div>
-          <div style={{ fontFamily: ROZHA, fontSize: 30, marginBottom: 10 }}>Tray</div>
-          <p style={{ margin: "0 0 18px", fontSize: 15, lineHeight: 1.6, color: "rgba(34,31,24,.65)", maxWidth: 300 }}>
-            Street food operations for stalls and tiffin centers that want faster handoff, cleaner billing and fewer counter bottlenecks.
-          </p>
-          <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: ".12em", color: "rgba(34,31,24,.45)" }}>
-            MADE FOR INDIA&apos;S STREET FOOD STALLS
+      <div className="lp-foot">
+        <div className="lp-foot-row">
+          <div className="lp-foot-lead">
+            <p className="lp-foot-eyebrow">Street edition · India</p>
+            <p className="lp-foot-line-copy">
+              Direct UPI. Phone token. Zero cut.
+              <br />
+              Built for the counter.
+            </p>
           </div>
+
+          <nav className="lp-foot-chips" aria-label="Footer links">
+            <Link href="/get-started" className="lp-foot-chip lp-foot-chip--hot">
+              Set up stall
+            </Link>
+            <Link href="/demo/student" className="lp-foot-chip">
+              Try demos
+            </Link>
+            <Link href={menuHref} className="lp-foot-chip lp-foot-chip--ghost">
+              Sample menu
+            </Link>
+            <Link href="/legal/terms" className="lp-foot-chip lp-foot-chip--ghost">
+              Terms
+            </Link>
+            <Link href="/legal/privacy" className="lp-foot-chip lp-foot-chip--ghost">
+              Privacy
+            </Link>
+            <a
+              href="https://github.com/thribhuvan003/trayy"
+              target="_blank"
+              rel="noreferrer"
+              className="lp-foot-chip lp-foot-chip--ghost"
+            >
+              GitHub
+            </a>
+            <Link href="/login" className="lp-foot-chip lp-foot-chip--ghost">
+              Sign in
+            </Link>
+          </nav>
         </div>
-        <div>
-          <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: ".16em", color: "#C13A2A", marginBottom: 14 }}>PRODUCT</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 9, fontSize: 15.5, fontWeight: 500, alignItems: "flex-start" }}>
-            <Link href="/demo/student" className="lp-footer-link">Customer view</Link>
-            <Link href="/demo/kitchen" className="lp-footer-link">Kitchen view</Link>
-            <Link href="/demo/admin" className="lp-footer-link">Admin view</Link>
-            <Link href="/get-started" className="lp-footer-link">Get started</Link>
-          </div>
-        </div>
-        <div>
-          <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: ".16em", color: "#C13A2A", marginBottom: 14 }}>RESOURCES</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 9, fontSize: 15.5, fontWeight: 500, alignItems: "flex-start" }}>
-            <a href="https://github.com/thribhuvan003/trayy/blob/main/README.md" target="_blank" rel="noreferrer" className="lp-footer-link">
-              README
-            </a>
-            <a href="https://github.com/thribhuvan003/trayy/tree/main/docs/adr" target="_blank" rel="noreferrer" className="lp-footer-link">
-              Architecture
-            </a>
-            <a href="https://github.com/thribhuvan003/trayy/blob/main/SECURITY.md" target="_blank" rel="noreferrer" className="lp-footer-link">
-              Security
-            </a>
-          </div>
-        </div>
-        <div>
-          <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: ".16em", color: "#C13A2A", marginBottom: 14 }}>CONTACT</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 9, fontSize: 15.5, fontWeight: 500, alignItems: "flex-start" }}>
-            <a href="https://github.com/thribhuvan003" target="_blank" rel="noreferrer" className="lp-footer-link">
-              github.com/thribhuvan003
-            </a>
-          </div>
-          <div
-            style={{
-              marginTop: 22,
-              display: "inline-block",
-              padding: "6px 14px",
-              border: "2.5px double #C13A2A",
-              borderRadius: 6,
-              color: "#C13A2A",
-              fontFamily: MONO,
-              fontSize: 12,
-              fontWeight: 700,
-              letterSpacing: ".18em",
-              transform: "rotate(-3deg)",
-              mixBlendMode: "multiply",
-            }}
-          >
-            REGISTER CLOSED · 2:30 PM
+
+        <div className="lp-foot-end">
+          <p className="lp-foot-meta">© Tray · Street edition</p>
+
+          <div className="lp-foot-stamp" aria-label="Tray brand stamp">
+            <span className="lp-foot-stamp-word">TRAY</span>
+            <span className="lp-foot-stamp-sub">STREET · INDIA</span>
           </div>
         </div>
       </div>
@@ -388,29 +219,16 @@ function Footer() {
 }
 
 export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
-  const college = tenant?.college_name?.toUpperCase() ?? "MG ROAD · STALL NO. 7";
+  const label = tenant?.college_name?.toUpperCase() ?? "MG ROAD · STALL 7";
+  const menuHref = tenant ? `/c/${tenant.slug}/menu` : "/demo/student";
 
   return (
     <div className={`lp ${landingFontVars}`}>
-      {/* Ledger ruling underlay */}
-      <div
-        aria-hidden
-        style={{
-          position: "absolute",
-          inset: 0,
-          pointerEvents: "none",
-          zIndex: 0,
-          backgroundImage:
-            "repeating-linear-gradient(to bottom, transparent 0px, transparent 35px, rgba(29,63,191,.075) 35px, rgba(29,63,191,.075) 36px)",
-        }}
-      />
-      {/* Red margin line */}
-      <div aria-hidden className="lp-margin-line" />
-
-      <div style={{ position: "relative", zIndex: 1 }}>
+      <LandingIntro />
+      <div className="lp-shell">
         <Masthead />
         <main id="main">
-          <Hero college={college} />
+          <Hero label={label} menuHref={menuHref} />
           <RegisterLine />
           <CouponsSection />
           <WalkthroughSection />
@@ -419,7 +237,7 @@ export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
           <BackPageSection />
           <QuoteSection />
         </main>
-        <Footer />
+        <Footer menuHref={menuHref} />
       </div>
     </div>
   );

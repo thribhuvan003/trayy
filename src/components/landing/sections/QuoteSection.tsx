@@ -1,51 +1,54 @@
 import React from "react";
+import Link from "next/link";
 import { Reveal } from "@/components/landing/reveal";
 
-const MONO = "var(--font-spline-mono), monospace";
-const ROZHA = "var(--font-rozha), serif";
-
+/**
+ * Close = decision, not another trust restatement.
+ */
 export function QuoteSection() {
   return (
-    <Reveal className="lp-quote">
-      <blockquote style={{ margin: 0, position: "relative" }}>
-        <span className="lp-section-no">06</span>
-        {/* Swap for a real, named stall-owner quote once the first pilot is live —
-            never an invented one. Until then this is honestly what it is: the pitch. */}
-        <p style={{ margin: "0 0 26px", fontFamily: ROZHA, fontSize: "clamp(28px, 3.4vw, 42px)", lineHeight: 1.22, maxWidth: 760, textWrap: "balance" }}>
-          “No shouting over the crowd. The phone calls the order, the customer shows a token, and the rush settles itself.”
-        </p>
-        <footer style={{ fontFamily: MONO, fontSize: 12, letterSpacing: ".14em", color: "rgba(34,31,24,.55)" }}>
-          THE PITCH WE MAKE TO EVERY STALL OWNER
-        </footer>
-      </blockquote>
-      <div
-        style={{
-          border: "1.5px solid rgba(34,31,24,.85)",
-          borderRadius: 6,
-          background: "#FFFDF6",
-          padding: "18px 20px",
-          transform: "rotate(1.2deg)",
-          boxShadow: "3px 4px 0 rgba(34,31,24,.12)",
-          maxWidth: 300,
-        }}
-      >
-        <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".16em", color: "rgba(34,31,24,.5)", marginBottom: 12 }}>
-          HANDOVER BOARD · SPECIMEN
+    <Reveal className="lp-band-close">
+      <div className="lp-close">
+        <div className="lp-close-mark" aria-hidden>
+          <span className="lp-close-zero">10</span>
+          <span className="lp-close-cut">min</span>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 9, fontFamily: MONO, fontSize: 13 }}>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span>A-217 Masala dosa</span>
-            <span style={{ fontWeight: 700, color: "var(--ink)" }}>4821</span>
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span>B-044 Veg thali</span>
-            <span style={{ color: "rgba(34,31,24,.55)" }}>04m</span>
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span>C-103 Filter coffee</span>
-            <span style={{ color: "#C13A2A", fontWeight: 700 }}>CALLED</span>
+
+        <div className="lp-close-copy">
+          <p className="lp-close-eyebrow">Last stop</p>
+          <h2 className="lp-close-title">
+            QR on the cart
+            <br />
+            before the next rush.
+          </h2>
+          <p className="lp-close-lede">
+            Set up the stall, print the poster, take the first phone order. Demos first if you want
+            to feel it — no account required.
+          </p>
+          <div className="lp-close-actions">
+            <Link href="/get-started" className="lp-close-cta">
+              Set up my stall
+            </Link>
+            <Link href="/demo/student" className="lp-close-link">
+              Or try the customer demo first
+            </Link>
           </div>
         </div>
+
+        <ul className="lp-close-facts">
+          <li>
+            <span>You need</span>
+            <strong>A phone + a UPI ID</strong>
+          </li>
+          <li>
+            <span>You skip</span>
+            <strong>App install wars at the counter</strong>
+          </li>
+          <li>
+            <span>You keep</span>
+            <strong>Every rupee on the plate</strong>
+          </li>
+        </ul>
       </div>
     </Reveal>
   );

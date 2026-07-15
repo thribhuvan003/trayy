@@ -1,96 +1,109 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
 import { Reveal } from "@/components/landing/reveal";
 
-const MONO = "var(--font-spline-mono), monospace";
-const ROZHA = "var(--font-rozha), serif";
-
-const ROWS = [
+/**
+ * Interactive owner promises — click selects; detail adds a real objection answer,
+ * not a paraphrase of the card body.
+ */
+const PROMISES = [
   {
-    tag: "UPI",
-    title: "Direct settlement",
-    copy: "Payments hit the stall's own VPA. No platform wallet, no float sitting with Tray.",
+    n: "01",
+    title: "Paisa goes to you",
+    copy: "Customer pays your UPI. Tray never holds the money — not for a second.",
+    detail:
+      "Unlike delivery apps, there is no Tray wallet in the middle. Settlement is their phone → your VPA.",
+    proof: "Direct UPI",
   },
   {
-    tag: "RLS",
-    title: "Tenant isolation",
-    copy: "Menus, orders and profiles are scoped per outlet with row-level security on every Postgres query.",
+    n: "02",
+    title: "Zero cut on the plate",
+    copy: "No commission per order. What they pay is what you keep.",
+    detail:
+      "No 20–30% marketplace cut. Optional tools later — never a silent fee on every dosa.",
+    proof: "₹0 cut",
   },
   {
-    tag: "REV",
-    title: "Zero commission",
-    copy: "No per-order platform fee. The stall keeps exactly what the customer pays.",
+    n: "03",
+    title: "Only your stall",
+    copy: "Orders and menu stay locked to this outlet. Never mixed with the cart next door.",
+    detail:
+      "Each stall is its own tenant. Neighbour’s sold-out paneer cannot wipe your board.",
+    proof: "Isolated",
   },
   {
-    tag: "OTP",
-    title: "Verifiable pickup",
-    copy: "The four-digit code ties payment to handover and settles wrong-order disputes before they start.",
+    n: "04",
+    title: "Token at the glass",
+    copy: "They show the phone. You hand over the food. Kitchen board only if you want it.",
+    detail:
+      "Street default is counter token after pay. Kitchen OTP is opt-in for bigger counters.",
+    proof: "Token first",
   },
-];
-
-const TECH = ["NEXT.JS 15", "TYPESCRIPT", "TAILWIND 4", "SUPABASE", "POSTGRES + RLS", "RAZORPAY", "VERCEL EDGE"];
+] as const;
 
 export function BackPageSection() {
+  const [active, setActive] = React.useState<string>("01");
+
+  const activePromise = PROMISES.find((p) => p.n === active) ?? PROMISES[0];
+
   return (
-    <section id="trust" style={{ background: "#1B2447", color: "#F7F1E3", borderTop: "2.5px solid #221F18" }}>
-      <Reveal
-        as="div"
-        className="lp-pad"
-        style={{ maxWidth: 1440, margin: "0 auto", padding: "96px 72px 88px 128px", boxSizing: "border-box" }}
-      >
-        <div className="lp-trust-grid">
-          <div>
-            <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 600, letterSpacing: ".16em", color: "#E8B84B", marginBottom: 18 }}>
-              05 · THE BACK PAGE
-            </div>
-            <h2
-              style={{
-                margin: "0 0 22px",
-                fontFamily: "var(--font-young-serif), serif",
-                fontWeight: 400,
-                fontSize: "clamp(34px, 4vw, 50px)",
-                lineHeight: 1.08,
-              }}
-            >
-              Serious under the hood.
-            </h2>
-            <p style={{ margin: "0 0 34px", fontSize: 18, lineHeight: 1.65, color: "rgba(247,241,227,.72)", maxWidth: 420, textWrap: "pretty" }}>
-              Tray is street infrastructure, not a delivery aggregator. It never holds the customer&apos;s money, never mixes one
-              stall&apos;s data with another&apos;s, and never takes a cut of the counter.
-            </p>
-            <Link href="/get-started" className="lp-cta-gold">
-              I run a stall — get started →
-            </Link>
-          </div>
-          <div style={{ borderTop: "2px solid rgba(247,241,227,.9)" }}>
-            {ROWS.map((row, i) => (
-              <div
-                key={row.tag}
-                className="lp-trust-row"
-                style={i === ROWS.length - 1 ? { borderBottom: "2px solid rgba(247,241,227,.9)" } : undefined}
+    <section id="trust" className="lp-band-trust">
+      <Reveal as="div" className="lp-trust-inner">
+        <header className="lp-trust-head">
+          <p className="lp-trust-kicker">05 · For the owner</p>
+          <h2 className="lp-trust-title">
+            Their money hits
+            <br />
+            <em>your</em> UPI.
+          </h2>
+          <p className="lp-trust-lede">
+            Four promises. Tap one for the owner answer — not another feature list.
+          </p>
+        </header>
+
+        <div className="lp-trust-promises" role="list">
+          {PROMISES.map((p, i) => {
+            const on = active === p.n;
+            return (
+              <button
+                key={p.n}
+                type="button"
+                role="listitem"
+                aria-pressed={on}
+                className={`lp-trust-card${on ? " is-active" : ""}`}
+                style={{ ["--i" as string]: i }}
+                onClick={() => setActive(p.n)}
               >
-                <span style={{ fontFamily: MONO, fontSize: 12.5, fontWeight: 700, letterSpacing: ".12em", color: "#E8B84B" }}>{row.tag}</span>
-                <span style={{ fontFamily: ROZHA, fontSize: 21 }}>{row.title}</span>
-                <span style={{ fontSize: 15.5, lineHeight: 1.6, color: "rgba(247,241,227,.68)" }}>{row.copy}</span>
-              </div>
-            ))}
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: "10px 26px",
-                paddingTop: 22,
-                fontFamily: MONO,
-                fontSize: 12,
-                letterSpacing: ".1em",
-                color: "rgba(247,241,227,.55)",
-              }}
-            >
-              {TECH.map((t) => (
-                <span key={t}>{t}</span>
-              ))}
-            </div>
+                <span className="lp-trust-n">{p.n}</span>
+                <h3 className="lp-trust-card-title">{p.title}</h3>
+                <p className="lp-trust-card-copy">{p.copy}</p>
+                <span className="lp-trust-card-hint" aria-hidden>
+                  {on ? "Open ↓" : "Tap"}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="lp-trust-detail" key={active} aria-live="polite">
+          <div className="lp-trust-detail-top">
+            <span className="lp-trust-detail-n">{activePromise.n}</span>
+            <span className="lp-trust-detail-proof">{activePromise.proof}</span>
           </div>
+          <p className="lp-trust-detail-title">{activePromise.title}</p>
+          <p className="lp-trust-detail-body">{activePromise.detail}</p>
+        </div>
+
+        <div className="lp-trust-bar">
+          <p className="lp-trust-bar-line">
+            Ready when you are — QR, UPI, token. No marketplace cut.
+          </p>
+          <Link href="/get-started" className="lp-trust-cta">
+            Set up my stall
+            <span aria-hidden>→</span>
+          </Link>
         </div>
       </Reveal>
     </section>
