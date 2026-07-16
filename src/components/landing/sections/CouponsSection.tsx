@@ -29,7 +29,7 @@ const CARDS = [
     href: "/demo/admin",
     variant: "admin" as const,
     label: "C · Owner desk",
-    device: "Desktop",
+    device: "Your phone",
     title: "Today’s cash, one page",
     copy: "Orders, sold-out, QR poster, staff — your stall desk. Commission stays at zero.",
     cta: "Open admin demo",

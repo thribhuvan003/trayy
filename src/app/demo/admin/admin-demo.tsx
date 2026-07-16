@@ -48,7 +48,7 @@ const STAFF = [
   { name: "Stall owner", role: "Menus, prices, staff, payouts", scope: "This stall", scopeColor: "#1E5A3C" },
   { name: "Counter hand 1", role: "Queue board · tickets & OTP only", scope: "Queue only", scopeColor: "#2C50B0" },
   { name: "Counter hand 2", role: "Queue board · tickets & OTP only", scope: "Queue only", scopeColor: "#2C50B0" },
-  { name: "Street office", role: "Read-only · cross-stall revenue", scope: "Whole street", scopeColor: "#B03A2A" },
+  { name: "Partner (family)", role: "Read-only · today's hisaab", scope: "Money view", scopeColor: "#B03A2A" },
 ];
 
 function fmtMoney(n: number) {
@@ -118,8 +118,13 @@ export function AdminDemo() {
           time: fmtClock(x.placedAt || Date.now()),
         }))
     : [];
-  const allOrders = [...inbox.slice().reverse(), ...c.orders.map((o) => ({ ...o, student: o.student }))];
+  // Static seed orders get times relative to now, so the book never looks stale.
+  const allOrders = [
+    ...inbox.slice().reverse(),
+    ...c.orders.map((o, i) => ({ ...o, student: o.student, time: fmtClock(nowTs - (i + 2) * 150000) })),
+  ];
   const collectedTotal = allOrders.filter((o) => o.status === "collected").reduce((a, o) => a + (o.total || 0), 0);
+  const inKitchenTotal = allOrders.filter((o) => o.status !== "collected").reduce((a, o) => a + (o.total || 0), 0);
 
   // Live ₹ today = KPI base + inbox totals for this stall (demo still “feels” live)
   const liveInboxRev = inbox.reduce((a, o) => a + (o.total || 0), 0);
@@ -136,10 +141,15 @@ export function AdminDemo() {
   const storedSpecials = ready ? getSpecials(c.id) : [];
   const specials = storedSpecials.length ? storedSpecials : c.defaultSpecials;
 
-  // ---- audit ----
+  // ---- audit (seed rows shown relative to now) ----
   const auditRows: AuditEntry[] = [
     ...localAudit,
-    ...c.audit.map((a) => ({ t: a.t, type: a.type.toUpperCase(), who: a.who, msg: a.msg })),
+    ...c.audit.map((a, i) => ({
+      t: fmtClock(nowTs - (i + 1) * 11 * 60000),
+      type: a.type.toUpperCase(),
+      who: a.who,
+      msg: a.msg,
+    })),
   ];
 
   const today = new Date(nowTs).toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
@@ -160,7 +170,7 @@ export function AdminDemo() {
     <div className={`ad ${adminFontVars}`}>
       {/* Demo strip */}
       <div className="ad-strip">
-        <span className="ad-strip-label">Demo · orders from customer land here</span>
+        <span className="ad-strip-label">Sample stall · no real money</span>
         <span className="ad-strip-links">
           <Link href="/" className="ad-strip-link">
             ← Home
@@ -206,6 +216,7 @@ export function AdminDemo() {
             </button>
           );
         })}
+        <span className="ad-stalls-note">3 sample stalls — each sealed &amp; separate</span>
       </div>
 
       {/* Bottom-ish segment tabs (also sticky under header) */}
@@ -231,6 +242,7 @@ export function AdminDemo() {
         {/* ============ TODAY ============ */}
         {view === "today" && (
           <div className="ad-panel" style={{ animation: "adRowIn .28s ease both" }}>
+            <div className="ad-col ad-col--a">
             {/* Huge Today ₹ */}
             <section className="ad-today-hero">
               <div className="ad-today-label">Today ₹</div>
@@ -306,12 +318,14 @@ export function AdminDemo() {
                 </div>
               </div>
             </section>
+            </div>
 
+            <div className="ad-col ad-col--b">
             {/* Live order list */}
             <section className="ad-section">
               <div className="ad-section-head">
                 <h2>Orders</h2>
-                <span>Newest first</span>
+                <span>Last {allOrders.length} · newest first</span>
               </div>
               <ul className="ad-order-list">
                 {allOrders.map((o, i) => {
@@ -334,9 +348,16 @@ export function AdminDemo() {
                   );
                 })}
               </ul>
-              <div className="ad-carried">
-                <span>Collected so far</span>
-                <b>₹{fmtMoney(collectedTotal)}</b>
+              <div className="ad-recon">
+                <div className="ad-recon-row">
+                  <span>Collected (these {allOrders.length})</span>
+                  <b>₹{fmtMoney(collectedTotal)}</b>
+                </div>
+                <div className="ad-recon-row">
+                  <span>Still in kitchen</span>
+                  <b>₹{fmtMoney(inKitchenTotal)}</b>
+                </div>
+                <div className="ad-recon-match">Every order matched to {c.upi} ✓</div>
               </div>
             </section>
 
@@ -365,12 +386,14 @@ export function AdminDemo() {
                 </p>
               </div>
             </section>
+            </div>
           </div>
         )}
 
         {/* ============ MENU ============ */}
         {view === "menu" && (
           <div className="ad-panel" style={{ animation: "adRowIn .28s ease both" }}>
+            <div className="ad-col ad-col--a">
             <section className="ad-section">
               <div className="ad-section-head">
                 <h2>Menu</h2>
@@ -436,7 +459,9 @@ export function AdminDemo() {
               </ul>
               <p className="ad-hint">Sold-out items disappear from the customer menu instantly.</p>
             </section>
+            </div>
 
+            <div className="ad-col ad-col--b">
             <section className="ad-section">
               <div className="ad-section-head">
                 <h2>Today&apos;s specials</h2>
@@ -479,12 +504,14 @@ export function AdminDemo() {
                 </div>
               )}
             </section>
+            </div>
           </div>
         )}
 
         {/* ============ STAFF ============ */}
         {view === "staff" && (
           <div className="ad-panel" style={{ animation: "adRowIn .28s ease both" }}>
+            <div className="ad-col ad-col--a">
             <section className="ad-section">
               <div className="ad-section-head">
                 <h2>Staff</h2>
@@ -504,32 +531,36 @@ export function AdminDemo() {
                   </li>
                 ))}
               </ul>
-              <p className="ad-hint">Kitchen logins see only their own queue.</p>
+              <p className="ad-hint">Counter logins see the queue, never the money. Only the owner sees the hisaab.</p>
             </section>
+            </div>
 
+            <div className="ad-col ad-col--b">
             <section className="ad-section">
               <div className="ad-section-head">
                 <h2>Regulars</h2>
                 <span>This month</span>
               </div>
               <ul className="ad-reg-list">
-                {c.studentRows.map((sr) => (
+                {c.studentRows.map((sr, i) => (
                   <li key={sr.roll} className="ad-reg">
                     <span className="ad-reg-name">{sr.name}</span>
                     <span className="ad-reg-meta">
                       {sr.orders} orders · ₹{fmtMoney(sr.spend)}
                     </span>
-                    <span className="ad-reg-last">{sr.last}</span>
+                    <span className="ad-reg-last">{fmtClock(nowTs - (i + 2) * 9 * 60000)}</span>
                   </li>
                 ))}
               </ul>
             </section>
+            </div>
           </div>
         )}
 
         {/* ============ SETTINGS ============ */}
         {view === "settings" && (
           <div className="ad-panel" style={{ animation: "adRowIn .28s ease both" }}>
+            <div className="ad-col ad-col--a">
             <section className="ad-section">
               <div className="ad-section-head">
                 <h2>Settlement</h2>
@@ -541,7 +572,9 @@ export function AdminDemo() {
                 <p style={{ marginTop: 8 }}>Commission 0%. Tray never holds the money.</p>
               </div>
             </section>
+            </div>
 
+            <div className="ad-col ad-col--b">
             <section className="ad-section">
               <div className="ad-section-head">
                 <h2>Activity log</h2>
@@ -568,6 +601,7 @@ export function AdminDemo() {
               </ul>
               <p className="ad-hint">Price edits and sold-out toggles append here live.</p>
             </section>
+            </div>
           </div>
         )}
       </main>

@@ -103,15 +103,14 @@ function Hero({ label }: { label: string }) {
 
 function RegisterLine() {
   const items = [
-    { id: "order", node: <>12:47 — T-2425 <b>ORDER ₹120</b></> },
-    { id: "upi", node: <>UPI OPEN</> },
-    { id: "paid", node: <>PAID · STALL VPA</> },
-    { id: "token", node: <><b>TOKEN DIKHAO</b></> },
+    { id: "order", node: <>12:47 — token T-2425 <b>pays ₹120</b></> },
+    { id: "paid", node: <>money lands in the stall&apos;s UPI</> },
+    { id: "token", node: <><b>token shown at the glass</b></> },
     {
       id: "collected",
-      node: <span className="lp-register-accent">COLLECTED</span>,
+      node: <span className="lp-register-accent">handed over ✓</span>,
     },
-    { id: "hisaab", node: <>HISAAB UPDATE</> },
+    { id: "hisaab", node: <>hisaab updates itself</> },
   ];
   const track = [...items, ...items];
   return (

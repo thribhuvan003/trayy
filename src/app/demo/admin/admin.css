@@ -941,3 +941,95 @@
     max-width: 36%;
   }
 }
+
+/* ── P0 upgrade: reconciliation block, stall note, real desktop layout ── */
+
+/* Stall picker caption */
+.ad-stalls-note {
+  align-self: center;
+  flex-shrink: 0;
+  font-family: var(--font-courier), monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(35, 32, 25, 0.55);
+  padding-left: 4px;
+  white-space: nowrap;
+}
+
+/* Reconciliation summary under the order list — the hisaab must always add up */
+.ad-recon {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 2px solid #1e5a3c;
+}
+.ad-recon-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 3px 0;
+  font-family: var(--font-courier), monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(35, 32, 25, 0.62);
+}
+.ad-recon-row b {
+  font-family: var(--font-alegreya), serif;
+  font-size: 19px;
+  letter-spacing: 0;
+  color: #1e5a3c;
+  font-variant-numeric: tabular-nums;
+}
+.ad-recon-match {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1.5px dashed rgba(30, 90, 60, 0.5);
+  border-radius: 4px;
+  background: rgba(30, 90, 60, 0.06);
+  font-family: var(--font-courier), monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #1e5a3c;
+}
+
+/* Column wrappers are invisible on phones… */
+.ad-col {
+  display: contents;
+}
+
+/* …and become a real owner's desk on wide screens */
+@media (min-width: 1024px) {
+  body:has(.ad) {
+    background: #efe9db;
+  }
+  .ad {
+    max-width: 1100px;
+    margin: 0 auto;
+    border-left: 1px solid rgba(35, 32, 25, 0.14);
+    border-right: 1px solid rgba(35, 32, 25, 0.14);
+    box-shadow: 0 24px 60px -30px rgba(35, 32, 25, 0.35);
+  }
+  .ad-col {
+    display: block;
+    min-width: 0;
+  }
+  .ad-panel {
+    display: flex;
+    align-items: flex-start;
+  }
+  .ad-col--a {
+    flex: 0 0 44%;
+    border-right: 1px solid rgba(35, 32, 25, 0.12);
+    min-height: 100%;
+  }
+  .ad-col--b {
+    flex: 1 1 auto;
+  }
+  .ad-main {
+    padding-bottom: 48px;
+  }
+}
