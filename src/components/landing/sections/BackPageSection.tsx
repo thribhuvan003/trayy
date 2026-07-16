@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
 import { Reveal } from "@/components/landing/reveal";
 
 /**
@@ -59,7 +58,7 @@ export function BackPageSection() {
             <em>your</em> UPI.
           </h2>
           <p className="lp-trust-lede">
-            Four promises. Tap one for the owner answer — not another feature list.
+            Four promises, each with the straight answer underneath.
           </p>
         </header>
 
@@ -80,7 +79,7 @@ export function BackPageSection() {
                 <h3 className="lp-trust-card-title">{p.title}</h3>
                 <p className="lp-trust-card-copy">{p.copy}</p>
                 <span className="lp-trust-card-hint" aria-hidden>
-                  {on ? "Open ↓" : "Tap"}
+                  {on ? "Open ↓" : "Open"}
                 </span>
               </button>
             );
@@ -96,15 +95,6 @@ export function BackPageSection() {
           <p className="lp-trust-detail-body">{activePromise.detail}</p>
         </div>
 
-        <div className="lp-trust-bar">
-          <p className="lp-trust-bar-line">
-            Ready when you are — QR, UPI, token. No marketplace cut.
-          </p>
-          <Link href="/get-started" className="lp-trust-cta">
-            Set up my stall
-            <span aria-hidden>→</span>
-          </Link>
-        </div>
       </div>
     </Reveal>
   );

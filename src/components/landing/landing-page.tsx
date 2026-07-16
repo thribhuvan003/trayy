@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { ResolvedTenant } from "@/lib/tenant";
 import { landingFontVars } from "@/components/landing/fonts";
 import { LandingIntro } from "@/components/landing/intro";
+import { Masthead } from "@/components/landing/masthead";
 import { CouponsSection } from "@/components/landing/sections/CouponsSection";
 import { WalkthroughSection } from "@/components/landing/sections/WalkthroughSection";
 import { LedgerSection } from "@/components/landing/sections/LedgerSection";
@@ -10,41 +11,6 @@ import { CarbonSection } from "@/components/landing/sections/CarbonSection";
 import { BackPageSection } from "@/components/landing/sections/BackPageSection";
 import { QuoteSection } from "@/components/landing/sections/QuoteSection";
 import "./ledger.css";
-
-function Masthead() {
-  return (
-    <header className="lp-masthead">
-      <div className="lp-masthead-inner">
-        <a href="#top" className="lp-brand">
-          <span className="lp-brand-name">Tray</span>
-          <span className="lp-brand-tag">Street edition</span>
-        </a>
-        <nav className="lp-nav" aria-label="Main">
-          <a href="#how" className="lp-nav-link">
-            How
-          </a>
-          <a href="#demos" className="lp-nav-link">
-            Try demos
-          </a>
-          <a href="#trust" className="lp-nav-link">
-            For owners
-          </a>
-          <Link href="/get-started" className="lp-nav-link lp-nav-link--cta">
-            Set up stall
-          </Link>
-        </nav>
-        <div className="lp-masthead-actions">
-          <Link href="/login" className="lp-signin">
-            Sign in
-          </Link>
-          <Link href="/get-started" className="lp-masthead-cta">
-            Set up stall
-          </Link>
-        </div>
-      </div>
-    </header>
-  );
-}
 
 function MealToken({ label }: { label: string }) {
   return (
@@ -82,7 +48,7 @@ function MealToken({ label }: { label: string }) {
   );
 }
 
-function Hero({ label, menuHref }: { label: string; menuHref: string }) {
+function Hero({ label }: { label: string }) {
   return (
     <section id="top" className="lp-hero">
       <div className="lp-hero-copy">
@@ -92,28 +58,28 @@ function Hero({ label, menuHref }: { label: string; menuHref: string }) {
         </div>
 
         <h1 className="lp-h1">
-          <span className="lp-h1-line">Order on the phone.</span>
-          <span className="lp-h1-line">Pay the stall&apos;s UPI.</span>
-          <span className="lp-h1-line lp-h1-line--accent">Pick up with a token.</span>
+          <span className="lp-h1-line">Customers scan &amp; pay.</span>
+          <span className="lp-h1-line">Straight to your UPI.</span>
+          <span className="lp-h1-line lp-h1-line--accent">You keep every rupee.</span>
         </h1>
 
         <p className="lp-hero-lede">
-          Built for the crush outside a dosa cart — not for delivery apps. Zero commission. Money
-          never sits with Tray. Kitchen screen only if you need staff.
+          Built for the crush outside a dosa cart — not another delivery app. Money goes phone →
+          your VPA, and Tray never takes a cut of an order.
         </p>
 
-        <ol className="lp-hero-steps" aria-label="How it works">
+        <ol className="lp-hero-steps" aria-label="How your customers order">
           <li>
             <b>1</b>
-            <span>Scan the stall QR</span>
+            <span>They scan your QR</span>
           </li>
           <li>
             <b>2</b>
-            <span>Pay their UPI</span>
+            <span>They pay your UPI</span>
           </li>
           <li>
             <b>3</b>
-            <span>Show token at counter</span>
+            <span>Token at your counter</span>
           </li>
         </ol>
 
@@ -122,13 +88,12 @@ function Hero({ label, menuHref }: { label: string; menuHref: string }) {
             Set up my stall
           </Link>
           <Link href="/demo/student" className="lp-underline-link">
-            Try customer demo
+            Try the demo — no sign-up
           </Link>
         </div>
         <p className="lp-hero-note">
-          Demos use sample data.{" "}
-          <Link href={menuHref}>Open a sample menu</Link>
-          .
+          How is it free? Zero commission, ever — paid optional tools come later, never a silent
+          fee on every dosa.
         </p>
       </div>
       <MealToken label={label} />
@@ -178,7 +143,7 @@ function Footer({ menuHref }: { menuHref: string }) {
 
           <nav className="lp-foot-chips" aria-label="Footer links">
             <Link href="/get-started" className="lp-foot-chip lp-foot-chip--hot">
-              Set up stall
+              Set up my stall
             </Link>
             <Link href="/demo/student" className="lp-foot-chip">
               Try demos
@@ -229,7 +194,7 @@ export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
       <div className="lp-shell">
         <Masthead />
         <main id="main">
-          <Hero label={label} menuHref={menuHref} />
+          <Hero label={label} />
           <RegisterLine />
           <CouponsSection />
           <WalkthroughSection />

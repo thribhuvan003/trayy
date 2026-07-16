@@ -2810,3 +2810,84 @@
     --lp-pad-x: 48px;
   }
 }
+
+/* ── P0 fixes: mobile nav menu + stamp containment ─────────────────── */
+
+/* Mobile menu trigger — visible only below the desktop nav breakpoint */
+.lp-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: var(--lp-tap);
+  padding: 8px 12px;
+  border: 2px solid var(--ink);
+  background: var(--paper-bright);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+.lp-menu-btn:hover { background: var(--paper); }
+
+/* Disclosure panel under the masthead */
+.lp-mobile-menu {
+  border-top: 1.5px solid var(--lp-rule);
+  background: var(--paper-bright);
+}
+.lp-mobile-menu-list {
+  display: flex;
+  flex-direction: column;
+  padding: 6px var(--lp-pad-x) 14px;
+}
+.lp-mobile-link {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 4px 2px;
+  border-bottom: 1px solid var(--lp-rule);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 15.5px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.lp-mobile-link:last-child { border-bottom: none; }
+.lp-mobile-link--cta {
+  margin-top: 10px;
+  justify-content: center;
+  border: 2px solid var(--ink);
+  background: var(--signal);
+  color: #fff;
+}
+
+@media (min-width: 720px) {
+  .lp-menu-btn { display: none; }
+  .lp-mobile-menu { display: none; }
+}
+
+/* Walkthrough scene stamps hang off the card edge on desktop for the
+   rubber-stamp effect; on small screens that overflowed the viewport
+   and caused horizontal wobble. Clamp them inside the card. */
+@media (max-width: 719px) {
+  .lp-scene-stamp {
+    right: 6px !important;
+    font-size: 13px !important;
+    letter-spacing: 0.1em !important;
+    padding: 5px 10px !important;
+  }
+  /* Belt and braces: the stage never leaks horizontally */
+  .lp-stage { overflow: hidden; }
+}
+
+/* Carbon sheet: the SOLD OUT overlay stamp collided with truncated
+   item names on narrow cards. The right-hand status chip already says
+   "Sold out", so the decorative overlay rests on desktop only. */
+@media (max-width: 719px) {
+  .lp-sync-card--customer .lp-sync-row.is-sold::after,
+  .lp-sync-card--admin .lp-sync-row.is-sold::after {
+    display: none;
+  }
+}

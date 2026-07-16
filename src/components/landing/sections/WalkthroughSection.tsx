@@ -29,11 +29,28 @@ function SceneStudent() {
           boxSizing: "border-box",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "baseline",
+            marginBottom: 14,
+            flexWrap: "wrap",
+            gap: "4px 12px",
+          }}
+        >
           <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".18em", color: "#E8C860" }}>
             CUSTOMER · TODAY&apos;S BOARD
           </span>
-          <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".12em", color: "rgba(242,238,226,.5)" }}>
+          <span
+            style={{
+              fontFamily: MONO,
+              fontSize: 10.5,
+              letterSpacing: ".12em",
+              color: "rgba(242,238,226,.5)",
+              whiteSpace: "nowrap",
+            }}
+          >
             STALL NO. 7 · MG ROAD
           </span>
         </div>
@@ -77,6 +94,7 @@ function SceneStudent() {
       </div>
       <div
         aria-hidden
+        className="lp-scene-stamp"
         style={{
           position: "absolute",
           top: "34%",
@@ -179,11 +197,31 @@ function SceneOtp() {
           boxSizing: "border-box",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "baseline",
+            marginBottom: 16,
+            flexWrap: "wrap",
+            gap: "4px 12px",
+          }}
+        >
           <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".18em", color: "#7FB79A" }}>
             KITCHEN · READY — VERIFY OTP
           </span>
-          <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".12em", color: "rgba(237,234,224,.45)" }}>T-2431</span>
+          <span
+            style={{
+              fontFamily: MONO,
+              fontSize: 10.5,
+              letterSpacing: ".12em",
+              color: "rgba(237,234,224,.45)",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+            }}
+          >
+            T-2431
+          </span>
         </div>
         <div style={{ background: "#F8F4E8", color: "#23201A", borderRadius: 5, borderLeft: "5px solid #2E7D52", padding: "18px 20px" }}>
           <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".14em", color: "rgba(35,32,26,.55)", marginBottom: 10 }}>
@@ -229,6 +267,7 @@ function SceneOtp() {
       </div>
       <div
         aria-hidden
+        className="lp-scene-stamp"
         style={{
           position: "absolute",
           bottom: 22,
@@ -359,6 +398,7 @@ function SceneAdmin() {
       </div>
       <div
         aria-hidden
+        className="lp-scene-stamp"
         style={{
           position: "absolute",
           top: -16,
@@ -413,7 +453,7 @@ export function WalkthroughSection() {
           <p className="lp-sec-kicker">02 · Watch one order</p>
           <h2 className="lp-sec-title">One order, four screens</h2>
           <p className="lp-sec-lede">
-            About 20 seconds. Real UI patterns, auto-playing. Tap a step to jump.
+            About 20 seconds, auto-playing — the actual flow on sample data. Pick a step to jump.
           </p>
           <div className="lp-chips">
             <span className="lp-chip">QR → UPI → token</span>

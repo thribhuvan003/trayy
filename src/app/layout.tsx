@@ -160,7 +160,7 @@ const SITE_URL = process.env.APP_URL ?? "https://trayy.vercel.app";
 
 export const metadata: Metadata = {
   title: {
-    default: "Tray — Street food, without the queue.",
+    default: "Tray — Zero cut. Their UPI. Your token.",
     template: "%s · Tray",
   },
   description:
