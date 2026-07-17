@@ -87,7 +87,7 @@ Italic emphasis uses Newsreader Italic + `accent/warm`.
 
 ## Motion (for Figma prototyping / dev handoff)
 
-**Tier:** medium+ (tasteful bold). GSAP in `landing-motion.tsx`; hybrid stack per `docs/research/senior-dev-animation-decision.md`.
+**Tier:** medium+ (tasteful bold). GSAP in `landing-motion.tsx`; hybrid GSAP + CSS motion stack.
 
 | Section | Scroll behavior (GSAP) |
 |---------|-------------------------|
