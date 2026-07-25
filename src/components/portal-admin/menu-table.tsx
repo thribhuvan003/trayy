@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { CheckCircle2, CircleDot, EyeOff, Power, PowerOff } from "lucide-react";
 import { toast } from "sonner";
 import { formatRupees, cn, fmtElapsed } from "@/lib/utils";
@@ -20,11 +21,15 @@ type Row = {
 };
 
 export function MenuTable({ items, categories, tenantSlug }: { items: Row[]; categories: { id: string; name: string }[]; tenantSlug: string }) {
+  const router = useRouter();
+  const [displayItems, setDisplayItems] = useState(items);
   const [filter, setFilter] = useState<"all" | "live" | "draft" | "archived">("all");
   const [search, setSearch] = useState("");
   const [pending, start] = useTransition();
   const needle = search.trim().toLowerCase();
-  const filtered = items.filter((i) => {
+  useEffect(() => setDisplayItems(items), [items]);
+
+  const filtered = displayItems.filter((i) => {
     if (filter !== "all" && i.status !== filter) return false;
     if (!needle) return true;
     return i.name.toLowerCase().includes(needle);
@@ -35,14 +40,26 @@ export function MenuTable({ items, categories, tenantSlug }: { items: Row[]; cat
     start(async () => {
       const r = await setMenuItemStatus(id, status);
       if (!r.ok) toast.error(r.error ?? "Failed");
-      else toast.success(`Moved to ${status}`);
+      else {
+        setDisplayItems((current) =>
+          current.map((item) => (item.id === id ? { ...item, status } : item))
+        );
+        toast.success(`Moved to ${status}`);
+        router.refresh();
+      }
     });
   };
   const onStock = (id: string, inStock: boolean) => {
     start(async () => {
       const r = await setMenuItemStock(id, inStock);
       if (!r.ok) toast.error(r.error ?? "Failed");
-      else toast.success(inStock ? "Back in stock" : "Marked out of stock");
+      else {
+        setDisplayItems((current) =>
+          current.map((item) => (item.id === id ? { ...item, in_stock: inStock } : item))
+        );
+        toast.success(inStock ? "Back in stock" : "Marked out of stock");
+        router.refresh();
+      }
     });
   };
 

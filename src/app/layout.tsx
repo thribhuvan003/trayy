@@ -13,6 +13,7 @@ import { headers } from "next/headers";
 const clashDisplay = localFont({
   variable: "--font-clash",
   display: "swap",
+  preload: false,
   src: [
     { path: "./fonts/ClashDisplay-400.woff2", weight: "400", style: "normal" },
     { path: "./fonts/ClashDisplay-500.woff2", weight: "500", style: "normal" },
@@ -23,6 +24,7 @@ const clashDisplay = localFont({
 const switzer = localFont({
   variable: "--font-switzer",
   display: "swap",
+  preload: false,
   src: [
     { path: "./fonts/Switzer-400.woff2", weight: "400", style: "normal" },
     { path: "./fonts/Switzer-500.woff2", weight: "500", style: "normal" },
@@ -40,22 +42,26 @@ const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
   display: "swap",
+  preload: false,
 });
 const fraunces = Fraunces({
   subsets: ["latin"],
   variable: "--font-fraunces",
   display: "swap",
+  preload: false,
   axes: ["opsz", "SOFT"],
 });
 const manrope = Manrope({
   subsets: ["latin"],
   variable: "--font-manrope",
   display: "swap",
+  preload: false,
 });
 const jetbrains = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-jetbrains",
   display: "swap",
+  preload: false,
 });
 const instrumentSerif = Instrument_Serif({
   subsets: ["latin"],
@@ -63,6 +69,7 @@ const instrumentSerif = Instrument_Serif({
   style: ["normal", "italic"],
   variable: "--font-instrument-serif",
   display: "swap",
+  preload: false,
 });
 const newsreader = Newsreader({
   subsets: ["latin"],
@@ -70,11 +77,13 @@ const newsreader = Newsreader({
   style: ["normal", "italic"],
   variable: "--font-newsreader",
   display: "swap",
+  preload: false,
 });
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
   variable: "--font-space-grotesk",
   display: "swap",
+  preload: false,
 });
 // Expressive typography — landing + customer portal art direction
 const bebasNeue = Bebas_Neue({
@@ -82,6 +91,7 @@ const bebasNeue = Bebas_Neue({
   weight: "400",
   variable: "--font-bebas",
   display: "swap",
+  preload: false,
 });
 // Note: bigShoulders removed — was a duplicate Barlow_Condensed instantiation;
 // barlowCondensed (line below) covers the same font with full weight range.
@@ -91,17 +101,20 @@ const cormorant = Cormorant_Garamond({
   style: ["normal", "italic"],
   variable: "--font-cormorant",
   display: "swap",
+  preload: false,
 });
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-jakarta",
   display: "swap",
+  preload: false,
 });
 const barlowCondensed = Barlow_Condensed({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800", "900"],
   variable: "--font-barlow",
   display: "swap",
+  preload: false,
 });
 const dmSerif = DM_Serif_Display({
   subsets: ["latin"],
@@ -109,16 +122,19 @@ const dmSerif = DM_Serif_Display({
   style: ["normal", "italic"],
   variable: "--font-dm-serif",
   display: "swap",
+  preload: false,
 });
 const geist = Geist({
   subsets: ["latin"],
   variable: "--font-geist",
   display: "swap",
+  preload: false,
 });
 const geistMono = Geist_Mono({
   subsets: ["latin"],
   variable: "--font-geist-mono",
   display: "swap",
+  preload: false,
 });
 const dmMono = DM_Mono({
   subsets: ["latin"],
@@ -126,34 +142,40 @@ const dmMono = DM_Mono({
   style: ["normal", "italic"],
   variable: "--font-dm-mono",
   display: "swap",
+  preload: false,
 });
 const kronaOne = Krona_One({
   subsets: ["latin"],
   weight: "400",
   variable: "--font-krona-one",
   display: "swap",
+  preload: false,
 });
 const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
   variable: "--font-bricolage",
   display: "swap",
+  preload: false,
 });
 // Neobrutalist customer-portal art direction — distinctive, non-generic type.
 const unbounded = Unbounded({
   subsets: ["latin"],
   variable: "--font-unbounded",
   display: "swap",
+  preload: false,
 });
 const hankenGrotesk = Hanken_Grotesk({
   subsets: ["latin"],
   variable: "--font-hanken",
   display: "swap",
+  preload: false,
 });
 const spaceMono = Space_Mono({
   subsets: ["latin"],
   weight: ["400", "700"],
   variable: "--font-space-mono",
   display: "swap",
+  preload: false,
 });
 
 const SITE_URL = process.env.APP_URL ?? "https://trayy.vercel.app";

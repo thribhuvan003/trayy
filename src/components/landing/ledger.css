@@ -49,7 +49,7 @@
   --text: #1c1916;
   --lp-text: #1c1916;
   --lp-text-soft: #4a433c;
-  --lp-text-faint: #7a7268;
+  --lp-text-faint: #625a51;
   --brass: #c4a35a;
   --lp-gold: #c4a35a;
   --cream: #f7f0e4;
@@ -701,7 +701,7 @@
   padding: 8px 2px;
 }
 .lp-masthead-cta {
-  display: inline-flex;
+  display: none;
   align-items: center;
   justify-content: center;
   min-height: var(--lp-tap);
@@ -2445,7 +2445,7 @@
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(247, 240, 228, 0.38);
+  color: rgba(247, 240, 228, 0.72);
   line-height: 1.5;
   max-width: 28ch;
   order: 2;
@@ -2800,7 +2800,23 @@
     display: none;
   }
   .lp-hero-plate-l {
-    max-width: 70%;
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    line-height: 1.35;
+  }
+  .lp-hero-plate {
+    align-items: flex-start;
+  }
+  .lp-masthead-inner {
+    gap: 6px;
+  }
+  .lp-signin {
+    padding-inline: 4px;
+  }
+  .lp-menu-btn {
+    padding-inline: 9px;
   }
 }
 

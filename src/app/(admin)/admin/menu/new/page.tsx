@@ -5,6 +5,7 @@ import { createMenuItem } from "@/app/(admin)/admin/_actions";
 import { requireTenantContext } from "@/lib/tenant";
 import { ImageUploadField } from "@/components/portal-admin/image-upload-field";
 import { CategorySelect } from "@/components/portal-admin/category-select";
+import { sanitizeMenuImageUrl } from "@/lib/menu-image";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,7 @@ export default async function NewMenuItemPage() {
     const description = (formData.get("description") as string | null)?.trim() || null;
     const diet = (formData.get("diet") as "veg" | "nonveg" | "egg") ?? "veg";
     const category_id = (formData.get("category_id") as string | null) || null;
-    const image_url = (formData.get("image_url") as string | null)?.trim() || null;
+    const image_url = sanitizeMenuImageUrl(formData.get("image_url"));
     const sort_order = parseInt((formData.get("sort_order") as string | null) ?? "0", 10) || 0;
     const is_special = formData.get("is_special") === "on";
 

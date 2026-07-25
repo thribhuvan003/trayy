@@ -155,7 +155,7 @@ function Field({
         <span style={{ fontSize: 12, color: "var(--gs-ink-muted)" }}>{hint}</span>
       )}
       {error && (
-        <span style={{ fontSize: 12, color: "#ef5749", display: "flex", alignItems: "center", gap: 4 }}>
+        <span role="alert" style={{ fontSize: 12, color: "#b42318", display: "flex", alignItems: "center", gap: 4 }}>
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
             <circle cx="6" cy="6" r="5" stroke="#ef5749" strokeWidth="1.5" />
             <path d="M6 4v3M6 8.5v.01" stroke="#ef5749" strokeWidth="1.5" strokeLinecap="round" />
@@ -253,6 +253,7 @@ function Step1({
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <Field label="Institution name" error={errors.institutionName}>
         <TextInput
+          aria-label="Institution name"
           placeholder="e.g. IIT Bombay, Hotel Taj, Infosys Campus"
           value={data.institutionName}
           onChange={(e) => onChange("institutionName", e.target.value)}
@@ -263,6 +264,8 @@ function Step1({
 
       <Field label="Institution type" error={errors.institutionType}>
         <SelectInput
+          aria-label="Institution type"
+          name="institutionType"
           value={data.institutionType}
           onChange={(e) => handleTypeChange(e.target.value)}
           error={errors.institutionType}
@@ -281,6 +284,7 @@ function Step1({
 
       <Field label="City" error={errors.city}>
         <TextInput
+          aria-label="City"
           placeholder="e.g. Mumbai, Delhi, Bengaluru"
           value={data.city}
           onChange={(e) => onChange("city", e.target.value)}
@@ -297,6 +301,7 @@ function Step1({
           <div style={{ position: "relative" }}>
             <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--gs-ink-muted)", fontSize: 14, pointerEvents: "none" }}>@</span>
             <input
+              aria-label="Institution email domain"
               style={{ ...inputStyle, paddingLeft: 28 }}
               placeholder="iitb.ac.in"
               value={data.emailDomain}
@@ -344,6 +349,7 @@ function Step2({
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <Field label="Outlet name" error={errors.canteenName}>
         <TextInput
+          aria-label="Outlet name"
           placeholder="e.g. Guru Meals, Block A Mess, Anna's Chaat"
           value={data.canteenName}
           onChange={(e) => onChange("canteenName", e.target.value)}
@@ -354,6 +360,7 @@ function Step2({
 
       <Field label="Landmark or location" error={errors.canteenBuilding}>
         <TextInput
+          aria-label="Landmark or location"
           placeholder="e.g. Near PG gate no. 2, MG Road, Building C"
           value={data.canteenBuilding}
           onChange={(e) => onChange("canteenBuilding", e.target.value)}
@@ -366,6 +373,7 @@ function Step2({
         hint="e.g. canteen@okaxis — customers pay directly to this VPA. Optional."
       >
         <TextInput
+          aria-label="UPI address"
           placeholder="canteen@okaxis"
           value={data.upiVpa}
           onChange={(e) => onChange("upiVpa", e.target.value)}
@@ -423,6 +431,7 @@ function Step2({
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <Field label="Opens at">
           <input
+            aria-label="Opening time"
             type="time"
             style={inputStyle}
             value={data.opensAt}
@@ -431,6 +440,7 @@ function Step2({
         </Field>
         <Field label="Closes at">
           <input
+            aria-label="Closing time"
             type="time"
             style={inputStyle}
             value={data.closesAt}
@@ -459,6 +469,7 @@ function Step3({
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <Field label="Your name" error={errors.adminName}>
         <TextInput
+          aria-label="Your name"
           placeholder="Full name"
           value={data.adminName}
           onChange={(e) => onChange("adminName", e.target.value)}
@@ -470,6 +481,7 @@ function Step3({
 
       <Field label="Your email" error={errors.adminEmail}>
         <TextInput
+          aria-label="Your email"
           type="email"
           placeholder="you@example.com"
           value={data.adminEmail}
@@ -482,6 +494,7 @@ function Step3({
       <Field label="Create password" error={errors.adminPassword} hint="Minimum 8 characters">
         <div style={{ position: "relative" }}>
           <input
+            aria-label="Create password"
             type={showPassword ? "text" : "password"}
             style={{ ...inputStyle, paddingRight: 44, ...(errors.adminPassword ? { borderColor: "#ef5749" } : {}) }}
             placeholder="At least 8 characters"
@@ -669,6 +682,7 @@ export function GetStartedWizard({ isNewUser = false, isSignedIn = false }: { is
   const [step, setStep] = useState<Step>(1);
   const [formData, setFormData] = useState<FormData>(INITIAL_FORM);
   const [errors, setErrors] = useState<FieldErrors>({});
+  const [stepAttempted, setStepAttempted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -678,19 +692,28 @@ export function GetStartedWizard({ isNewUser = false, isSignedIn = false }: { is
   }
 
   function handleNext() {
+    setStepAttempted(true);
     const validate = step === 1 ? validateStep1 : step === 2 ? validateStep2 : validateStep3;
     const errs = validate(formData);
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
     setErrors({});
-    if (step < 3) setStep((prev) => (prev + 1) as Step);
+    if (step < 3) {
+      setStepAttempted(false);
+      setStep((prev) => (prev + 1) as Step);
+    }
   }
 
   function handleBack() {
-    if (step > 1) setStep((prev) => (prev - 1) as Step);
+    if (step > 1) {
+      setErrors({});
+      setStepAttempted(false);
+      setStep((prev) => (prev - 1) as Step);
+    }
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setStepAttempted(true);
     const errs = validateStep3(formData);
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
     setErrors({});
@@ -753,6 +776,7 @@ export function GetStartedWizard({ isNewUser = false, isSignedIn = false }: { is
   }
 
   const title = STEP_TITLES[step];
+  const visibleErrors = stepAttempted ? errors : {};
 
   return (
     <>
@@ -762,7 +786,7 @@ export function GetStartedWizard({ isNewUser = false, isSignedIn = false }: { is
           --gs-surface: #ffffff;
           --gs-line: rgba(10, 22, 40, 0.1);
           --gs-ink: #0a1628;
-          --gs-ink-muted: rgba(10, 22, 40, 0.55);
+            --gs-ink-muted: rgba(10, 22, 40, 0.72);
         }
         @media (prefers-color-scheme: dark) {
           .gs-root {
@@ -770,7 +794,7 @@ export function GetStartedWizard({ isNewUser = false, isSignedIn = false }: { is
             --gs-surface: #0f131a;
             --gs-line: rgba(255, 255, 255, 0.1);
             --gs-ink: #e8ecf2;
-            --gs-ink-muted: rgba(232, 236, 242, 0.55);
+              --gs-ink-muted: rgba(232, 236, 242, 0.72);
           }
         }
         html.dark .gs-root {
@@ -778,7 +802,7 @@ export function GetStartedWizard({ isNewUser = false, isSignedIn = false }: { is
           --gs-surface: #0f131a;
           --gs-line: rgba(255, 255, 255, 0.1);
           --gs-ink: #e8ecf2;
-          --gs-ink-muted: rgba(232, 236, 242, 0.55);
+            --gs-ink-muted: rgba(232, 236, 242, 0.72);
         }
         .gs-input:focus { border-color: #e60000 !important; box-shadow: 0 0 0 3px rgba(230,0,0,0.10); }
         .gs-btn-primary {
@@ -902,9 +926,9 @@ export function GetStartedWizard({ isNewUser = false, isSignedIn = false }: { is
               </p>
 
               <form onSubmit={handleSubmit} noValidate>
-                {step === 1 && <Step1 data={formData} errors={errors} onChange={handleChange} />}
-                {step === 2 && <Step2 data={formData} errors={errors} onChange={handleChange} />}
-                {step === 3 && <Step3 data={formData} errors={errors} onChange={handleChange} />}
+                {step === 1 && <Step1 data={formData} errors={visibleErrors} onChange={handleChange} />}
+                {step === 2 && <Step2 data={formData} errors={visibleErrors} onChange={handleChange} />}
+                {step === 3 && <Step3 data={formData} errors={visibleErrors} onChange={handleChange} />}
 
                 {submitError && (
                   <div

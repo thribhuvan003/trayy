@@ -147,7 +147,7 @@ export default async function SettingsPage() {
             </label>
             <button
               type="submit"
-              className="mt-3 h-8 px-4 rounded-md bg-lime text-graphite-900 text-[12px] font-semibold hover:bg-lime/90 transition-colors"
+              className="mt-3 h-8 px-4 rounded-md bg-[#1b6b3a] text-white text-[12px] font-semibold hover:bg-[#155b31] transition-colors"
             >
               Save open/close
             </button>
@@ -237,7 +237,7 @@ export default async function SettingsPage() {
             <div>
               <button
                 type="submit"
-                className="h-8 px-4 rounded-md bg-lime text-graphite-900 text-[12px] font-semibold hover:bg-lime/90 transition-colors"
+                className="h-8 px-4 rounded-md bg-[#1b6b3a] text-white text-[12px] font-semibold hover:bg-[#155b31] transition-colors"
               >
                 Save hours
               </button>
@@ -282,7 +282,7 @@ export default async function SettingsPage() {
               <p className="text-[11px] font-mono uppercase tracking-[0.1em] text-graphite-400 mb-1">
                 Admin phone (SMS alerts)
               </p>
-              <p className="text-[11px] text-graphite-500 mb-3">
+              <p className="text-[11px] text-[#5f574e] dark:text-graphite-400 mb-3">
                 Enter your mobile number to receive an SMS when a new order arrives.
                 Requires Twilio — leave blank to disable.
               </p>
@@ -333,7 +333,7 @@ export default async function SettingsPage() {
                     <div className="text-[11.5px] text-graphite-400 mt-1 leading-[1.6]">
                       System verifies payment automatically via Razorpay. No &quot;I&apos;ve paid&quot; button, no kitchen manual check needed — orders reach the board <strong className="text-graphite-300">only when money is genuinely captured</strong>. Requires live Razorpay keys in Vercel.
                     </div>
-                    <div className="mt-2 rounded-md px-3 py-2 text-[11px] leading-snug" style={{ background: "rgba(255,174,41,0.1)", border: "1px solid rgba(255,174,41,0.25)", color: "#ffae29" }}>
+                    <div className="mt-2 rounded-md px-3 py-2 text-[11px] leading-snug" style={{ background: "#fff4d6", border: "1px solid #9a6700", color: "#704800" }}>
                       ⏱ <strong>Important:</strong> Money settles to your bank in <strong>1–2 business days</strong> (T+1/T+2) via Razorpay — not instantly. Students see &ldquo;Order confirmed&rdquo; right away, but the bank transfer to you takes 1–2 days. This is how Swiggy, Zomato, and all Razorpay merchants work in India.
                     </div>
                   </div>
@@ -388,7 +388,7 @@ export default async function SettingsPage() {
             <div>
               <button
                 type="submit"
-                className="h-8 px-4 rounded-md bg-lime text-graphite-900 text-[12px] font-semibold hover:bg-lime/90 transition-colors"
+                className="h-8 px-4 rounded-md bg-[#1b6b3a] text-white text-[12px] font-semibold hover:bg-[#155b31] transition-colors"
               >
                 Save settings
               </button>

@@ -2,7 +2,12 @@
 
 import React from "react";
 import Link from "next/link";
-import { getCanteen, listCanteens, type TicketStatus } from "@/app/demo/_lib/data";
+import {
+  DEFAULT_ID,
+  getCanteen,
+  listCanteens,
+  type TicketStatus,
+} from "@/app/demo/_lib/data";
 import {
   INBOX_KEY,
   STORAGE_CANTEEN,
@@ -72,7 +77,7 @@ interface AuditEntry {
 
 export function AdminDemo() {
   const [ready, setReady] = React.useState(false);
-  const [canteenId, setCanteenId] = React.useState<string | null>(null);
+  const [canteenId, setCanteenId] = React.useState(DEFAULT_ID);
   const [view, setView] = React.useState<ViewId>("today");
   const [menuState, setMenuState] = React.useState<Record<string, boolean>>({});
   const [priceDrafts, setPriceDrafts] = React.useState<Record<string, string>>({});
@@ -191,7 +196,7 @@ export function AdminDemo() {
             Tray <span>· aaj ka hisaab</span>
           </div>
           <div className="ad-head-sub">
-            {ready ? c.name : "…"} · {today} · {fmtClock(nowTs)}
+            {c.name} · {today} · {fmtClock(nowTs)}
           </div>
         </div>
         <div className="ad-head-status" style={{ color: stallStatusColor, borderColor: stallStatusColor }}>
@@ -608,7 +613,7 @@ export function AdminDemo() {
 
       <footer className="ad-footer">
         <span>This stall only · sealed from the rest of the street</span>
-        <span className="ad-footer-mark">— Tray · {ready ? today : ""}</span>
+        <span className="ad-footer-mark">— Tray · {today}</span>
       </footer>
     </div>
   );

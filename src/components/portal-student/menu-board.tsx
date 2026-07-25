@@ -44,7 +44,7 @@ type Props = {
 };
 
 export function MenuBoard({
-  categories, items, tenantId, tenantSlug,
+  categories, items: initialItems, tenantId, tenantSlug,
   tenantName: tenantNameProp, siblings = [], user,
   adminName: _adminName = null,
   isOpen: initialIsOpen, pausedUntil: initialPausedUntil,
@@ -54,6 +54,7 @@ export function MenuBoard({
   const [isBrowseOpen, setIsBrowseOpen] = useState(false);
   const [vegOnly, setVegOnly] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [items, setItems] = useState(initialItems);
   const q = useCart((s) => s.searchQuery);
   const setSearchQuery = useCart((s) => s.setSearchQuery);
   const router = useRouter();
@@ -79,6 +80,10 @@ export function MenuBoard({
   useEffect(() => {
     setLiveStatus({ isOpen: initialIsOpen, pausedUntil: initialPausedUntil, pendingCount: initialPendingCount });
   }, [initialIsOpen, initialPausedUntil, initialPendingCount]);
+
+  useEffect(() => {
+    setItems(initialItems);
+  }, [initialItems]);
 
   useEffect(() => {
     const sb = getBrowserClient();
@@ -154,6 +159,19 @@ export function MenuBoard({
   const cartDec = useCart((s) => s.decrement);
   const cartInc = useCart((s) => s.increment);
   const cartAdd = useCart((s) => s.add);
+  const cartRemove = useCart((s) => s.remove);
+  const setOrderingAvailability = useCart((s) => s.setOrderingAvailability);
+  const isClosed = !liveStatus.isOpen;
+  const isPaused =
+    !isClosed &&
+    !!liveStatus.pausedUntil &&
+    new Date(liveStatus.pausedUntil).getTime() > Date.now();
+  const acceptingOrders = !isClosed && !isPaused;
+  const unavailableReason = isClosed
+    ? "This counter is closed. Ordering is unavailable."
+    : isPaused
+      ? `Ordering is paused until ${formatPausedTime(liveStatus.pausedUntil!)}.`
+      : null;
   const cartCount = lines.reduce((acc, l) => acc + l.qty, 0);
   const cartTotal = lines.reduce((acc, l) => acc + l.pricePaise * l.qty, 0);
   const totalFilteredCount = filteredSpecials.length + filteredOther.length;
@@ -167,6 +185,23 @@ export function MenuBoard({
   // True when a specific (non-"all") category is selected but has nothing to show.
   const activeCatEmpty = activeCat !== "all" && !showSpecials && visibleOtherCount === 0;
   const canteenGridCols = siblings.length <= 1 ? 1 : siblings.length === 2 ? 2 : 3;
+
+  useEffect(() => {
+    setOrderingAvailability(acceptingOrders, unavailableReason);
+    return () => setOrderingAvailability(true, null);
+  }, [acceptingOrders, setOrderingAvailability, unavailableReason]);
+
+  // A stock change can arrive while an item is already in the tray. Remove it
+  // immediately so the customer never reaches checkout with a known sold-out
+  // line. The server still performs the final authoritative stock check.
+  useEffect(() => {
+    const unavailableIds = new Set(
+      items.filter((item) => !item.in_stock || item.status !== "live").map((item) => item.id)
+    );
+    for (const line of lines) {
+      if (unavailableIds.has(line.menuItemId)) cartRemove(line.menuItemId);
+    }
+  }, [cartRemove, items, lines]);
 
   function sibWait(sib: any): string {
     if (!sib.is_open) return "Closed";
@@ -197,6 +232,28 @@ export function MenuBoard({
     }, 500);
   }, [router]);
 
+  const applyMenuEvent = useCallback((payload: any) => {
+    const next = payload?.new as Partial<MenuItem> | undefined;
+    const previous = payload?.old as Partial<MenuItem> | undefined;
+    const id = next?.id ?? previous?.id;
+    if (!id) {
+      debouncedRefresh();
+      return;
+    }
+
+    setItems((current) => {
+      if (!next?.id || next.status !== "live") {
+        return current.filter((item) => item.id !== id);
+      }
+      const index = current.findIndex((item) => item.id === id);
+      if (index === -1) return [...current, next as MenuItem];
+      const copy = [...current];
+      copy[index] = { ...copy[index], ...next };
+      return copy;
+    });
+    debouncedRefresh();
+  }, [debouncedRefresh]);
+
   // Stable filter arrays — defined outside render so the hook's dep array never
   // changes. If we put these inside the component body they'd be new objects every
   // render and trigger endless resubscriptions.
@@ -210,7 +267,7 @@ export function MenuBoard({
   const menuStatus = useRealtimeWithFallback(
     `realtime-menu-${tenantId}`,
     menuFilters,
-    { onEvent: debouncedRefresh, onFallbackPoll: debouncedRefresh, pollIntervalMs: 30_000 }
+    { onEvent: applyMenuEvent, onFallbackPoll: debouncedRefresh, pollIntervalMs: 15_000 }
   );
   const tenantStatus = useRealtimeWithFallback(
     `realtime-tenant-${tenantId}`,
@@ -263,7 +320,7 @@ export function MenuBoard({
         <p style={{ fontFamily: S.fontDisplay, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: S.muted, margin: "0 12px 14px" }}>Browse</p>
         <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 4 }}>
           <li>
-            <button onClick={() => scrollToCategory("all")} style={{ width: "100%", textAlign: "left", padding: "10px 14px", borderRadius: S.radiusSm, fontSize: 15, fontWeight: 500, background: activeCat === "all" ? S.accentDim : "transparent", color: activeCat === "all" ? S.accent : S.muted, cursor: "pointer", border: "none", transition: "color .2s, background .2s", fontFamily: S.fontDisplay }}>
+            <button aria-pressed={activeCat === "all"} onClick={() => scrollToCategory("all")} style={{ width: "100%", textAlign: "left", padding: "10px 14px", borderRadius: S.radiusSm, fontSize: 15, fontWeight: 500, background: activeCat === "all" ? S.accentDim : "transparent", color: activeCat === "all" ? S.accent : S.muted, cursor: "pointer", border: "none", transition: "color .2s, background .2s", fontFamily: S.fontDisplay }}>
               All items
               <span style={{ display: "block", fontSize: 11, color: S.muted2, marginTop: 2, fontWeight: 500 }}>{items.length} dishes</span>
             </button>
@@ -273,7 +330,7 @@ export function MenuBoard({
             const isActive = activeCat === cat.id;
             return (
               <li key={cat.id}>
-                <button onClick={() => scrollToCategory(cat.id)} style={{ width: "100%", textAlign: "left", padding: "10px 14px", borderRadius: S.radiusSm, fontSize: 15, fontWeight: 500, background: isActive ? S.accentDim : "transparent", color: isActive ? S.accent : S.muted, cursor: "pointer", border: "none", transition: "color .2s, background .2s", fontFamily: S.fontDisplay }}>
+                <button aria-pressed={isActive} onClick={() => scrollToCategory(cat.id)} style={{ width: "100%", textAlign: "left", padding: "10px 14px", borderRadius: S.radiusSm, fontSize: 15, fontWeight: 500, background: isActive ? S.accentDim : "transparent", color: isActive ? S.accent : S.muted, cursor: "pointer", border: "none", transition: "color .2s, background .2s", fontFamily: S.fontDisplay }}>
                   {cat.name}
                   <span style={{ display: "block", fontSize: 11, color: S.muted2, marginTop: 2, fontWeight: 500 }}>{cnt} dish{cnt === 1 ? "" : "es"}</span>
                 </button>
@@ -290,10 +347,10 @@ export function MenuBoard({
               {filteredSpecials.map((it) => {
                 const line = lines.find((l) => l.menuItemId === it.id);
                 const oos = !it.in_stock || it.status !== "live";
+                const unavailable = oos || !acceptingOrders;
                 return (
                   <div
                     key={it.id}
-                    onClick={() => scrollToCategory("specials")}
                     style={{
                       padding: "10px 12px",
                       borderRadius: S.radiusSm,
@@ -302,9 +359,7 @@ export function MenuBoard({
                       display: "flex",
                       flexDirection: "column",
                       gap: 6,
-                      cursor: "pointer",
                       transition: "transform 0.15s, box-shadow 0.15s",
-                      opacity: oos ? 0.6 : 1,
                     }}
                     className="hover:-translate-y-[1.5px] hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)]"
                   >
@@ -317,9 +372,10 @@ export function MenuBoard({
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 2 }}>
                       <span style={{ fontFamily: S.fontDisplay, fontSize: 13, fontWeight: 700, color: "var(--color-ocean-500)" }}>{formatRupees(it.price_paise)}</span>
                       {line ? (
-                        <div style={{ display: "flex", alignItems: "center", border: "1px solid var(--color-line)", borderRadius: 6, overflow: "hidden", background: "var(--student-surface)" }} onClick={(e) => e.stopPropagation()}>
+                        <div style={{ display: "flex", alignItems: "center", border: "1px solid var(--color-line)", borderRadius: 6, overflow: "hidden", background: "var(--student-surface)" }}>
                           <button
                             type="button"
+                            aria-label={`Decrease ${it.name}`}
                             onClick={() => cartDec(it.id)}
                             style={{ width: 22, height: 22, display: "grid", placeItems: "center", cursor: "pointer", background: "transparent", border: "none", color: S.text, fontSize: 10 }}
                           >
@@ -328,6 +384,8 @@ export function MenuBoard({
                           <span style={{ minWidth: 16, textAlign: "center", fontSize: 11, fontWeight: 700, fontFamily: S.fontMono }}>{line.qty}</span>
                           <button
                             type="button"
+                            aria-label={`Increase ${it.name}`}
+                            disabled={unavailable}
                             onClick={() => cartInc(it.id)}
                             style={{ width: 22, height: 22, display: "grid", placeItems: "center", cursor: "pointer", background: "transparent", border: "none", color: "var(--color-ocean-500)", fontSize: 10 }}
                           >
@@ -337,9 +395,8 @@ export function MenuBoard({
                       ) : (
                         <button
                           type="button"
-                          disabled={oos}
-                          onClick={(e) => {
-                            e.stopPropagation();
+                          disabled={unavailable}
+                          onClick={() => {
                             cartAdd({ menuItemId: it.id, name: it.name, pricePaise: it.price_paise, diet: it.diet as "veg" | "nonveg" | "egg" });
                             toast.success(`Added ${it.name}!`);
                           }}
@@ -351,11 +408,11 @@ export function MenuBoard({
                             background: "rgba(51,65,85,.08)",
                             color: "var(--color-ocean-500)",
                             border: `1px solid ${S.border}`,
-                            cursor: oos ? "not-allowed" : "pointer",
+                            cursor: unavailable ? "not-allowed" : "pointer",
                             fontFamily: S.fontDisplay,
                           }}
                         >
-                          + Add
+                          {oos ? "Sold out" : acceptingOrders ? "+ Add" : isClosed ? "Closed" : "Paused"}
                         </button>
                       )}
                     </div>
@@ -417,13 +474,13 @@ export function MenuBoard({
             <div>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 12 }}>
                 <p style={{ margin: 0, fontFamily: S.fontDisplay, fontSize: 12, fontWeight: 600, letterSpacing: "0.11em", textTransform: "uppercase", color: S.muted }}>How are you eating today?</p>
-                <button type="button" onClick={() => setVegOnly(!vegOnly)} style={{ fontFamily: S.fontDisplay, fontSize: 12, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", padding: "6px 12px", borderRadius: 999, border: vegOnly ? "1px solid rgba(94,224,138,.55)" : `1px solid ${S.border}`, background: vegOnly ? "rgba(94,224,138,.12)" : "transparent", color: vegOnly ? "#0c8a43" : S.muted, cursor: "pointer", transition: "border-color .2s, background .2s, color .2s" }}>🌿 Veg only</button>
+                <button type="button" aria-pressed={vegOnly} onClick={() => setVegOnly(!vegOnly)} style={{ fontFamily: S.fontDisplay, fontSize: 12, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", padding: "6px 12px", borderRadius: 999, border: vegOnly ? "1px solid rgba(94,224,138,.55)" : `1px solid ${S.border}`, background: vegOnly ? "rgba(94,224,138,.12)" : "transparent", color: vegOnly ? "#0c8a43" : S.muted, cursor: "pointer", transition: "border-color .2s, background .2s, color .2s" }}>🌿 Veg only</button>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 {(["takeaway", "dine_in"] as const).map((type) => {
                   const isActive = orderType === type;
                   return (
-                    <button key={type} type="button" onClick={() => setOrderType(type)}
+                    <button key={type} type="button" aria-pressed={isActive} onClick={() => setOrderType(type)}
                       style={{ textAlign: "left", padding: "14px 14px 12px", borderRadius: S.radiusSm, border: isActive ? `1px solid ${S.accent}` : `1px solid ${S.border}`, background: S.cardBg, boxShadow: isActive ? "0 0 0 1px rgba(51,65,85,.15), 0 10px 26px rgba(26,26,25,.10)" : "none", transform: isActive ? "translateY(-1px)" : "none", cursor: "pointer", color: S.text, transition: "border-color .2s, box-shadow .2s, transform .2s", fontFamily: S.fontDisplay }}>
                       <span style={{ fontSize: "1.45rem", display: "block", marginBottom: 6 }}>{type === "takeaway" ? "🛍️" : "🍽️"}</span>
                       <span style={{ display: "block", fontWeight: 600, fontSize: 15 }}>{type === "takeaway" ? "Takeaway" : "Dine in"}</span>
@@ -466,7 +523,7 @@ export function MenuBoard({
             {[{ id: "all", name: "All items" }, ...injectedCategories].map((cat) => {
               const isActive = activeCat === cat.id;
               return (
-                <button key={cat.id} onClick={() => scrollToCategory(cat.id)} style={{ flexShrink: 0, padding: "8px 14px", borderRadius: 999, fontSize: 13, fontWeight: 700, border: "2px solid #000", boxShadow: isActive ? "var(--ns-shadow-sm)" : "none", color: isActive ? "#fff" : S.text, background: isActive ? S.accent : "#fff", cursor: "pointer", transition: "all .15s", fontFamily: S.fontDisplay }}>
+                <button key={cat.id} aria-pressed={isActive} onClick={() => scrollToCategory(cat.id)} style={{ flexShrink: 0, padding: "8px 14px", borderRadius: 999, fontSize: 13, fontWeight: 700, border: "2px solid #000", boxShadow: isActive ? "var(--ns-shadow-sm)" : "none", color: isActive ? "#fff" : S.text, background: isActive ? S.accent : "#fff", cursor: "pointer", transition: "all .15s", fontFamily: S.fontDisplay }}>
                   {cat.name}
                 </button>
               );
@@ -491,7 +548,7 @@ export function MenuBoard({
                 </span>
               </div>
               <div style={{ display: "flex", gap: 14, overflowX: "auto", padding: "4px 4px 16px", margin: "0 -4px", scrollbarWidth: "none" }}>
-                {filteredSpecials.map((item) => <SpecialCard key={item.id} item={item} onAdd={cartAdd} onInc={cartInc} onDec={cartDec} />)}
+                {filteredSpecials.map((item) => <SpecialCard key={item.id} item={item} acceptingOrders={acceptingOrders} unavailableReason={unavailableReason} onAdd={cartAdd} onInc={cartInc} onDec={cartDec} />)}
               </div>
             </div>
           )}
@@ -514,7 +571,7 @@ export function MenuBoard({
                     <div key={cat.id} id={`category-${cat.id}`} style={{ scrollMarginTop: "140px" }} className="pt-2">
                       <h3 style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: S.muted, margin: "0 0 12px", paddingLeft: 8, borderLeft: `2px solid ${S.accent}`, fontFamily: S.fontDisplay }}>{cat.name}</h3>
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
-                        {list.map((it) => <RegularCard key={it.id} item={it} onAdd={cartAdd} onInc={cartInc} onDec={cartDec} />)}
+                        {list.map((it) => <RegularCard key={it.id} item={it} acceptingOrders={acceptingOrders} unavailableReason={unavailableReason} onAdd={cartAdd} onInc={cartInc} onDec={cartDec} />)}
                       </div>
                     </div>
                   );
@@ -527,7 +584,7 @@ export function MenuBoard({
                     <div key="__uncategorised" id="category-uncategorised" style={{ scrollMarginTop: "140px" }} className="pt-2">
                       <h3 style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: S.muted, margin: "0 0 12px", paddingLeft: 8, borderLeft: `2px solid ${S.accent}`, fontFamily: S.fontDisplay }}>Other</h3>
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
-                        {uncategorised.map((it) => <RegularCard key={it.id} item={it} onAdd={cartAdd} onInc={cartInc} onDec={cartDec} />)}
+                        {uncategorised.map((it) => <RegularCard key={it.id} item={it} acceptingOrders={acceptingOrders} unavailableReason={unavailableReason} onAdd={cartAdd} onInc={cartInc} onDec={cartDec} />)}
                       </div>
                     </div>
                   );
@@ -553,7 +610,7 @@ export function MenuBoard({
             <div className="mx-auto w-12 h-1.5 rounded-full bg-[color:var(--color-line-strong)] mt-3 mb-2" />
             <div className="px-5 py-3 border-b border-[color:var(--color-line)]"><h3 className="font-display text-[18px] font-bold">Browse Menu</h3></div>
             <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
-              <button onClick={() => { scrollToCategory("all"); setIsBrowseOpen(false); }} className={cn("w-full text-left px-4 py-3.5 rounded-2xl text-[14.5px] font-semibold transition-all border flex items-center justify-between", activeCat === "all" ? "bg-ocean-500/10 text-ocean-600 dark:text-ocean-400 font-bold border-ocean-500/20" : "border-[color:var(--color-line)] text-[color:var(--color-ink)] bg-[color:var(--color-paper)]")}>
+              <button aria-pressed={activeCat === "all"} onClick={() => { scrollToCategory("all"); setIsBrowseOpen(false); }} className={cn("w-full text-left px-4 py-3.5 rounded-2xl text-[14.5px] font-semibold transition-all border flex items-center justify-between", activeCat === "all" ? "bg-ocean-500/10 text-ocean-600 dark:text-ocean-400 font-bold border-ocean-500/20" : "border-[color:var(--color-line)] text-[color:var(--color-ink)] bg-[color:var(--color-paper)]")}>
                 <span>All items</span><span className="text-[12px] opacity-60 font-normal">{items.filter((it) => !vegOnly || it.diet === "veg").length} items</span>
               </button>
               {injectedCategories.map((cat) => {
@@ -563,7 +620,7 @@ export function MenuBoard({
                 if (catCount === 0) return null;
                 const isActive = activeCat === cat.id;
                 return (
-                  <button key={cat.id} onClick={() => { scrollToCategory(cat.id); setIsBrowseOpen(false); }} className={cn("w-full text-left px-4 py-3.5 rounded-2xl text-[14.5px] font-semibold transition-all border flex items-center justify-between", isActive ? "bg-ocean-500/10 text-ocean-600 dark:text-ocean-400 font-bold border-ocean-500/20" : "border-[color:var(--color-line)] text-[color:var(--color-ink)] bg-[color:var(--color-paper)]")}>
+                  <button key={cat.id} aria-pressed={isActive} onClick={() => { scrollToCategory(cat.id); setIsBrowseOpen(false); }} className={cn("w-full text-left px-4 py-3.5 rounded-2xl text-[14.5px] font-semibold transition-all border flex items-center justify-between", isActive ? "bg-ocean-500/10 text-ocean-600 dark:text-ocean-400 font-bold border-ocean-500/20" : "border-[color:var(--color-line)] text-[color:var(--color-ink)] bg-[color:var(--color-paper)]")}>
                     <span>{cat.name}</span><span className="text-[12px] opacity-60 font-normal">{catCount} items</span>
                   </button>
                 );
@@ -579,14 +636,30 @@ export function MenuBoard({
 type CartAddFn = (item: { menuItemId: string; name: string; pricePaise: number; diet: "veg" | "nonveg" | "egg" }) => void;
 type CartQtyFn = (menuItemId: string) => void;
 
-function SpecialCard({ item, onAdd, onInc, onDec }: { item: MenuItem; onAdd: CartAddFn; onInc: CartQtyFn; onDec: CartQtyFn }) {
+function SpecialCard({
+  item,
+  acceptingOrders,
+  unavailableReason,
+  onAdd,
+  onInc,
+  onDec,
+}: {
+  item: MenuItem;
+  acceptingOrders: boolean;
+  unavailableReason: string | null;
+  onAdd: CartAddFn;
+  onInc: CartQtyFn;
+  onDec: CartQtyFn;
+}) {
   const line = useCart((s) => s.lines.find((l) => l.menuItemId === item.id));
   const oos = !item.in_stock || item.status !== "live";
+  const unavailable = oos || !acceptingOrders;
+  const unavailableLabel = oos ? "Sold out" : unavailableReason ?? "Ordering unavailable";
   const accent = "var(--color-ocean-500)";
   const border = "var(--color-line)";
   return (
-    <article style={{ flexShrink: 0, width: 220, background: "var(--student-special-card-bg)", border: "3px solid #000", boxShadow: "var(--ns-shadow-sm)", borderRadius: 14, padding: 18, display: "flex", flexDirection: "column", gap: 12, position: "relative", opacity: oos ? 0.6 : 1, cursor: oos ? "not-allowed" : "default" }}
-      className={oos ? "" : "transition-all duration-100 hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[var(--ns-shadow)]"}>
+    <article data-ordering-unavailable={unavailable || undefined} style={{ flexShrink: 0, width: 220, background: "var(--student-special-card-bg)", border: "3px solid #000", boxShadow: "var(--ns-shadow-sm)", borderRadius: 14, padding: 18, display: "flex", flexDirection: "column", gap: 12, position: "relative", cursor: unavailable ? "not-allowed" : "default" }}
+      className={unavailable ? "" : "transition-all duration-100 hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[var(--ns-shadow)]"}>
       <span style={{ position: "absolute", top: 12, right: 12, background: "#b32b2b", color: "#fff", fontFamily: "monospace", fontSize: 9, letterSpacing: "0.08em", padding: "2px 6px", borderRadius: 4, fontWeight: 700, textTransform: "uppercase" }}>SPECIAL</span>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
         <div style={{ width: 56, height: 56, borderRadius: 12, background: item.image_url ? "transparent" : "var(--student-card-bg)", border: `1px solid ${border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, overflow: "hidden", flexShrink: 0 }}>
@@ -600,23 +673,39 @@ function SpecialCard({ item, onAdd, onInc, onDec }: { item: MenuItem; onAdd: Car
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "auto", paddingTop: 8 }}>
         <span style={{ fontFamily: "var(--font-num-ns)", fontSize: 15, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: accent }}>{formatRupees(item.price_paise)}</span>
-        {line ? <QtyControl qty={line.qty} onDec={() => onDec(item.id)} onInc={() => onInc(item.id)} disabled={oos} btnSize={32} /> : (
-          <button disabled={oos} onClick={() => { onAdd({ menuItemId: item.id, name: item.name, pricePaise: item.price_paise, diet: item.diet as "veg" | "nonveg" | "egg" }); toast.success(`Added ${item.name}!`); }}
-            className={oos ? "" : "ns-press"}
-            style={{ padding: "7px 13px", fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".02em", background: oos ? "var(--color-line)" : accent, color: "#fff", cursor: oos ? "not-allowed" : "pointer", opacity: oos ? 0.5 : 1, fontFamily: "var(--font-title-ns)" }}>+ Add</button>
+        {line ? <QtyControl itemName={item.name} qty={line.qty} onDec={() => onDec(item.id)} onInc={() => onInc(item.id)} disableIncrease={unavailable} btnSize={32} /> : (
+          <button disabled={unavailable} title={unavailable ? unavailableLabel : undefined} onClick={() => { onAdd({ menuItemId: item.id, name: item.name, pricePaise: item.price_paise, diet: item.diet as "veg" | "nonveg" | "egg" }); toast.success(`Added ${item.name}!`); }}
+            className={unavailable ? "" : "ns-press"}
+            style={{ padding: "7px 13px", fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".02em", background: unavailable ? "#6b625a" : accent, color: "#fff", cursor: unavailable ? "not-allowed" : "pointer", fontFamily: "var(--font-title-ns)" }}>{oos ? "Sold out" : acceptingOrders ? "+ Add" : "Unavailable"}</button>
         )}
       </div>
     </article>
   );
 }
 
-function RegularCard({ item, onAdd, onInc, onDec }: { item: MenuItem; onAdd: CartAddFn; onInc: CartQtyFn; onDec: CartQtyFn }) {
+function RegularCard({
+  item,
+  acceptingOrders,
+  unavailableReason,
+  onAdd,
+  onInc,
+  onDec,
+}: {
+  item: MenuItem;
+  acceptingOrders: boolean;
+  unavailableReason: string | null;
+  onAdd: CartAddFn;
+  onInc: CartQtyFn;
+  onDec: CartQtyFn;
+}) {
   const line = useCart((s) => s.lines.find((l) => l.menuItemId === item.id));
   const oos = !item.in_stock || item.status !== "live";
+  const unavailable = oos || !acceptingOrders;
+  const unavailableLabel = oos ? "Sold out" : unavailableReason ?? "Ordering unavailable";
   const accent = "var(--color-ocean-500)";
   return (
-    <article style={{ display: "flex", gap: 14, padding: 16, borderRadius: 14, border: "3px solid #000", boxShadow: "var(--ns-shadow-sm)", background: "var(--student-regular-card-bg)", opacity: oos ? 0.6 : 1 }}
-      className={oos ? "" : "transition-all duration-100 hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[var(--ns-shadow)]"}>
+    <article data-ordering-unavailable={unavailable || undefined} style={{ display: "flex", gap: 14, padding: 16, borderRadius: 14, border: "3px solid #000", boxShadow: "var(--ns-shadow-sm)", background: "var(--student-regular-card-bg)" }}
+      className={unavailable ? "" : "transition-all duration-100 hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[var(--ns-shadow)]"}>
       <div style={{ width: 72, height: 72, borderRadius: 12, flexShrink: 0, background: "var(--student-surface2)", display: "grid", placeItems: "center", fontSize: 30, border: "1px solid var(--color-line)", overflow: "hidden" }}>
         {item.image_url ? <img src={item.image_url} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : dietEmoji(item.diet)}
       </div>
@@ -628,10 +717,10 @@ function RegularCard({ item, onAdd, onInc, onDec }: { item: MenuItem; onAdd: Car
         {item.description && <p style={{ margin: "4px 0 0", fontSize: 14, color: "var(--student-muted)", lineHeight: 1.45 }}>{item.description}</p>}
         <div style={{ marginTop: "auto", paddingTop: 12, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
           <span style={{ fontFamily: "var(--font-num-ns)", fontSize: 15, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: accent }}>{formatRupees(item.price_paise)}</span>
-          {line ? <QtyControl qty={line.qty} onDec={() => onDec(item.id)} onInc={() => onInc(item.id)} disabled={oos} btnSize={38} /> : (
-            <button disabled={oos} onClick={() => { onAdd({ menuItemId: item.id, name: item.name, pricePaise: item.price_paise, diet: item.diet as "veg" | "nonveg" | "egg" }); toast.success(`Added ${item.name}!`); }}
-              className={oos ? "" : "ns-press"}
-              style={{ padding: "8px 14px", fontSize: 14, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".02em", background: oos ? "var(--color-line)" : accent, color: "#fff", cursor: oos ? "not-allowed" : "pointer", opacity: oos ? 0.5 : 1, fontFamily: "var(--font-title-ns)" }}>+ Add</button>
+          {line ? <QtyControl itemName={item.name} qty={line.qty} onDec={() => onDec(item.id)} onInc={() => onInc(item.id)} disableIncrease={unavailable} btnSize={38} /> : (
+            <button disabled={unavailable} title={unavailable ? unavailableLabel : undefined} onClick={() => { onAdd({ menuItemId: item.id, name: item.name, pricePaise: item.price_paise, diet: item.diet as "veg" | "nonveg" | "egg" }); toast.success(`Added ${item.name}!`); }}
+              className={unavailable ? "" : "ns-press"}
+              style={{ padding: "8px 14px", fontSize: 14, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".02em", background: unavailable ? "#6b625a" : accent, color: "#fff", cursor: unavailable ? "not-allowed" : "pointer", fontFamily: "var(--font-title-ns)" }}>{oos ? "Sold out" : acceptingOrders ? "+ Add" : "Unavailable"}</button>
           )}
         </div>
       </div>
@@ -639,12 +728,12 @@ function RegularCard({ item, onAdd, onInc, onDec }: { item: MenuItem; onAdd: Car
   );
 }
 
-function QtyControl({ qty, onDec, onInc, disabled, btnSize }: { qty: number; onDec: () => void; onInc: () => void; disabled: boolean; btnSize: number }) {
+function QtyControl({ itemName, qty, onDec, onInc, disableIncrease, btnSize }: { itemName: string; qty: number; onDec: () => void; onInc: () => void; disableIncrease: boolean; btnSize: number }) {
   return (
     <div style={{ display: "flex", alignItems: "center", borderRadius: S_RADIUS_SM, border: "1px solid var(--color-line)", overflow: "hidden", background: "var(--student-surface2)" }}>
-      <button aria-label="Decrease" disabled={disabled} onClick={onDec} style={{ width: btnSize, height: btnSize, display: "grid", placeItems: "center", cursor: disabled ? "not-allowed" : "pointer", background: "transparent", border: "none", color: "var(--color-ink)" }}><Minus size={Math.round(btnSize * 0.37)} /></button>
+      <button aria-label={`Decrease ${itemName}`} onClick={onDec} style={{ width: btnSize, height: btnSize, display: "grid", placeItems: "center", cursor: "pointer", background: "transparent", border: "none", color: "var(--color-ink)" }}><Minus size={Math.round(btnSize * 0.37)} /></button>
       <span style={{ minWidth: btnSize - 8, textAlign: "center", fontFamily: "var(--font-jetbrains, monospace)", fontSize: 14, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{qty}</span>
-      <button aria-label="Increase" disabled={disabled} onClick={onInc} style={{ width: btnSize, height: btnSize, display: "grid", placeItems: "center", cursor: disabled ? "not-allowed" : "pointer", background: "transparent", border: "none", color: "var(--color-ocean-500)" }}><Plus size={Math.round(btnSize * 0.37)} /></button>
+      <button aria-label={`Increase ${itemName}`} disabled={disableIncrease} onClick={onInc} style={{ width: btnSize, height: btnSize, display: "grid", placeItems: "center", cursor: disableIncrease ? "not-allowed" : "pointer", background: "transparent", border: "none", color: "var(--color-ocean-500)" }}><Plus size={Math.round(btnSize * 0.37)} /></button>
     </div>
   );
 }
@@ -652,7 +741,7 @@ function QtyControl({ qty, onDec, onInc, disabled, btnSize }: { qty: number; onD
 function DietDot({ diet }: { diet: string }) {
   const color = diet === "veg" ? "#0c8a43" : diet === "egg" ? "#f59e0b" : "#b32b2b";
   return (
-    <span style={{ width: 18, height: 18, border: `2px solid ${color}`, borderRadius: 3, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 4, background: "transparent" }}>
+    <span role="img" aria-label={diet === "nonveg" ? "Non-vegetarian" : diet === "egg" ? "Contains egg" : "Vegetarian"} style={{ width: 18, height: 18, border: `2px solid ${color}`, borderRadius: 3, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 4, background: "transparent" }}>
       {diet === "nonveg"
         ? <span style={{ width: 0, height: 0, borderLeft: "4.5px solid transparent", borderRight: "4.5px solid transparent", borderBottom: `8px solid ${color}`, display: "block" }} />
         : <span style={{ height: 8, width: 8, borderRadius: "50%", background: color, display: "block" }} />}

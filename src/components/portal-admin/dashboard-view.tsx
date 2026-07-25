@@ -202,7 +202,7 @@ export function DashboardView({
     } catch {
       // Swallow — the 20s poll + visibility will recover.
     }
-  }, [tenantId]);
+  }, [playAdminBell, tenantId]);
 
   // Coalesce a burst of realtime events into ONE money refetch per MONEY_REFRESH_MS
   // window. Trailing debounce + in-flight guard: a 1000-order rush triggers a couple

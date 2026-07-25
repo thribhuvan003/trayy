@@ -76,7 +76,7 @@ const STATIC_SPECS = [
       if (!has(html, /href=["']\/["'][^>]*class=["']brand|class=["']brand[^>]*href=["']\/["']/))
         fails.push("Tray brand must link to / (production landing)");
       if (!has(html, /demo-canteens\.js/)) fails.push("Missing demo-canteens.js");
-      if (!has(html, /id=["']canteenSelect["']/)) fails.push("Missing #canteenSelect (pick canteen)");
+      if (!has(html, /id=["']canteenSegments["']/)) fails.push("Missing #canteenSegments (pick canteen)");
       if (!has(html, /loadCanteenData/)) fails.push("Missing loadCanteenData (per-canteen menu)");
       if (!has(html, /canteenId/)) fails.push("Missing canteenId on kitchen push");
       if (!has(html, /tray_kitchen_inbox|KITCHEN_INBOX_KEY|INBOX_KEY/)) fails.push("Missing kitchen inbox push");
@@ -99,7 +99,7 @@ const STATIC_SPECS = [
         fails.push("Tray brand must link to / (production landing)");
       if (!has(html, /demo-canteens\.js/)) fails.push("Missing demo-canteens.js");
       if (!has(html, /function applyTenantData/)) fails.push("Missing applyTenantData (tenant data swap)");
-      if (!has(html, /data-tenant=/)) fails.push("Missing data-tenant on canteen options");
+      if (!has(html, /data-cid=/)) fails.push("Missing data-cid on canteen options");
       if (!has(html, /width=device-width/)) fails.push("Viewport should be responsive");
       if (has(html, /data-toast=/)) fails.push("Sidebar still uses data-toast placeholders");
       if (!has(html, /const VIEW_META/)) fails.push("Missing VIEW_META view router");

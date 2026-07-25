@@ -145,9 +145,17 @@ export async function setMenuItemStock(id: string, inStock: boolean): Promise<{ 
 export async function inviteStaff(
   email: string,
   role: "kitchen_staff" | "canteen_admin"
-): Promise<{ ok: boolean; error?: string; url?: string }> {
+): Promise<{ ok: boolean; error?: string; url?: string; deliveryFailed?: boolean }> {
   const c = await adminContext();
   if (!c.ok) return { ok: false, error: c.error };
+
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+    return { ok: false, error: "Enter a valid email address" };
+  }
+  if (role !== "kitchen_staff" && role !== "canteen_admin") {
+    return { ok: false, error: "Choose a valid staff role" };
+  }
 
   const rate = await tenantRateLimit(c.tenant.id, "admin_action", c.user.id);
   if (!rate.success) {
@@ -160,7 +168,7 @@ export async function inviteStaff(
   const expiresAt = dayjs().add(48, "hour").toISOString();
   const { error } = await admin.from("staff_invites").insert({
     tenant_id: c.tenant.id,
-    email,
+    email: normalizedEmail,
     role,
     token,
     expires_at: expiresAt,
@@ -168,24 +176,57 @@ export async function inviteStaff(
   });
   if (error) return { ok: false, error: error.message };
   const url = `${env.APP_URL}/auth/invite/${token}`;
-  await sendEmail({
-    to: email,
-    subject: `You're invited to join ${c.tenant.name} on Tray`,
-    html: `<p>You've been invited as a ${role.replace("_", " ")}.</p><p><a href="${url}">Accept invite</a></p>`,
-  });
+  try {
+    await sendEmail({
+      to: normalizedEmail,
+      subject: `You're invited to join ${c.tenant.name} on Tray`,
+      html: `<p>You've been invited as a ${role.replace("_", " ")}.</p><p><a href="${url}">Accept invite</a></p>`,
+    });
+  } catch (emailError) {
+    // The invite row is written before delivery so the link is valid when the
+    // recipient opens it. Compensate on delivery failure to avoid silently
+    // accumulating pending invites after a failed Server Action.
+    const { error: rollbackError } = await admin
+      .from("staff_invites")
+      .delete()
+      .eq("token", token)
+      .eq("tenant_id", c.tenant.id);
+
+    logger.error("admin staff invite email delivery failed", emailError, {
+      tenant_id: c.tenant.id,
+      slug: c.tenant.slug,
+      actor_user_id: c.user.id,
+      invited_email: normalizedEmail,
+      rollback_failed: Boolean(rollbackError),
+    });
+
+    if (rollbackError) {
+      return {
+        ok: false,
+        error: "Email delivery failed. The invite is still pending; copy and share the link.",
+        url,
+        deliveryFailed: true,
+      };
+    }
+    return {
+      ok: false,
+      error: "Email delivery failed. No invite was created — please try again.",
+      deliveryFailed: true,
+    };
+  }
   await admin.from("audit_logs").insert({
     tenant_id: c.tenant.id,
     actor_user_id: c.user.id,
     action: "staff.invited",
     target_type: "invite",
-    meta: { email, role },
+    meta: { email: normalizedEmail, role },
   });
 
   logger.info("admin staff invited", {
     tenant_id: c.tenant.id,
     slug: c.tenant.slug,
     actor_user_id: c.user.id,
-    invited_email: email,
+    invited_email: normalizedEmail,
     invited_role: role,
     latency_ms: Date.now() - start,
   });
@@ -579,9 +620,17 @@ export async function cancelOrderAsAdmin(
     meta: { reason, from_status: cur.status },
   });
 
-  // Queue refund if the order was paid
+  // Complete the refund attempt before the serverless invocation returns.
+  // Direct-UPI payments are recorded as manual-refund obligations.
   if (cur.status !== "pending_payment") {
-    void initiateRefundForOrder(orderId, c.tenant.id).catch(() => {});
+    try {
+      await initiateRefundForOrder(orderId, c.tenant.id);
+    } catch (error) {
+      logger.error("admin cancel refund attempt failed", error, {
+        tenant_id: c.tenant.id,
+        order_id: orderId,
+      });
+    }
   }
 
   logger.info("admin cancelled order", {

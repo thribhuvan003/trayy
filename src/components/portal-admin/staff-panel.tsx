@@ -28,7 +28,10 @@ export function StaffPanel({ members, invites }: { members: Member[]; invites: I
     if (!email.trim()) return;
     start(async () => {
       const r = await inviteStaff(email.trim(), role);
-      if (!r.ok) toast.error(r.error ?? "Failed");
+      if (!r.ok) {
+        toast.error(r.error ?? "Failed");
+        if (r.url) setLastUrl(r.url);
+      }
       else {
         toast.success("Invite sent");
         if (r.url) setLastUrl(r.url);

@@ -35,12 +35,12 @@ No IT team required. No per-tenant infrastructure. No app install for customers 
 
 | Portal | URL |
 |--------|-----|
-| Customer app | [trayy.vercel.app/c/aditya/menu](https://trayy.vercel.app/c/aditya/menu) |
-| Kitchen board | [trayy.vercel.app/c/aditya/kitchen](https://trayy.vercel.app/c/aditya/kitchen) |
-| Admin console | [trayy.vercel.app/c/aditya/admin/dashboard](https://trayy.vercel.app/c/aditya/admin/dashboard) |
-| Area portal (multi-outlet) | [trayy.vercel.app/college/aditya](https://trayy.vercel.app/college/aditya) |
+| Customer app | [trayy.vercel.app/demo/student](https://trayy.vercel.app/demo/student) |
+| Kitchen board | [trayy.vercel.app/demo/kitchen](https://trayy.vercel.app/demo/kitchen) |
+| Admin console | [trayy.vercel.app/demo/admin](https://trayy.vercel.app/demo/admin) |
 
-No account required to explore the demo.
+No account required to explore these browser-only demos. The `/c/[slug]/kitchen`
+and `/c/[slug]/admin/...` routes below are the authenticated production portals.
 
 ---
 
@@ -48,7 +48,7 @@ No account required to explore the demo.
 
 ### Multi-tenancy
 
-Every database row carries a `tenant_id`. Postgres Row Level Security enforces isolation at the database layer — not in application code. There is no scattered `WHERE tenant_id = ?` logic; a mis-scoped query returns zero rows and cannot leak another tenant's data.
+Tenant-owned rows carry a `tenant_id`. Postgres Row Level Security enforces isolation for authenticated database access, while service-role server actions also require and filter the resolved tenant explicitly.
 
 A single Vercel deployment serves **N locations** (a street, a PG cluster, a campus), each with **M outlets** (stalls, tiffin counters, canteens), each with their own URL, menu, payment account, and dashboard.
 
@@ -103,14 +103,14 @@ Tray started as a campus canteen system and was repositioned for street stalls. 
 | Layer | Choice | Why |
 |-------|--------|-----|
 | Framework | Next.js 15 App Router + React 19 + TypeScript strict | Server components, streaming, zero-config deployment |
-| Database | Supabase Postgres + Row Level Security | Native multi-tenant isolation, no application-layer filtering |
-| Auth | Supabase Auth | Magic link for customers, PIN kiosk for kitchen staff |
+| Database | Supabase Postgres + Row Level Security | Database policies plus explicit tenant scoping on service-role paths |
+| Auth | Supabase Auth | Google/email auth for customers and owners, PIN kiosk for kitchen staff |
 | Realtime | Supabase Realtime — `order_events` INSERT fan-out | Append-only events = minimal WAL, no duplicate status updates |
-| Payments | Razorpay UPI | HMAC webhooks, direct VPA settlement, zero card data stored |
+| Payments | Direct UPI + optional Razorpay gateway | Direct-to-owner VPA mode or HMAC-verified gateway webhooks; zero card data stored |
 | Styling | Tailwind CSS v4 | Separate design tokens per portal (cream/crimson for customers, dark editorial for kitchen) |
 | State | Zustand (cart) + React Server Components (server state) | Per-tenant cart bucket in localStorage; no global client state |
 | Animation | Framer Motion + GSAP + Lenis | Scroll-triggered reveals, magnetic buttons, smooth scroll |
-| Rate limiting | Upstash Redis | Distributed across Vercel instances; in-memory fallback for local dev |
+| Rate limiting | Upstash Redis | Distributed across Vercel instances; strict per-instance fallback during Redis outages |
 | Background jobs | QStash (Upstash) | Order expiry at 15 min, daily payment reconciliation |
 | Email | Resend | Magic link delivery |
 | Error tracking | Sentry | Auto-captures all `logger.error()` calls with structured context |
@@ -128,17 +128,17 @@ Tray started as a campus canteen system and was repositioned for street stalls. 
 - UPI payment: `upi://` deep link on mobile, QR code on desktop
 - Two order flows per outlet: full tracking (Placed → Preparing → Ready → Collected) for kitchens, or **token counter** (paid ⇒ token shown, no kitchen step) for stalls
 - 4-digit OTP handover at the counter (3-attempt lockout)
-- 5-minute cancel window with automatic refund to source account
+- 5-minute cancel window; gateway payments refund to source, while direct-UPI cancellations create a clearly logged manual-refund obligation
 - Kitchen "busy" warning when queue depth exceeds threshold
 
 ### Kitchen board `/c/[slug]/kitchen`
 
 - Four-column live queue: Incoming → Preparing → Ready → Collected
 - 44–56 px touch targets for wet or gloved hands on low-end tablets
-- 5-second undo window after any status advance — one tap reverses a mistake
-- Order rejection with selectable reason + free text; refund triggered automatically
+- 10-second server-enforced undo window after a status advance — one tap reverses a mistake
+- Order rejection with selectable reason + free text; gateway refund is triggered automatically and direct-UPI refund obligations are logged
 - Prep totals: aggregated quantities across all active orders ("7× Biryani")
-- One-tap SOLD OUT per item; updates the customer menu in under 300 ms
+- One-tap SOLD OUT per item; customer menus refresh through Realtime with a polling fallback
 - Walk-in order creation: staff searches/browses menu, places order at the counter
 - New-order bell chime with mute toggle, plus an optional hands-free audio announcer (`/kitchen/announce`) that reads each paid order aloud
 - Three-state connection indicator: Online / Reconnecting / OFFLINE
@@ -153,7 +153,7 @@ Tray started as a campus canteen system and was repositioned for street stalls. 
 - Real-time order activity feed
 - Menu management: add, edit, toggle availability, manage categories
 - Order management: full history with search, cancel any active order with logged reason
-- Staff management: invite by email, assign PIN codes
+- Staff management: invite by email; kitchen staff use the PIN kiosk for shift access
 - Settings: UPI VPA (Razorpay-validated at save), opening hours, pause/unpause with countdown
 - CSV export filtered by date range
 
@@ -161,7 +161,6 @@ Tray started as a campus canteen system and was repositioned for street stalls. 
 
 - Multi-outlet overview for an operator running several stalls/counters in one area
 - Live order counts and open/close status per outlet
-- Cross-outlet reports
 
 ---
 
@@ -198,7 +197,7 @@ tray/
 │   │   │   └── track/[orderId]/  Live order tracking + OTP display
 │   │   │
 │   │   ├── (public)/             Unauthenticated pages
-│   │   │   ├── login/            Magic link + role tabs
+│   │   │   ├── login/            Google/email sign-in + role-aware routing
 │   │   │   ├── signup/           New account registration
 │   │   │   └── legal/            Terms of service, Privacy policy
 │   │   │
@@ -241,6 +240,8 @@ tray/
 │   │   ├── tenant.ts             Tenant resolution with 30-second cache
 │   │   └── utils.ts              Date, currency, className helpers
 │   │
+│   ├── instrumentation-client.ts Sentry browser instrumentation
+│   ├── instrumentation.ts        Sentry server/edge instrumentation
 │   └── middleware.ts             Path-based tenant resolution → x-tenant-slug header
 │
 ├── supabase/migrations/
@@ -270,14 +271,13 @@ tray/
 │   ├── 0025_admin_phone.sql                       Owner SMS alerts
 │   ├── 0026_realtime_rls_fix.sql                  Realtime WebSocket RLS policies
 │   ├── 0027_upi_autoverify.sql                    UPI SMS auto-verification
-│   └── 0028_tenant_tier_order_mode.sql            Street edition: tier + token-counter order flow
+│   ├── 0028_tenant_tier_order_mode.sql            Street edition: tier + token-counter order flow
+│   ├── 0029_order_short_code_allocator.sql         Collision-safe per-tenant order-code allocation
+│   └── 0030_restore_reserved_stock.sql             Idempotent stock release on failed/abandoned orders
 │
 ├── src/__tests__/                Unit and integration tests (Vitest)
 ├── docs/                         Architecture decision records
 ├── public/                       Static assets, demo HTML files
-├── sentry.client.config.ts       Sentry browser configuration
-├── sentry.server.config.ts       Sentry server configuration
-├── sentry.edge.config.ts         Sentry edge/middleware configuration
 ├── next.config.ts                Next.js + Sentry build config
 └── tsconfig.json
 ```
@@ -300,7 +300,7 @@ The webhook calls a `SECURITY DEFINER` Postgres function that does `SELECT ... F
 
 **`atomic_decrement_stock()` — row-locked stock decrement on checkout**
 
-Before creating an order row, `placeOrder` calls a Postgres function that acquires `FOR UPDATE` locks on each menu item with finite stock. If any item has insufficient quantity, the function returns immediately — no partial decrements. Two concurrent checkouts for the last samosa: exactly one succeeds.
+After the provisional order, item, and payment ledgers are valid, checkout calls a Postgres function that acquires `FOR UPDATE` locks on each finite-stock item. If any item is insufficient, the function changes no stock and the provisional order is removed. Two concurrent checkouts for the last samosa: exactly one succeeds.
 
 **Per-tenant cart bucket in localStorage**
 
@@ -344,7 +344,7 @@ pnpm typecheck   # verify zero TypeScript errors
 pnpm dev
 ```
 
-Open [http://localhost:3000/c/aditya/menu](http://localhost:3000/c/aditya/menu).
+Open [http://localhost:3000/demo/student](http://localhost:3000/demo/student).
 
 ### Environment variables
 
@@ -360,9 +360,9 @@ Open [http://localhost:3000/c/aditya/menu](http://localhost:3000/c/aditya/menu).
 
 | Variable | Feature |
 |----------|---------|
-| `RAZORPAY_KEY_ID` + `RAZORPAY_KEY_SECRET` + `RAZORPAY_WEBHOOK_SECRET` | Live UPI payments |
+| `RAZORPAY_KEY_ID` + `RAZORPAY_KEY_SECRET` + `RAZORPAY_WEBHOOK_SECRET` | Razorpay gateway payments |
 | `NEXT_PUBLIC_RAZORPAY_LIVE=true` | Hides the dev simulate button in production |
-| `RESEND_API_KEY` | Magic link email delivery |
+| `RESEND_API_KEY` | Staff-invite email delivery |
 | `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` | Distributed rate limiting |
 | `QSTASH_TOKEN` + signing keys | Order expiry + payment reconciliation crons |
 | `SENTRY_DSN` + `NEXT_PUBLIC_SENTRY_DSN` | Error tracking |
@@ -387,7 +387,7 @@ supabase db push
 
 ### Vercel (recommended)
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/thribhuvan003/Tray&env=NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/thribhuvan003/trayy&env=NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY)
 
 After deploying: push migrations to your Supabase project, configure environment variables, set up the Razorpay webhook.
 
@@ -400,7 +400,7 @@ INSERT INTO tenants (slug, name, college_name, upi_vpa, order_mode)
 VALUES ('mg-road-07', 'Stall No. 7', 'MG Road', 'stall07@upi', 'token_prepaid');
 ```
 
-The portals are immediately live at `/c/north-block/menu`, `/c/north-block/kitchen`, and `/c/north-block/admin/dashboard`.
+The portals are immediately live at `/c/mg-road-07/menu`, `/c/mg-road-07/kitchen`, and `/c/mg-road-07/admin/dashboard`.
 
 ### Razorpay webhook
 

@@ -60,6 +60,9 @@ vi.mock("@/lib/auth/get-user", () => ({
 // ── Shared mock state ──────────────────────────────────────────────────────────
 
 const NOW = Date.now();
+// Freeze the server clock so dynamic module imports and a busy parallel CI
+// worker cannot consume the final second of either boundary.
+vi.spyOn(Date, "now").mockReturnValue(NOW);
 let mockOrderStatus = "placed";
 let mockPlacedAt = new Date(NOW).toISOString();
 let mockOrderTotalPaise = 10000;

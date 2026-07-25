@@ -239,7 +239,7 @@
 .kd-ticket-meta {
   font-family: var(--font-plex-mono), monospace;
   font-size: 11px;
-  color: rgba(35, 32, 26, 0.55);
+  color: rgba(35, 32, 26, 0.72);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -275,7 +275,7 @@
   font-family: var(--font-plex-mono), monospace;
   font-size: 13px;
   font-weight: 600;
-  color: rgba(35, 32, 26, 0.6);
+  color: rgba(35, 32, 26, 0.72);
   white-space: nowrap;
 }
 .kd-progress {
@@ -306,8 +306,8 @@
 }
 .kd-timer[data-late="true"] { color: #c13a2a; }
 .kd-timer span {
-  color: rgba(35, 32, 26, 0.4);
-  font-weight: 400;
+  color: rgba(35, 32, 26, 0.72);
+  font-weight: 500;
 }
 
 /* Huge CTAs — thumb-friendly */

@@ -268,9 +268,12 @@ describe("Concurrent stock — atomic decrement prevents overselling", () => {
     const { placeOrder } = await import("@/app/(student)/_actions");
     // Reset mock to return out_of_stock for any qty > remaining
     stockRemaining = 2;
-    mockRpc.mockImplementationOnce((fn: string) => {
+    mockRpc.mockImplementation((fn: string) => {
       if (fn === "atomic_decrement_stock") {
         return Promise.resolve({ data: "out_of_stock:Crispy Samosa", error: null });
+      }
+      if (fn === "next_order_short_code") {
+        return Promise.resolve({ data: "T-2402", error: null });
       }
       return Promise.resolve({ data: null, error: null });
     });

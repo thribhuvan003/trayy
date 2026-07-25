@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getServerClient } from "@/lib/supabase/server";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { resolveTenant } from "@/lib/tenant";
+import { getVerifiedAuthUser } from "@/lib/auth/verified-user";
 import { logger } from "@/lib/logging";
 import { safeNext } from "@/lib/auth/safe-redirect";
 
@@ -128,8 +129,7 @@ export async function GET(req: NextRequest) {
   const isSignup = searchParams.get("signup") === "1";
 
   const tenant = tenantSlug ? await resolveTenant(tenantSlug) : null;
-  const { data: { session: _cbSession } } = await supabase.auth.getSession();
-  const u = { user: _cbSession?.user ?? null };
+  const u = { user: await getVerifiedAuthUser(supabase) };
 
   if (u.user) {
     // ── ENROLLMENT FIRST ─────────────────────────────────────────────────────

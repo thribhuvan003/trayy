@@ -62,14 +62,13 @@ export function BackPageSection() {
           </p>
         </header>
 
-        <div className="lp-trust-promises lp-stagger" role="list">
+        <div className="lp-trust-promises lp-stagger">
           {PROMISES.map((p, i) => {
             const on = active === p.n;
             return (
               <button
                 key={p.n}
                 type="button"
-                role="listitem"
                 aria-pressed={on}
                 className={`lp-trust-card${on ? " is-active" : ""}`}
                 style={{ ["--i" as string]: i }}

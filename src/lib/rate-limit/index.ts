@@ -41,26 +41,9 @@ async function getUpstash() {
 // env.ts throws at startup in production if Upstash is missing, so this
 // path is never reached on Vercel.
 const _mem = new Map<string, { count: number; reset: number }>();
+let _lastUpstashErrorLogAt = 0;
 
-export async function rateLimit(
-  key: string,
-  opts?: { limit?: number; windowMs?: number }
-): Promise<Result> {
-  const limit = opts?.limit ?? 20;
-  const windowMs = opts?.windowMs ?? 10_000;
-
-  const u = await getUpstash();
-  if (u) {
-    const r = await u.rl.limit(key);
-    return {
-      success: r.success,
-      limit: r.limit,
-      remaining: r.remaining,
-      reset: r.reset,
-    };
-  }
-
-  // Local dev / test only.
+function memoryRateLimit(key: string, limit: number, windowMs: number): Result {
   const now = Date.now();
   const cur = _mem.get(key);
   if (!cur || cur.reset < now) {
@@ -74,4 +57,39 @@ export async function rateLimit(
     remaining: Math.max(0, limit - cur.count),
     reset: cur.reset,
   };
+}
+
+export async function rateLimit(
+  key: string,
+  opts?: { limit?: number; windowMs?: number }
+): Promise<Result> {
+  const limit = opts?.limit ?? 20;
+  const windowMs = opts?.windowMs ?? 10_000;
+
+  const u = await getUpstash();
+  if (u) {
+    try {
+      const r = await u.rl.limit(key);
+      return {
+        success: r.success,
+        limit: r.limit,
+        remaining: r.remaining,
+        reset: r.reset,
+      };
+    } catch (error) {
+      // Redis is the distributed source of truth, but a transient dependency
+      // outage must not turn every order, login, cron, and signed webhook into
+      // a 500. Degrade to a strict per-instance window while the provider
+      // recovers. Log at most once per minute to avoid an outage log storm.
+      const now = Date.now();
+      if (now - _lastUpstashErrorLogAt >= 60_000) {
+        _lastUpstashErrorLogAt = now;
+        console.error("[Tray] Upstash rate limit unavailable; using local fallback", error);
+      }
+      return memoryRateLimit(key, limit, windowMs);
+    }
+  }
+
+  // Local dev / test only.
+  return memoryRateLimit(key, limit, windowMs);
 }

@@ -132,11 +132,13 @@ export async function cancelOrderByStudent(orderId: string): Promise<CancelResul
     elapsed_ms: elapsedMs, total_paise: order.total_paise,
   });
 
-  // Best-effort refund — don't block the cancellation on refund success.
-  // P1-3: Fire-and-forget BUT log failures via initiateRefundForOrder's own error handling
-  void initiateRefundForOrder(orderId, tenant.id).catch((err) => {
+  // Complete the refund attempt before this serverless invocation returns.
+  // Direct-UPI payments record a manual-refund obligation inside the helper.
+  try {
+    await initiateRefundForOrder(orderId, tenant.id);
+  } catch (err) {
     logger.error("refund.failed_on_student_cancel", err, { tenant_id: tenant.id, order_id: orderId });
-  });
+  }
 
   revalidatePath(`/c/${tenant.slug}/track/${orderId}`);
   revalidatePath(`/c/${tenant.slug}/orders`);
@@ -322,50 +324,37 @@ export async function placeOrder(
   // We own this idemKey. Proceed with creation.
   const admin = getAdminClient(tenant.id);
 
-  // ── Priority 7: Atomic stock decrement (row-level locked, prevents overselling) ──
-  // For items with a finite stock_qty, call the DB function that holds FOR UPDATE
-  // locks on each menu_item row and decrements atomically. If ANY item has run out,
-  // the function returns immediately with 'out_of_stock:<name>' — no partial decrement.
-  // This is the only correct way to prevent overselling under 500+ concurrent checkouts.
-  const stockBoundItems = validated.filter((v) => v.item.stock_qty !== null);
-  if (stockBoundItems.length > 0) {
-    const stockPayload = stockBoundItems.map((v) => ({ menu_item_id: v.item.id, qty: v.qty }));
-    const { data: stockResult, error: stockErr } = await (admin as any).rpc(
-      "atomic_decrement_stock",
-      { p_tenant_id: tenant.id, p_items: stockPayload }
-    );
-
-    if (stockErr || (typeof stockResult === "string" && stockResult !== "ok")) {
-      // Release the idempotency claim so the student can retry cleanly
-      await getAdminClient(tenant.id)
-        .from("idempotency_keys" as any)
-        .delete()
-        .eq("key", idemKey);
-
-      const itemName =
-        typeof stockResult === "string" && stockResult.startsWith("out_of_stock:")
-          ? stockResult.replace("out_of_stock:", "")
-          : "an item";
-      log.warn("stock decrement rejected", { result: stockResult });
-      return {
-        ok: false,
-        error: `${itemName} just sold out — please remove it and try again`,
-        code: "OUT_OF_STOCK" as const,
-      };
-    }
-  }
-
-  // Atomic per-tenant sequence — race-safe under any concurrency.
-  // Postgres sequence nextval() is instantaneous and guaranteed unique;
-  // no two concurrent requests can ever receive the same short code.
+  // Allocate the human-readable code before reserving finite stock. A failed or
+  // not-yet-deployed allocator can leave a harmless number gap, but must never
+  // decrement inventory for an order that cannot be created.
   const { data: codeData, error: codeErr } = await (admin as any).rpc(
     "next_order_short_code",
     { p_tenant: tenant.id }
   );
-  if (codeErr || !codeData) {
-    await getAdminClient(tenant.id).from("idempotency_keys" as any).delete().eq("key", idemKey);
-    log.error("placeOrder: short code RPC failed", codeErr, { tenant_id: tenant.id });
+  const allocatorMissing =
+    (codeErr as { code?: string } | null)?.code === "PGRST202" ||
+    (codeErr as { code?: string } | null)?.code === "42883";
+  let shortCode =
+    typeof codeData === "string" && codeData
+      ? codeData
+      : allocatorMissing
+        ? `T-${crypto.randomBytes(5).toString("hex").toUpperCase()}`
+        : null;
+
+  if (!shortCode) {
+    await admin.from("idempotency_keys" as any).delete().eq("key", idemKey);
+    log.error("placeOrder: short code allocation failed", codeErr, {
+      tenant_id: tenant.id,
+      database_code: (codeErr as { code?: string } | null)?.code,
+      database_hint: (codeErr as { hint?: string } | null)?.hint,
+    });
     return { ok: false, error: "Could not assign order code — please try again" };
+  }
+  if (allocatorMissing) {
+    log.warn("placeOrder: allocator migration missing; using collision-resistant fallback", {
+      tenant_id: tenant.id,
+      database_code: (codeErr as { code?: string } | null)?.code,
+    });
   }
 
   // Direct-UPI auto-verify: give the order a unique final amount (total + 1..999 paise)
@@ -385,12 +374,11 @@ export async function placeOrder(
     verifyPaise = tag === 0 ? null : tag; // 0 = all 999 slots taken → manual net
   }
 
-  const orderInsert = await admin
-    .from("orders")
-    .insert({
+  const insertOrder = (candidateCode: string) =>
+    admin.from("orders").insert({
       tenant_id: tenant.id,
       user_id: user.id,
-      short_code: codeData as string,
+      short_code: candidateCode,
       status: "pending_payment",
       total_paise: total,
       upi_verify_paise: verifyPaise,
@@ -404,7 +392,17 @@ export async function placeOrder(
     } as any)
     .select("id, short_code")
     .single<{ id: string; short_code: string }>();
+
+  let orderInsert = await insertOrder(shortCode);
+  // The migration-backed allocator is deterministic and collision-safe. The
+  // emergency fallback is random; retry a vanishingly unlikely unique collision
+  // before touching inventory or exposing an error to the customer.
+  if (allocatorMissing && (orderInsert.error as { code?: string } | null)?.code === "23505") {
+    shortCode = `T-${crypto.randomBytes(5).toString("hex").toUpperCase()}`;
+    orderInsert = await insertOrder(shortCode);
+  }
   if (orderInsert.error || !orderInsert.data) {
+    await admin.from("idempotency_keys" as any).delete().eq("key", idemKey);
     return { ok: false, error: orderInsert.error?.message ?? "Could not create order" };
   }
   const order = orderInsert.data;
@@ -433,6 +431,94 @@ export async function placeOrder(
     return { ok: false, error: "Could not save order items — please try again" };
   }
 
+  // ── Payment-rail branch ──────────────────────────────────────────────────
+  // direct_upi: student pays the canteen's VPA directly. There is NOTHING for
+  // Razorpay to capture, so we never create a Razorpay order (that was the bug —
+  // orphan Razorpay orders that webhooks/reconcile waited on forever). The
+  // payment row carries a null razorpay_order_id; the reconcile cron already
+  // skips rows with no razorpay_order_id.
+  // razorpay: money flows through the gateway — create the order so the existing
+  // webhook / safe_capture_payment / reconcile machinery can capture it.
+  let razorpayOrderId: string | null = null;
+  let simulated = false;
+  if (paymentMode === "razorpay") {
+    try {
+      const rzpStart = Date.now();
+      const rzp = await createRazorpayOrder({
+        amountPaise: total,
+        receipt: order.short_code,
+        notes: { tenant: tenant.slug, order: order.id },
+      });
+      razorpayOrderId = rzp.id;
+      simulated = rzp.simulated;
+      log.info("razorpay order created", {
+        razorpay_order_id: rzp.id,
+        simulated: rzp.simulated,
+        latency_ms: Date.now() - rzpStart,
+      });
+    } catch (error) {
+      await admin.from("orders").delete().eq("id", order.id).eq("tenant_id", tenant.id);
+      await admin.from("idempotency_keys" as any).delete().eq("key", idemKey);
+      log.error("placeOrder: Razorpay order creation failed", error, {
+        order_id: order.id,
+        tenant_id: tenant.id,
+      });
+      return { ok: false, error: "Payment setup failed — no charge was made. Please try again." };
+    }
+  } else {
+    log.info("direct_upi order — no Razorpay order created (pays canteen VPA directly)", {
+      order_id: order.id,
+    });
+  }
+
+  const { error: paymentInsertErr } = await admin.from("payments").insert({
+    tenant_id: tenant.id,
+    order_id: order.id,
+    razorpay_order_id: razorpayOrderId,
+    amount_paise: total,
+    status: "initiated",
+  });
+  if (paymentInsertErr) {
+    await admin.from("orders").delete().eq("id", order.id).eq("tenant_id", tenant.id);
+    await admin.from("idempotency_keys" as any).delete().eq("key", idemKey);
+    log.error("placeOrder: payment ledger insert failed", paymentInsertErr, {
+      order_id: order.id,
+      tenant_id: tenant.id,
+    });
+    return { ok: false, error: "Could not prepare payment — no charge was made. Please try again." };
+  }
+
+  // Reserve finite stock only after every fallible order/payment write above has
+  // succeeded. If the locked reservation loses a race, deleting the order rolls
+  // back its items and payment row without ever decrementing inventory.
+  const stockBoundItems = validated.filter((v) => v.item.stock_qty !== null);
+  if (stockBoundItems.length > 0) {
+    const stockPayload = stockBoundItems.map((v) => ({ menu_item_id: v.item.id, qty: v.qty }));
+    const { data: stockResult, error: stockErr } = await (admin as any).rpc(
+      "atomic_decrement_stock",
+      { p_tenant_id: tenant.id, p_items: stockPayload }
+    );
+
+    if (stockErr || (typeof stockResult === "string" && stockResult !== "ok")) {
+      await admin.from("orders").delete().eq("id", order.id).eq("tenant_id", tenant.id);
+      await admin.from("idempotency_keys" as any).delete().eq("key", idemKey);
+
+      const itemName =
+        typeof stockResult === "string" && stockResult.startsWith("out_of_stock:")
+          ? stockResult.replace("out_of_stock:", "")
+          : "an item";
+      log.warn("stock reservation rejected; provisional order removed", {
+        order_id: order.id,
+        result: stockResult,
+      });
+      return {
+        ok: false,
+        error: `${itemName} just sold out — please remove it and try again`,
+        code: "OUT_OF_STOCK" as const,
+      };
+    }
+  }
+
   await admin.from("order_status_logs").insert({
     tenant_id: tenant.id,
     order_id: order.id,
@@ -448,44 +534,6 @@ export async function placeOrder(
     target_type: "order",
     target_id: order.id,
     meta: { total_paise: total, items: validated.length, order_type: orderType },
-  });
-
-  // ── Payment-rail branch ──────────────────────────────────────────────────
-  // direct_upi: student pays the canteen's VPA directly. There is NOTHING for
-  // Razorpay to capture, so we never create a Razorpay order (that was the bug —
-  // orphan Razorpay orders that webhooks/reconcile waited on forever). The
-  // payment row carries a null razorpay_order_id; the reconcile cron already
-  // skips rows with no razorpay_order_id.
-  // razorpay: money flows through the gateway — create the order so the existing
-  // webhook / safe_capture_payment / reconcile machinery can capture it.
-  let razorpayOrderId: string | null = null;
-  let simulated = false;
-  if (paymentMode === "razorpay") {
-    const rzpStart = Date.now();
-    const rzp = await createRazorpayOrder({
-      amountPaise: total,
-      receipt: order.short_code,
-      notes: { tenant: tenant.slug, order: order.id },
-    });
-    razorpayOrderId = rzp.id;
-    simulated = rzp.simulated;
-    log.info("razorpay order created", {
-      razorpay_order_id: rzp.id,
-      simulated: rzp.simulated,
-      latency_ms: Date.now() - rzpStart,
-    });
-  } else {
-    log.info("direct_upi order — no Razorpay order created (pays canteen VPA directly)", {
-      order_id: order.id,
-    });
-  }
-
-  await admin.from("payments").insert({
-    tenant_id: tenant.id,
-    order_id: order.id,
-    razorpay_order_id: razorpayOrderId,
-    amount_paise: total,
-    status: "initiated",
   });
 
   log.info("placeOrder success — order created", {

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getServerClient } from "@/lib/supabase/server";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { IndianRupee, ShoppingBag, Trophy } from "lucide-react";
+import { getVerifiedAuthUser } from "@/lib/auth/verified-user";
 
 export const dynamic = "force-dynamic";
 
@@ -16,10 +17,7 @@ function formatRupees(paise: number) {
 
 export default async function ReportsPage() {
   const serverClient = await getServerClient();
-  const {
-    data: { session },
-  } = await serverClient.auth.getSession();
-  const user = session?.user ?? null;
+  const user = await getVerifiedAuthUser(serverClient);
   if (!user) redirect("/login?next=/college-admin/reports");
 
   const admin = getAdminClient();

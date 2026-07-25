@@ -82,7 +82,7 @@ export default async function SignupPage({
               {copy.italic}
             </span>
           </h1>
-          <p className="text-[14px] leading-[1.6] mb-7" style={{ color: "var(--color-ink, #1A1A19)", opacity: 0.52 }}>
+          <p className="text-[14px] leading-[1.6] mb-7" style={{ color: "var(--color-ink, #1A1A19)", opacity: 0.72 }}>
             {copy.sub}
           </p>
 
@@ -95,12 +95,12 @@ export default async function SignupPage({
 
           {/* Footer */}
           <div className="mt-7 pt-5 border-t border-[color:var(--color-line)]">
-            <p className="text-[13px]" style={{ color: "var(--color-ink, #1A1A19)", opacity: 0.5 }}>
+            <p className="text-[13px]" style={{ color: "var(--color-ink, #1A1A19)", opacity: 0.72 }}>
               Already have an account?{" "}
               <Link
                 href={`/login?next=${encodeURIComponent(sp.next ?? "/")}&role=${role}`}
                 className="font-semibold hover:underline underline-offset-2"
-                style={{ color: "var(--color-ocean-500, #e60000)", opacity: 1 }}
+                style={{ color: "var(--color-ocean-700, #8f1410)", opacity: 1 }}
               >
                 Sign in
               </Link>
