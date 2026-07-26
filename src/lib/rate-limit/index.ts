@@ -8,7 +8,8 @@ type Result = { success: boolean; limit: number; remaining: number; reset: numbe
 // up at import time.
 let _upstash: {
   Ratelimit: typeof import("@upstash/ratelimit").Ratelimit;
-  rl: import("@upstash/ratelimit").Ratelimit;
+  redis: import("@upstash/redis").Redis;
+  limiters: Map<string, import("@upstash/ratelimit").Ratelimit>;
 } | null = null;
 
 async function getUpstash() {
@@ -22,18 +23,7 @@ async function getUpstash() {
     token: env.UPSTASH_REDIS_REST_TOKEN!,
   });
 
-  // Sliding window — strictly correct: no 2× burst at window boundaries.
-  // Fixed window lets a student place 10 orders in 2 seconds by straddling
-  // a minute boundary (5 at :59.9, 5 at :00.0). Sliding window prevents this.
-  // analytics=true surfaces usage in the Upstash dashboard for capacity planning.
-  const rl = new Ratelimit({
-    redis,
-    limiter: Ratelimit.slidingWindow(20, "10 s"),
-    analytics: true,
-    prefix: "tray",
-  });
-
-  _upstash = { Ratelimit, rl };
+  _upstash = { Ratelimit, redis, limiters: new Map() };
   return _upstash;
 }
 
@@ -69,7 +59,18 @@ export async function rateLimit(
   const u = await getUpstash();
   if (u) {
     try {
-      const r = await u.rl.limit(key);
+      const policyKey = `${limit}:${windowMs}`;
+      let limiter = u.limiters.get(policyKey);
+      if (!limiter) {
+        limiter = new u.Ratelimit({
+          redis: u.redis,
+          limiter: u.Ratelimit.slidingWindow(limit, `${windowMs} ms`),
+          analytics: true,
+          prefix: `tray:${limit}:${windowMs}`,
+        });
+        u.limiters.set(policyKey, limiter);
+      }
+      const r = await limiter.limit(key);
       return {
         success: r.success,
         limit: r.limit,

@@ -372,7 +372,7 @@ export async function placeOrder(
     typeof codeData === "string" && codeData
       ? codeData
       : allocatorMissing
-        ? `T-${crypto.randomBytes(5).toString("hex").toUpperCase()}`
+        ? `T-X${crypto.randomBytes(5).toString("hex").toUpperCase()}`
         : null;
 
   if (!shortCode) {
@@ -432,7 +432,7 @@ export async function placeOrder(
   // emergency fallback is random; retry a vanishingly unlikely unique collision
   // before touching inventory or exposing an error to the customer.
   if (allocatorMissing && (orderInsert.error as { code?: string } | null)?.code === "23505") {
-    shortCode = `T-${crypto.randomBytes(5).toString("hex").toUpperCase()}`;
+    shortCode = `T-X${crypto.randomBytes(5).toString("hex").toUpperCase()}`;
     orderInsert = await insertOrder(shortCode);
   }
   if (orderInsert.error || !orderInsert.data) {

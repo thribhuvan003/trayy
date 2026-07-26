@@ -126,6 +126,7 @@ export function StaffPanel({ members, invites }: { members: Member[]; invites: I
               <Check size={12} className="text-emerald-400 shrink-0 mt-0.5" />
               <span className="flex-1">{lastUrl}</span>
               <button
+                type="button"
                 onClick={() => {
                   navigator.clipboard.writeText(lastUrl);
                   toast.success("Copied");

@@ -498,7 +498,7 @@ export async function createWalkInOrder(opts: {
     typeof allocatedCode === "string" && allocatedCode
       ? allocatedCode
       : allocatorMissing
-        ? `T-${crypto.randomBytes(5).toString("hex").toUpperCase()}`
+        ? `T-X${crypto.randomBytes(5).toString("hex").toUpperCase()}`
         : null;
   if (!shortCode) {
     logger.error("walk-in short code allocation failed", allocationError, {
@@ -527,7 +527,7 @@ export async function createWalkInOrder(opts: {
     allocatorMissing &&
     (orderInsert.error as { code?: string } | null)?.code === "23505"
   ) {
-    shortCode = `T-${crypto.randomBytes(5).toString("hex").toUpperCase()}`;
+    shortCode = `T-X${crypto.randomBytes(5).toString("hex").toUpperCase()}`;
     orderInsert = await insertWalkInOrder(shortCode);
   }
   if (orderInsert.error || !orderInsert.data) {

@@ -437,7 +437,7 @@ export function MenuBoard({
             {realtimeStatus !== "connected" && (
               <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", borderRadius: 999, background: "rgba(245,158,11,.10)", border: "1px solid rgba(245,158,11,.25)", fontFamily: S.fontMono, fontSize: 10, letterSpacing: "0.08em", color: "#d97706", marginBottom: 6 }}>
                 <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#f59e0b", display: "inline-block" }} />
-                {realtimeStatus === "connecting" ? "RECONNECTING…" : "UPDATES PAUSED · REFRESHING EVERY 30s"}
+                {realtimeStatus === "connecting" ? "RECONNECTING…" : "UPDATES PAUSED · REFRESHING AUTOMATICALLY"}
               </div>
             )}
             <h1 style={{ fontFamily: S.fontHeading, fontSize: "clamp(1.6rem, 7vw, 38px)", fontWeight: 700, lineHeight: 1.05, letterSpacing: "-0.02em", margin: "4px 0 0" }}>

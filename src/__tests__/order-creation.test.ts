@@ -534,7 +534,7 @@ describe("placeOrder — successful order creation", () => {
 
     expect(result.ok).toBe(true);
     expect((mockOrderInsertPayload as { short_code: string }).short_code)
-      .toMatch(/^T-[A-F0-9]{10}$/);
+      .toMatch(/^T-X[A-F0-9]{10}$/);
     expect(mockRpcCalls).toEqual(["next_order_short_code", "atomic_decrement_stock"]);
   });
 

@@ -10,7 +10,7 @@
  * exercise both sides of each boundary without waiting real time.
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { afterAll, describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("server-only", () => ({}));
 vi.mock("next/headers", () => ({
@@ -63,6 +63,7 @@ const NOW = Date.now();
 // Freeze the server clock so dynamic module imports and a busy parallel CI
 // worker cannot consume the final second of either boundary.
 vi.spyOn(Date, "now").mockReturnValue(NOW);
+afterAll(() => vi.restoreAllMocks());
 let mockOrderStatus = "placed";
 let mockPlacedAt = new Date(NOW).toISOString();
 let mockOrderTotalPaise = 10000;

@@ -44,6 +44,7 @@ begin
     )
   from public.orders o
   where o.tenant_id = p_tenant
+    and o.short_code ~ '^T-[0-9]{1,6}$'
   on conflict (tenant_id) do update
     set last_value = greatest(
       public.order_short_code_counters.last_value + 1,

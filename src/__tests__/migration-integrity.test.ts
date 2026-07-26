@@ -23,6 +23,14 @@ describe("production migration integrity", () => {
     const m0031 = migration("0031_atomic_payment_and_inventory.sql");
     expect(m0031).toContain("when allocated < 10000 then lpad");
     expect(m0031).toContain("else allocated::text");
+    expect(m0031).toContain("o.short_code ~ '^T-[0-9]{1,6}$'");
+  });
+
+  it("restores stock for every pre-fulfilment cancellation state", () => {
+    const m0030 = migration("0030_restore_reserved_stock.sql");
+    expect(m0030).toContain(
+      "old.status in ('pending_payment', 'placed', 'preparing', 'ready')"
+    );
   });
 
   it("validates the whole aggregated cart before the set-based stock update", () => {
@@ -73,6 +81,7 @@ describe("production migration integrity", () => {
     expect(m0031).toContain(
       "add column if not exists payment_verified boolean not null default true"
     );
+    expect(m0031).toContain("tenants_slug_not_reserved");
     const confirm = m0031.indexOf(
       "create or replace function public.safe_confirm_direct_upi_and_start"
     );

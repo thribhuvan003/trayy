@@ -24,7 +24,7 @@ function csvEscape(v: string | number | null) {
   // Prevent spreadsheet formula execution when an exported user-controlled
   // value is opened in Excel/Sheets.
   const s = /^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw;
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
 export async function GET(req: NextRequest) {

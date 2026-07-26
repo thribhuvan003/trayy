@@ -17,6 +17,21 @@ set order_mode = 'kitchen_flow'
 where order_mode = 'token_prepaid'
   and payment_mode = 'direct_upi';
 
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'tenants_slug_not_reserved'
+      and conrelid = 'public.tenants'::regclass
+  ) then
+    alter table public.tenants
+      add constraint tenants_slug_not_reserved
+      check (slug not in ('aditya', 'demo')) not valid;
+  end if;
+end
+$$;
+
 create or replace function public.next_order_short_code(p_tenant uuid)
 returns text
 language plpgsql
@@ -42,11 +57,16 @@ begin
     )
   from public.orders o
   where o.tenant_id = p_tenant
+    and o.short_code ~ '^T-[0-9]{1,6}$'
   on conflict (tenant_id) do update
-    set last_value = greatest(
-      public.order_short_code_counters.last_value + 1,
-      excluded.last_value
-    ),
+    set last_value = case
+      when public.order_short_code_counters.last_value > 9999999
+        then excluded.last_value
+      else greatest(
+        public.order_short_code_counters.last_value + 1,
+        excluded.last_value
+      )
+    end,
     updated_at = now()
   returning last_value into allocated;
 

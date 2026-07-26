@@ -13,7 +13,7 @@ set search_path = public, pg_temp
 as $$
 begin
   if old.stock_released_at is null
-     and old.status in ('pending_payment', 'placed')
+     and old.status in ('pending_payment', 'placed', 'preparing', 'ready')
      and new.status in (
        'expired',
        'rejected',
