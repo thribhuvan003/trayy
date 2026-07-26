@@ -21,6 +21,7 @@ type OrderRow = {
   order_type: "takeaway" | "dine_in";
   table_label: string | null;
   otp_attempts: number;
+  payment_verified: boolean;
 };
 type LineRow = {
   id: string;
@@ -87,7 +88,7 @@ export default async function KitchenPage() {
     supabase
       .from("orders")
       .select(
-        "id, short_code, status, total_paise, placed_at, ready_at, collected_at, customer_name, order_type, table_label, otp_attempts"
+        "id, short_code, status, total_paise, placed_at, ready_at, collected_at, customer_name, order_type, table_label, otp_attempts, payment_verified"
       )
       .eq("tenant_id", tenant.id)
       .in("status", ["placed", "preparing", "ready", "collected"])
@@ -123,6 +124,9 @@ export default async function KitchenPage() {
       orders={orders ?? []}
       lines={filteredLines}
       menuItems={menuItems ?? []}
+      unverifiedUpiOrderIds={(orders ?? [])
+        .filter((order) => !order.payment_verified)
+        .map((order) => order.id)}
     />
   );
 }

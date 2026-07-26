@@ -84,7 +84,6 @@ export async function setMenuItemStatus(
   if (!rate.success) {
     return { ok: false, error: "Too many admin actions — slow down a little" };
   }
-
   const start = Date.now();
   const admin = getAdminClient(c.tenant.id);
   const { error } = await admin
@@ -367,6 +366,13 @@ export async function updateCanteenSettings(opts: {
 }): Promise<{ ok: boolean; error?: string }> {
   const c = await adminContext();
   if (!c.ok) return { ok: false, error: c.error };
+  if (opts.paymentMode === "direct_upi" && opts.orderMode === "token_prepaid") {
+    return {
+      ok: false,
+      error:
+        "Token counter requires Razorpay Automatic so every PAID token is verified. Use Kitchen board with Direct UPI.",
+    };
+  }
 
   const rate = await tenantRateLimit(c.tenant.id, "admin_action", c.user.id);
   if (!rate.success) {

@@ -75,6 +75,8 @@ interface AuditEntry {
   msg: string;
 }
 
+const DEMO_REFERENCE_TS = Date.UTC(2026, 0, 1, 12, 0, 0);
+
 export function AdminDemo() {
   const [ready, setReady] = React.useState(false);
   const [canteenId, setCanteenId] = React.useState(DEFAULT_ID);
@@ -84,7 +86,9 @@ export function AdminDemo() {
   const [savedPrices, setSavedPrices] = React.useState<Record<string, number>>({});
   const [editing, setEditing] = React.useState<Record<string, boolean>>({});
   const [localAudit, setLocalAudit] = React.useState<AuditEntry[]>([]);
-  const [nowTs, setNowTs] = React.useState(() => Date.now());
+  // Keep the server and first browser render identical. The effect switches to
+  // the live clock immediately after hydration.
+  const [nowTs, setNowTs] = React.useState(DEMO_REFERENCE_TS);
   const [stallOpen, setStallOpen] = React.useState(true);
   const [paused, setPaused] = React.useState(false);
   const [, forceRender] = React.useReducer((x: number) => x + 1, 0);

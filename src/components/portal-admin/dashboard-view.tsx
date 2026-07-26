@@ -20,7 +20,19 @@ type ConnState = "online" | "reconnecting" | "offline";
 type OrderRow = {
   id: string;
   short_code: string;
-  status: "pending_payment" | "placed" | "preparing" | "ready" | "collected" | "rejected" | "expired";
+  status:
+    | "pending_payment"
+    | "placed"
+    | "preparing"
+    | "ready"
+    | "collected"
+    | "rejected"
+    | "expired"
+    | "cancelled_by_kitchen"
+    | "partially_ready"
+    | "refunded"
+    | "payment_failed";
+  payment_verified: boolean;
   total_paise: number;
   placed_at: string;
   collected_at: string | null;
@@ -44,6 +56,17 @@ type ItemRow = {
   diet_snapshot: "veg" | "nonveg" | "egg";
   price_paise_snapshot: number;
 };
+
+const REVENUE_STATUSES = new Set<OrderRow["status"]>([
+  "placed",
+  "preparing",
+  "ready",
+  "collected",
+]);
+
+function isRevenueOrder(order: OrderRow) {
+  return order.payment_verified && REVENUE_STATUSES.has(order.status);
+}
 
 export function DashboardView({
   tenantName,
@@ -105,7 +128,7 @@ export function DashboardView({
   const scheduleMoneyRefreshRef = useRef<() => void>(() => {});
 
   const prevPaidCountRef = useRef(
-    initialTodayOrders.filter((o) => !["pending_payment", "rejected", "expired"].includes(o.status)).length
+    initialTodayOrders.filter(isRevenueOrder).length
   );
   const [newOrderFlash, setNewOrderFlash] = useState(false);
 
@@ -148,7 +171,7 @@ export function DashboardView({
 
       const { data: orders14 } = await sb
         .from("orders")
-        .select("id, short_code, status, total_paise, placed_at, collected_at, ready_at, customer_name, order_type")
+        .select("id, short_code, status, total_paise, placed_at, collected_at, ready_at, customer_name, order_type, payment_verified")
         .eq("tenant_id", tenantId)
         .gte("placed_at", start14d.toISOString())
         .order("placed_at", { ascending: false })
@@ -160,7 +183,7 @@ export function DashboardView({
         const start7dIso = start7d.toISOString();
         const week = orders14.filter((o) => o.placed_at >= start7dIso);
         const today = week.filter((o) => o.placed_at >= todayIso);
-        const todayIds = today.map((o) => o.id);
+        const todayIds = today.filter(isRevenueOrder).map((o) => o.id);
 
         const elapsedMs = now.getTime() - startOfDay.getTime();
         const lwStart = new Date(startOfDay.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -173,7 +196,7 @@ export function DashboardView({
         setLiveTodayOrders(today);
         setLiveLastWeekToday(lastWeek);
 
-        const paidCount = today.filter((o) => !["pending_payment", "rejected", "expired"].includes(o.status)).length;
+        const paidCount = today.filter(isRevenueOrder).length;
         if (paidCount > prevPaidCountRef.current) {
           setNewOrderFlash(true);
           setTimeout(() => setNewOrderFlash(false), 8000);
@@ -364,8 +387,7 @@ export function DashboardView({
   // KPIs derived from live data (updated in real time via the resilient order_status_logs sub + refreshMoneyData).
   // Owner sees new paid orders, revenue move, top items change without manual refresh during rush.
   const kpis = useMemo(() => {
-    const paid = (rows: OrderRow[]) =>
-      rows.filter((o) => !["pending_payment", "rejected", "expired"].includes(o.status));
+    const paid = (rows: OrderRow[]) => rows.filter(isRevenueOrder);
     const today = paid(liveTodayOrders);
     const prior = paid(liveLastWeekToday);
 
@@ -419,7 +441,7 @@ export function DashboardView({
       days.push({ label: d.format("ddd").toUpperCase(), key: d.format("YYYY-MM-DD"), revenue: 0 });
     }
     for (const o of liveOrdersWeek) {
-      if (["rejected", "expired", "pending_payment"].includes(o.status)) continue;
+      if (!isRevenueOrder(o)) continue;
       const k = dayjs(o.placed_at).format("YYYY-MM-DD");
       const b = days.find((x) => x.key === k);
       if (b) b.revenue += o.total_paise;
@@ -430,6 +452,7 @@ export function DashboardView({
   const heatmap = useMemo(() => {
     const grid: number[][] = Array.from({ length: 7 }, () => Array(12).fill(0));
     for (const o of liveOrdersWeek) {
+      if (!isRevenueOrder(o)) continue;
       const d = dayjs(o.placed_at);
       const dow = (d.day() + 6) % 7;
       const hour = d.hour();

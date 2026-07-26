@@ -7,6 +7,7 @@ import { StudentTopBar } from "@/components/portal-student/top-bar";
 import { CartDrawerConditional } from "@/components/portal-student/cart-drawer-conditional";
 import { CartTenantSync } from "@/components/portal-student/cart-tenant-sync";
 import { OrderReadyListener } from "@/components/portal-student/order-ready-listener";
+import { TenantDocumentScope } from "@/components/tenant-document-scope";
 
 export default async function StudentLayout({ children }: { children: React.ReactNode }) {
   const h = await headers();
@@ -57,6 +58,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
       data-portal="student"
       className="min-h-screen font-sans bg-[color:var(--color-paper)] text-[color:var(--color-ink)] antialiased"
     >
+      <TenantDocumentScope tenantId={tenant.id} />
       <CartTenantSync slug={tenant.slug} />
       <OrderReadyListener userId={user?.id ?? null} tenantSlug={tenant.slug} tenantId={tenant.id} />
       <StudentTopBar tenant={tenant} siblings={siblings} user={user} />

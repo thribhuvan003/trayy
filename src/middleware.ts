@@ -259,7 +259,12 @@ export async function middleware(req: NextRequest) {
   // 4. Build response — rewrite /c/[slug]/<rest> to internal portal routes.
   //    The browser URL stays as /c/[slug]/menu but Next.js serves /menu internally.
   let res: NextResponse;
-  if (canteenMatch && canteenMatch[2] && canteenMatch[2] !== "/") {
+  if (pathname === "/" && tenantSlug) {
+    // A tenant subdomain/custom host is an ordering surface, not the generic
+    // marketing site. Keep the canonical root static while preserving the
+    // expected tenant-host entry flow.
+    res = NextResponse.redirect(new URL(`/c/${tenantSlug}/menu`, req.url));
+  } else if (canteenMatch && canteenMatch[2] && canteenMatch[2] !== "/") {
     const rewriteUrl = url.clone();
     rewriteUrl.pathname = canteenMatch[2];
     res = NextResponse.rewrite(rewriteUrl, { request: { headers: requestHeaders } });

@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { resolveTenant, getTenantSlugFromHeaders } from "@/lib/tenant";
 import { requireRole } from "@/lib/auth/get-user";
+import { TenantDocumentScope } from "@/components/tenant-document-scope";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,7 @@ export default async function KitchenLayout({ children }: { children: React.Reac
       data-portal="kitchen"
       className="min-h-screen bg-cream-200 text-tomato-900 relative overflow-x-hidden flex flex-col"
     >
+      <TenantDocumentScope tenantId={tenant.id} />
       <div className="paper-grain fixed inset-0 z-0" />
       <div className="relative z-10 flex-1">{children}</div>
       {/* Hidden on phone so cook tickets own the viewport (phone + speaker product) */}

@@ -154,8 +154,8 @@
   to { transform: translateX(-50%); }
 }
 @keyframes lpInkBlink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.35; }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(0.9); }
 }
 @keyframes lpIntroOut {
   to { opacity: 0; visibility: hidden; pointer-events: none; }
@@ -646,6 +646,7 @@
 .lp-brand {
   display: flex;
   align-items: baseline;
+  min-height: var(--lp-tap);
   gap: 10px;
   text-decoration: none;
   color: var(--text);
@@ -792,8 +793,7 @@
 #walkthrough,
 #ledger,
 #sync,
-#trust,
-#how {
+#trust {
   scroll-margin-top: 72px;
 }
 .lp-hero-copy { min-width: 0; animation: lpRise 0.55s cubic-bezier(0.16, 1, 0.3, 1) both; }
@@ -1226,9 +1226,9 @@
   font-weight: 600;
 }
 .lp-coupon-ticket b { color: var(--ink); font-size: 12px; }
-.lp-coupon-ticket b.is-new { color: var(--signal); }
+.lp-coupon-ticket b.is-new { color: #a93226; }
 .lp-live-dot {
-  color: #8fbf9a;
+  color: #b9e6c1;
   font-family: var(--font-mono), monospace;
   animation: lpInkBlink 1.5s ease infinite;
 }
@@ -1349,7 +1349,7 @@
   font-size: 14px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(242, 238, 226, 0.4);
+  color: rgba(242, 238, 226, 0.72);
 }
 .lp-step-btn--active .lp-step-num { color: #e8c860; }
 .lp-step-title {
@@ -1944,7 +1944,7 @@
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--signal);
+  color: #a93226;
 }
 .lp-trust-title {
   margin: 0 0 12px;
@@ -2084,8 +2084,8 @@
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--signal);
-  border: 1.5px solid var(--signal);
+  color: #f28b7e;
+  border: 1.5px solid #f28b7e;
   padding: 4px 8px;
 }
 .lp-trust-detail-title {
@@ -2274,7 +2274,7 @@
   justify-content: center;
   min-height: var(--lp-tap);
   padding: 0 22px;
-  background: var(--signal);
+  background: #a93226;
   color: #fff;
   font-weight: 800;
   font-size: 15.5px;
@@ -2392,7 +2392,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 40px;
+  min-height: var(--lp-tap);
   padding: 0 14px;
   border: 1.5px solid rgba(251, 247, 240, 0.28);
   background: transparent;
@@ -2423,7 +2423,7 @@
   border-color: rgba(251, 247, 240, 0.16);
   color: rgba(251, 247, 240, 0.55);
   font-weight: 600;
-  min-height: 36px;
+  min-height: var(--lp-tap);
   font-size: 12.5px;
 }
 
@@ -2818,6 +2818,9 @@
   .lp-menu-btn {
     padding-inline: 9px;
   }
+}
+.lp-coupon-preview--paper .lp-live-dot {
+  color: #27643a;
 }
 
 /* Large laptops / desktop */

@@ -3,6 +3,7 @@ import { updateCanteenHours, pauseCanteen, updateCanteenSettings } from "../_act
 import type { Tenant } from "@/lib/db/types";
 import { requireTenantContext } from "@/lib/tenant";
 import { UpiVpaField } from "@/components/portal-admin/upi-vpa-field";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,15 @@ function formatPausedUntil(pausedUntil: string | null): string | null {
   return `${diffMin}m`;
 }
 
-export default async function SettingsPage() {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const settingsParams = await searchParams;
+  const settingsError =
+    typeof settingsParams.error === "string" ? settingsParams.error : null;
+  const settingsSaved = settingsParams.saved === "1";
   // Production-grade tenant context — UPI VPA changes here must instantly affect the student pay QR for this canteen only.
   const { tenant } = await requireTenantContext();
 
@@ -104,7 +113,21 @@ export default async function SettingsPage() {
     void vpaVerified; // no longer a hard gate
     const paymentMode = (fd.get("payment_mode") as string | null) === "razorpay" ? "razorpay" : "direct_upi";
     const orderMode = (fd.get("order_mode") as string | null) === "token_prepaid" ? "token_prepaid" : "kitchen_flow";
-    await updateCanteenSettings({ guestOrdersEnabled, upiVpa: rawVpa, paymentMode, adminPhone, orderMode });
+    const result = await updateCanteenSettings({
+      guestOrdersEnabled,
+      upiVpa: rawVpa,
+      paymentMode,
+      adminPhone,
+      orderMode,
+    });
+    if (!result.ok) {
+      redirect(
+        `/c/${tenant.slug}/admin/settings?error=${encodeURIComponent(
+          result.error ?? "Settings could not be saved"
+        )}`
+      );
+    }
+    redirect(`/c/${tenant.slug}/admin/settings?saved=1`);
   }
 
   return (
@@ -120,6 +143,22 @@ export default async function SettingsPage() {
       </div>
 
       <div className="flex flex-col gap-6 max-w-xl">
+        {settingsError && (
+          <div
+            role="alert"
+            className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-[13px] leading-relaxed text-amber-200"
+          >
+            {settingsError}
+          </div>
+        )}
+        {settingsSaved && (
+          <div
+            role="status"
+            className="rounded-xl border border-lime/30 bg-lime/10 px-4 py-3 text-[13px] text-lime"
+          >
+            Settings saved.
+          </div>
+        )}
         {/* ═══ SERVICE (open / pause / hours) — also on Today home ═══ */}
         <div className="text-[11px] font-mono uppercase tracking-[0.16em] text-lime/80 px-0.5">
           Service · open & hours
@@ -371,13 +410,14 @@ export default async function SettingsPage() {
                   style={{ background: currentOrderMode === "token_prepaid" ? "rgba(210,251,80,0.05)" : "transparent", borderColor: currentOrderMode === "token_prepaid" ? "rgba(210,251,80,0.3)" : undefined }}>
                   <input type="radio" name="order_mode" value="token_prepaid"
                     defaultChecked={currentOrderMode === "token_prepaid"}
-                    className="mt-0.5 accent-lime h-4 w-4 shrink-0" />
+                    disabled={currentPaymentMode === "direct_upi"}
+                    className="mt-0.5 accent-lime h-4 w-4 shrink-0 disabled:opacity-40" />
                   <div>
                     <div className="text-[13px] text-graphite-200 font-semibold">
                       Token counter
                     </div>
                     <div className="text-[11.5px] text-graphite-400 mt-1 leading-[1.6]">
-                      No screens while you cook. Paid orders are confirmed automatically; the customer&apos;s phone shows a token number (like T-2431) and a PAID stamp — they show it at the counter, you hand over the food. Built for stalls and tiffin counters run by one or two people.
+                      No screens while you cook. Paid orders are confirmed automatically; the customer&apos;s phone shows a token number (like T-2431) and a PAID stamp — they show it at the counter, you hand over the food. Requires Razorpay Automatic so the PAID stamp cannot be self-claimed.
                     </div>
                   </div>
                 </label>

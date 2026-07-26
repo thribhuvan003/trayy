@@ -113,7 +113,7 @@ function RegisterLine() {
   ];
   const track = [...items, ...items];
   return (
-    <div className="lp-register" id="how" aria-label="Example order timeline">
+    <div className="lp-register" id="order-example" aria-label="Example order timeline">
       <div className="lp-register-track">
         {track.map((item, i) => (
           <span key={`${item.id}-${i}`} className="lp-register-item">

@@ -100,9 +100,9 @@ function SceneStudent() {
           top: "34%",
           right: -34,
           padding: "7px 16px",
-          border: "3px double #C13A2A",
+          border: "3px double #922B20",
           borderRadius: 8,
-          color: "#C13A2A",
+          color: "#922B20",
           background: "rgba(255,253,246,.85)",
           fontFamily: MONO,
           fontWeight: 700,
@@ -273,9 +273,9 @@ function SceneOtp() {
           bottom: 22,
           right: -30,
           padding: "7px 16px",
-          border: "3px double #C13A2A",
+          border: "3px double #922B20",
           borderRadius: 8,
-          color: "#C13A2A",
+          color: "#922B20",
           background: "rgba(255,253,246,.9)",
           fontFamily: MONO,
           fontWeight: 700,
@@ -338,7 +338,7 @@ function SceneAdmin() {
             padding: "9px 0",
             borderBottom: "1px solid rgba(35,32,25,.18)",
             fontSize: 14.5,
-            color: "rgba(35,32,25,.55)",
+            color: "#514D43",
           }}
         >
           <span style={{ fontFamily: MONO, fontSize: 12.5 }}>T-2430</span>

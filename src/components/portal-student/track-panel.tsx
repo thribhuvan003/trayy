@@ -66,7 +66,21 @@ const STEPS: { v: Status; label: string; icon: typeof Check; copy: string }[] = 
 
 const FIVE_MIN_MS = 5 * 60 * 1000;
 
-export function TrackPanel({ tenantSlug, tenantName, order: initial, lines, tokenMode = false }: { tenantSlug: string; tenantName: string; order: Order; lines: Line[]; tokenMode?: boolean }) {
+export function TrackPanel({
+  tenantSlug,
+  tenantName,
+  order: initial,
+  lines,
+  tokenMode = false,
+  refundState = null,
+}: {
+  tenantSlug: string;
+  tenantName: string;
+  order: Order;
+  lines: Line[];
+  tokenMode?: boolean;
+  refundState?: "completed" | "manual_required" | "pending_reconciliation" | null;
+}) {
   const [order, setOrder] = useState(initial);
   const [otp, setOtp] = useState<string | null>(null);
   const [cancelPending, startCancel] = useTransition();
@@ -215,7 +229,13 @@ export function TrackPanel({ tenantSlug, tenantName, order: initial, lines, toke
             {isCancelled ? (
               <>
                 Cancelled.{" "}
-                <span className="italic text-rose-500">Refund on its way.</span>
+                <span className="italic text-rose-500">
+                  {refundState === "completed"
+                    ? "Refund completed."
+                    : refundState === "manual_required"
+                      ? "Stall action required."
+                      : "Refund being reconciled."}
+                </span>
               </>
             ) : tokenMode && (isTokenLive || isCollected) ? (
               <>
@@ -245,9 +265,11 @@ export function TrackPanel({ tenantSlug, tenantName, order: initial, lines, toke
               Your order was cancelled.
             </div>
             <p className="text-[13.5px] text-[color:var(--color-ink)]/70 mt-1">
-              {order.status === "refunded"
-                ? "Refund has been completed. It should reflect in your UPI app within 3–5 business days."
-                : "Refund has been initiated. It should reflect in your UPI app within 3–5 business days."}
+              {refundState === "completed"
+                ? "The refund is complete. Bank processing time may still vary."
+                : refundState === "manual_required"
+                  ? "You paid the stall directly by UPI. The stall must return this payment manually; the obligation is recorded for staff."
+                  : "The cancellation is complete, but the refund is still being reconciled. Staff can see the outstanding payment record."}
             </p>
           </div>
         </div>
@@ -408,7 +430,8 @@ export function TrackPanel({ tenantSlug, tenantName, order: initial, lines, toke
           <div>
             <div className="text-[13.5px] font-medium">Changed your mind?</div>
             <p className="text-[12px] text-[color:var(--color-ink)]/55">
-              You can cancel for a full refund within 5 minutes of placing.
+              You can cancel within 5 minutes. Gateway refunds are initiated
+              automatically; direct UPI refunds must be returned by the stall.
             </p>
             {cancelError && (
               <p className="text-[12px] text-rose-500 mt-1">{cancelError}</p>

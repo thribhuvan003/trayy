@@ -7,7 +7,6 @@ import {
   Unbounded, Hanken_Grotesk, Space_Mono,
 } from "next/font/google";
 import localFont from "next/font/local";
-import { headers } from "next/headers";
 
 // Self-hosted Fontshare faces — distinctive, designer-grade, not Google/AI defaults.
 const clashDisplay = localFont({
@@ -33,8 +32,6 @@ const switzer = localFont({
   ],
 });
 import { Toaster } from "sonner";
-import { resolveTenant, getTenantSlugFromHeaders } from "@/lib/tenant";
-import { Providers } from "@/components/providers";
 import { AuthRescue } from "@/components/auth-rescue";
 import "./globals.css";
 
@@ -237,13 +234,7 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export const dynamic = "force-dynamic";
-
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const h = await headers();
-  const slug = getTenantSlugFromHeaders(h);
-  const tenant = await resolveTenant(slug);
-
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   // Blocking inline script: resolve theme synchronously before first paint so
   // dark-mode users never see a white flash (FOUC). Mirrors the logic in
   // ThemeProvider; that effect later re-applies idempotently.
@@ -252,8 +243,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html
       lang="en"
-      data-tenant-id={tenant?.id ?? ""}
-      data-tenant-slug={tenant?.slug ?? ""}
       className={`${clashDisplay.variable} ${switzer.variable} ${inter.variable} ${fraunces.variable} ${manrope.variable} ${jetbrains.variable} ${instrumentSerif.variable} ${newsreader.variable} ${spaceGrotesk.variable} ${geist.variable} ${geistMono.variable} ${bebasNeue.variable} ${cormorant.variable} ${plusJakarta.variable} ${barlowCondensed.variable} ${dmSerif.variable} ${dmMono.variable} ${kronaOne.variable} ${bricolage.variable} ${unbounded.variable} ${hankenGrotesk.variable} ${spaceMono.variable}`}
       suppressHydrationWarning
     >
@@ -279,9 +268,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           }}
         />
         <AuthRescue />
-        <Providers tenantId={tenant?.id ?? null}>
-          {children}
-        </Providers>
+        {children}
         <Toaster
           position="top-center"
           richColors

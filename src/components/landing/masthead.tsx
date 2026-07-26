@@ -20,7 +20,7 @@ export function Masthead() {
           <span className="lp-brand-tag">Street edition</span>
         </a>
         <nav className="lp-nav" aria-label="Main">
-          <a href="#how" className="lp-nav-link">
+          <a href="#walkthrough" className="lp-nav-link">
             How
           </a>
           <a href="#demos" className="lp-nav-link">
@@ -54,7 +54,7 @@ export function Masthead() {
 
       <div id="lp-mobile-menu" className="lp-mobile-menu" hidden={!open}>
         <nav className="lp-mobile-menu-list" aria-label="Mobile">
-          <a href="#how" className="lp-mobile-link" onClick={close}>
+          <a href="#walkthrough" className="lp-mobile-link" onClick={close}>
             How it works
           </a>
           <a href="#demos" className="lp-mobile-link" onClick={close}>

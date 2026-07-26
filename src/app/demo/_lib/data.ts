@@ -1,8 +1,4 @@
-/**
- * Shared fixture data for the public Tray demos — one street, multiple
- * stalls. Mirrors the shape used by the static demos in /public/demo so
- * the demo pages stay interoperable through the same localStorage keys.
- */
+/** Shared fixture data for the three public App Router demos. */
 
 export type Diet = "veg" | "nv";
 export type TicketDiet = "veg" | "nonveg";

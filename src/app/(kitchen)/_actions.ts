@@ -100,29 +100,33 @@ export async function markPreparing(orderId: string): Promise<Outcome> {
 
   const start = Date.now();
 
-  // CAS guard: only update if status is still "placed" (concurrent cancel race).
-  const { data: casResult } = await admin.from("orders")
-    .update({ status: "preparing" })
-    .eq("id", orderId)
-    .eq("tenant_id", ctx.tenant.id)
-    .eq("status", "placed")
-    .select("id");
-  if (!casResult || casResult.length === 0) {
-    return { ok: false, error: "Order status changed concurrently — refresh the board" };
+  // One database transaction confirms any direct-UPI claim, transitions the
+  // order, and writes its audit/event trail. This prevents a kitchen refresh or
+  // partial write from treating unverified money as paid revenue.
+  const { data: transition, error: transitionError } = await admin.rpc(
+    "safe_confirm_direct_upi_and_start",
+    {
+      p_order_id: orderId,
+      p_tenant_id: ctx.tenant.id,
+      p_actor_user_id: ctx.user.id,
+    }
+  );
+  if (transitionError) {
+    logger.error("kitchen start transaction failed", transitionError, {
+      tenant_id: ctx.tenant.id,
+      order_id: orderId,
+    });
+    return { ok: false, error: "Could not start order — refresh and try again" };
   }
-
-  // Attempt every audit/event write before the serverless invocation returns.
-  await settleKitchenWrites("markPreparing", [
-    admin.from("order_status_logs").insert({
-      tenant_id: ctx.tenant.id, order_id: orderId,
-      from_status: "placed", to_status: "preparing", actor_user_id: ctx.user.id,
-    }),
-    admin.from("audit_logs").insert({
-      tenant_id: ctx.tenant.id, actor_user_id: ctx.user.id,
-      action: "order.preparing", target_type: "order", target_id: orderId,
-    }),
-    emitOrderEvent(admin, { order_id: orderId, tenant_id: ctx.tenant.id, event_type: "preparing", payload: { actor: "kitchen" } }),
-  ], { tenant_id: ctx.tenant.id, order_id: orderId });
+  if (transition !== "started" && transition !== "confirmed_and_started") {
+    const message =
+      transition === "not_found"
+        ? "Order not found"
+        : transition === "unverified_payment_not_found"
+          ? "UPI claim is missing — do not start this order"
+          : "Order status changed concurrently — refresh the board";
+    return { ok: false, error: message };
+  }
   logger.info("kitchen status transition", {
     tenant_id: ctx.tenant.id,
     order_id: orderId,

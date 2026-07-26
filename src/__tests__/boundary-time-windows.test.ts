@@ -134,7 +134,12 @@ describe("cancelOrderByStudent — 5-minute cancel window boundary", () => {
     mockOrderStatus = "placed";
     mockUpdate.mockReturnValue({
       eq: vi.fn().mockReturnThis(),
-      select: vi.fn().mockResolvedValue({ data: [{ id: "order-1" }], error: null }),
+      select: vi.fn().mockReturnValue({
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: { id: "order-1" },
+          error: null,
+        }),
+      }),
     });
   });
 
