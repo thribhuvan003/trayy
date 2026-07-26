@@ -317,7 +317,7 @@ export function LoginForm({ next, slug = "", role = "student" }: { next: string;
         </button>
         <div className="flex items-center gap-3">
           <div className="flex-1 h-px bg-[color:var(--color-line)]" />
-          <span className="text-[12px] text-[color:var(--color-ink)]/45 font-mono">or</span>
+          <span className="text-[12px] text-[color:var(--color-ink)]/70 font-mono">or</span>
           <div className="flex-1 h-px bg-[color:var(--color-line)]" />
         </div>
       </div>

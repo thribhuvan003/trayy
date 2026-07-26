@@ -6,7 +6,7 @@ Tray handles real money (UPI payments) and PII (student emails, order history). 
 
 **Please do not open a public GitHub issue for security problems.**
 
-Report privately via [GitHub Security Advisories](https://github.com/thribhuvan003/tray/security/advisories/new). Include:
+Report privately via [GitHub Security Advisories](https://github.com/thribhuvan003/trayy/security/advisories/new). Include:
 
 - A description of the issue and its impact
 - Steps to reproduce (or a proof of concept)
@@ -19,7 +19,7 @@ You should receive an acknowledgement within **72 hours**. We aim to triage and 
 
 In scope:
 
-- The deployed Tray application (`*.tray.app` and preview URLs)
+- The deployed Tray application (`trayy.vercel.app` and its Vercel preview URLs)
 - This repository's source code, CI configuration, and infrastructure as code
 - Supabase RLS policies and database functions in `supabase/migrations/`
 - Razorpay webhook handling and order capture flow

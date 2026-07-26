@@ -28,7 +28,10 @@ export function StaffPanel({ members, invites }: { members: Member[]; invites: I
     if (!email.trim()) return;
     start(async () => {
       const r = await inviteStaff(email.trim(), role);
-      if (!r.ok) toast.error(r.error ?? "Failed");
+      if (!r.ok) {
+        toast.error(r.error ?? "Failed");
+        if (r.url) setLastUrl(r.url);
+      }
       else {
         toast.success("Invite sent");
         if (r.url) setLastUrl(r.url);
@@ -123,6 +126,7 @@ export function StaffPanel({ members, invites }: { members: Member[]; invites: I
               <Check size={12} className="text-emerald-400 shrink-0 mt-0.5" />
               <span className="flex-1">{lastUrl}</span>
               <button
+                type="button"
                 onClick={() => {
                   navigator.clipboard.writeText(lastUrl);
                   toast.success("Copied");

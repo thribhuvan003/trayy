@@ -1,10 +1,9 @@
 "use client";
 
 /**
- * localStorage-backed store shared by the three demo pages. Keys match the
- * static demos in /public/demo, so orders placed here land in the kitchen
- * demo and roll up in the admin demo. Production replaces this with
- * Supabase tables + Realtime channels.
+ * localStorage-backed state shared by the three demos. Orders placed in the
+ * student demo appear in the kitchen demo and roll up in the admin demo.
+ * Production uses Supabase tables and Realtime channels instead.
  */
 
 import { CANTEENS, DEFAULT_ID, DEMO_CANTEEN_IDS, type Special, type TicketDiet, type TicketStatus } from "./data";
@@ -63,6 +62,13 @@ export function getSpecials(canteenId: string): Special[] {
   } catch {
     return [];
   }
+}
+
+export function hasStoredSpecials(canteenId: string): boolean {
+  return (
+    typeof window !== "undefined" &&
+    localStorage.getItem(specialsKey(canteenId)) !== null
+  );
 }
 
 export function setSpecials(canteenId: string, list: Special[]) {

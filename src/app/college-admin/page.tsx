@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getServerClient } from "@/lib/supabase/server";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { Building2, ShoppingBag, IndianRupee, ArrowRight } from "lucide-react";
+import { getVerifiedAuthUser } from "@/lib/auth/verified-user";
 
 export const dynamic = "force-dynamic";
 
@@ -41,10 +42,7 @@ function canteenStatus(row: CanteenRow): {
 
 export default async function CollegeAdminDashboard() {
   const serverClient = await getServerClient();
-  const {
-    data: { session },
-  } = await serverClient.auth.getSession();
-  const user = session?.user ?? null;
+  const user = await getVerifiedAuthUser(serverClient);
   if (!user) redirect("/login?next=/college-admin");
 
   const admin = getAdminClient();

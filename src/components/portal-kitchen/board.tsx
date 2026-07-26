@@ -29,6 +29,7 @@ type OrderRow = {
   order_type: "takeaway" | "dine_in";
   table_label: string | null;
   otp_attempts: number;
+  payment_verified: boolean;
 };
 type LineRow = {
   id: string;
@@ -46,6 +47,7 @@ export function KitchenBoard({
   orders: initialOrders,
   lines: initialLines,
   menuItems: initialMenuItems,
+  unverifiedUpiOrderIds,
 }: {
   tenantId: string;
   tenantName: string;
@@ -53,6 +55,7 @@ export function KitchenBoard({
   orders: OrderRow[];
   lines: LineRow[];
   menuItems: { id: string; name: string; price_paise: number; diet: "veg" | "nonveg" | "egg"; is_special: boolean; in_stock: boolean; category_id: string | null }[];
+  unverifiedUpiOrderIds: string[];
 }) {
   const [orders, setOrders] = useState(initialOrders);
   const [lines, setLines] = useState(initialLines);
@@ -190,7 +193,9 @@ export function KitchenBoard({
 
   // Priority 1: Track orders that came in via UPI-trust path (unverified payment)
   // Set is populated from Realtime event payload; clears when order is collected/rejected.
-  const [unverifiedUpiOrders, setUnverifiedUpiOrders] = useState<Set<string>>(new Set());
+  const [unverifiedUpiOrders, setUnverifiedUpiOrders] = useState<Set<string>>(
+    () => new Set(unverifiedUpiOrderIds)
+  );
 
   const bellOnRef = useRef(true);
   const seenOrderIdsRef = useRef<Set<string>>(new Set(initialOrders.map((o) => o.id)));
@@ -389,7 +394,7 @@ export function KitchenBoard({
     const { data } = await sb
       .from("orders")
       .select(
-        "id, short_code, status, total_paise, placed_at, ready_at, collected_at, customer_name, order_type, table_label, otp_attempts"
+        "id, short_code, status, total_paise, placed_at, ready_at, collected_at, customer_name, order_type, table_label, otp_attempts, payment_verified"
       )
       .eq("tenant_id", tenantId)
       .in("status", ["placed", "preparing", "ready", "collected"])
@@ -402,6 +407,9 @@ export function KitchenBoard({
       const newPlaced = data.some((o) => o.status === "placed" && !seen.has(o.id));
       for (const o of data) seen.add(o.id);
       setOrders(data);
+      setUnverifiedUpiOrders(
+        new Set(data.filter((order) => !order.payment_verified).map((order) => order.id))
+      );
       const ids = data.map((o) => o.id);
       if (ids.length === 0) {
         setLines([]);
@@ -494,10 +502,22 @@ export function KitchenBoard({
           const ev = payload.new as {
             order_id?: string;
             event_type?: string;
-            payload?: { upi_unverified?: boolean; to?: string; from?: string };
+            payload?: {
+              upi_unverified?: boolean;
+              payment_verified?: boolean;
+              to?: string;
+              from?: string;
+            };
           } | null;
           if (ev?.payload?.upi_unverified && ev.order_id) {
             setUnverifiedUpiOrders((prev) => new Set(prev).add(ev.order_id!));
+          }
+          if (ev?.payload?.payment_verified && ev.order_id) {
+            setUnverifiedUpiOrders((prev) => {
+              const next = new Set(prev);
+              next.delete(ev.order_id!);
+              return next;
+            });
           }
           // Clear unverified flag when order is collected/rejected/cancelled
           if (ev?.order_id && ["collected","rejected","expired","cancelled_by_kitchen"].includes(ev?.payload?.to ?? "")) {
@@ -1427,6 +1447,12 @@ export function KitchenBoard({
                         clearUndoWindow();
                         setMobileLane("placed");
                         handleActionError(r.error);
+                      } else {
+                        setUnverifiedUpiOrders((prev) => {
+                          const next = new Set(prev);
+                          next.delete(id);
+                          return next;
+                        });
                       }
                     } finally {
                       setPendingActionId(null);
@@ -1494,6 +1520,12 @@ export function KitchenBoard({
                         setOrders((prev) => prev.map((o) => o.id === id ? { ...o, status: "placed" as const } : o));
                         clearUndoWindow();
                         handleActionError(r.error);
+                      } else {
+                        setUnverifiedUpiOrders((prev) => {
+                          const next = new Set(prev);
+                          next.delete(id);
+                          return next;
+                        });
                       }
                     } finally {
                       setPendingActionId(null);

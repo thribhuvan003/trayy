@@ -30,8 +30,8 @@ export function ClosedBanner({ tenantName, isClosed, pausedUntil }: Props) {
   if (dismissed || (!isClosed && !isPaused)) return null;
 
   const message = isClosed
-    ? `${tenantName} is currently closed. Orders placed now may not be fulfilled.`
-    : `Orders are paused until ${formatPausedTime(pausedUntil!)}. You can still browse the menu.`;
+    ? `${tenantName} is closed. Ordering is unavailable; you can still browse the menu.`
+    : `Ordering is paused until ${formatPausedTime(pausedUntil!)}. You can still browse the menu, but Add and checkout are disabled.`;
 
   return (
     <div

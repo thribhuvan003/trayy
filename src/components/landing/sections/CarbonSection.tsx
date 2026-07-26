@@ -128,13 +128,12 @@ export function CarbonSection() {
             1 write → fan-out
           </p>
         <div className="lp-sync-board">
-          <div className="lp-sync-tabs" role="tablist" aria-label="Screens">
+          <div className="lp-sync-tabs" aria-label="Screens">
             {SCREENS.map((s) => (
               <button
                 key={s.id}
                 type="button"
-                role="tab"
-                aria-selected={active === s.id}
+                aria-pressed={active === s.id}
                 className={`lp-sync-tab${active === s.id ? " is-on" : ""}`}
                 onClick={() => {
                   setAuto(false);
@@ -165,7 +164,6 @@ export function CarbonSection() {
                     setAuto(false);
                     setActive(s.id);
                   }}
-                  role="tabpanel"
                 >
                   <header className="lp-sync-card-head">
                     <div>

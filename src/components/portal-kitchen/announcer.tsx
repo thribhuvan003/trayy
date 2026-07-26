@@ -304,7 +304,7 @@ export function Announcer({
     connStatus === "connected" ? "Live" : connStatus === "connecting" ? "Connecting…" : "Polling";
   const connTone =
     connStatus === "connected"
-      ? "text-emerald-600 dark:text-emerald-400"
+      ? "text-emerald-800 dark:text-emerald-400"
       : connStatus === "connecting"
         ? "text-amber-600 dark:text-amber-400"
         : "text-tomato-500";

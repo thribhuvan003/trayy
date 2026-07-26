@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { getServerClient } from "@/lib/supabase/server";
+import { getVerifiedAuthUser } from "@/lib/auth/verified-user";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
@@ -29,8 +30,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
   // Caller must be signed in as the invited email. Otherwise bounce to signup,
   // pre-filling the email and looping back here after auth.
   const supabase = await getServerClient(invite.tenant_id);
-  const { data: { session: _invSession } } = await supabase.auth.getSession();
-  const u = { user: _invSession?.user ?? null };
+  const u = { user: await getVerifiedAuthUser(supabase) };
   if (!u.user) {
     const next = `/auth/invite/${encodeURIComponent(token)}`;
     return NextResponse.redirect(

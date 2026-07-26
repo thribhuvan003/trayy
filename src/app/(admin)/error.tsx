@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { adminDashboardHref } from "@/lib/auth/admin-route";
 
 export default function AdminError({
   error,
@@ -10,6 +12,8 @@ export default function AdminError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const pathname = usePathname();
+  const dashboardHref = adminDashboardHref(pathname);
   useEffect(() => {
     console.error("[tray:admin:error]", error.digest, error.message);
   }, [error]);
@@ -31,7 +35,7 @@ export default function AdminError({
             Retry
           </button>
           <Link
-            href="/admin/dashboard"
+            href={dashboardHref}
             className="h-10 px-4 inline-flex items-center rounded-md border border-graphite-200/15 text-[12px] font-medium hover:border-lime hover:text-lime transition-colors"
           >
             Dashboard

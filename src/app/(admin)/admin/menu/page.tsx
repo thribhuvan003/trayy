@@ -23,7 +23,7 @@ export default async function AdminMenuPage() {
   // Each canteen's menu is fully isolated; changes only affect the correct /c/slug/ surface.
   const { tenant } = await requireTenantContext();
   const supabase = await getServerClient(tenant.id);
-  const [{ data: items }, { data: cats }] = await Promise.all([
+  const [{ data: items, error: itemsError }, { data: cats, error: categoriesError }] = await Promise.all([
     supabase
       .from("menu_items")
       .select("id, name, category_id, diet, price_paise, status, in_stock, stock_qty, prep_target_seconds")
@@ -54,7 +54,18 @@ export default async function AdminMenuPage() {
           + New item
         </Link>
       </div>
+      {(itemsError || categoriesError) && (
+        <div
+          role="alert"
+          className="mb-5 rounded-lg border border-admin-rose/40 bg-admin-rose/10 px-4 py-3 text-[13px] text-admin-rose"
+        >
+          The menu could not be loaded. No items were changed. Reload this page and try
+          again.
+        </div>
+      )}
+      {!itemsError && !categoriesError && (
       <MenuDashboard items={items ?? []} categories={cats ?? []} tenantSlug={tenant.slug} />
+      )}
     </div>
   );
 }

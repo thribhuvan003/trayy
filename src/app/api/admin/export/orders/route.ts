@@ -1,8 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { headers } from "next/headers";
-import { resolveTenant, getTenantSlugFromHeaders } from "@/lib/tenant";
+import { resolveTenant } from "@/lib/tenant";
 import { getServerClient } from "@/lib/supabase/server";
-import { requireRole } from "@/lib/auth/get-user";
+import { requireRoleForTenant } from "@/lib/auth/get-user";
+import { logger } from "@/lib/logging";
+import { getExportTenantSlug } from "@/lib/admin-export";
 
 type Row = {
   id: string;
@@ -18,22 +20,20 @@ type Row = {
 
 function csvEscape(v: string | number | null) {
   if (v === null) return "";
-  const s = String(v);
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  const raw = String(v);
+  // Prevent spreadsheet formula execution when an exported user-controlled
+  // value is opened in Excel/Sheets.
+  const s = /^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw;
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
 export async function GET(req: NextRequest) {
   const h = await headers();
-  // Use the same resolver as server actions: tries x-tenant-slug header,
-  // then referer pathname, then ?slug= param. This handles the case where
-  // the browser navigates directly to /api/admin/export/orders?slug=X
-  // (no middleware header) — the referer from the admin dashboard page
-  // provides the slug as a fallback.
-  const slugFromHeaders = getTenantSlugFromHeaders(h);
-  const slug = slugFromHeaders || req.nextUrl.searchParams.get("slug") || "";
+  const slug = getExportTenantSlug(req.nextUrl, h);
+  if (!slug) return new NextResponse("Tenant is required", { status: 400 });
   const tenant = await resolveTenant(slug);
   if (!tenant) return new NextResponse("Tenant not found", { status: 404 });
-  const user = await requireRole(["canteen_admin", "super_admin"]);
+  const user = await requireRoleForTenant(tenant, ["canteen_admin", "super_admin"]);
   if (!user) return new NextResponse("Forbidden", { status: 403 });
 
   const from = req.nextUrl.searchParams.get("from");
@@ -48,7 +48,15 @@ export async function GET(req: NextRequest) {
     .limit(5000);
   if (from) q = q.gte("placed_at", from);
   if (to) q = q.lte("placed_at", to);
-  const { data } = await q.returns<Row[]>();
+  const { data, error } = await q.returns<Row[]>();
+  if (error) {
+    logger.error("admin order CSV export failed", error, {
+      tenant_id: tenant.id,
+      slug: tenant.slug,
+      actor_user_id: user.id,
+    });
+    return new NextResponse("Could not export orders", { status: 500 });
+  }
 
   const header = "order_id,short_code,placed_at,collected_at,status,total_inr,order_type,table,customer\n";
   const body = (data ?? [])

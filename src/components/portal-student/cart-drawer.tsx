@@ -51,6 +51,8 @@ export function CartDrawer({ tenantSlug, tenantName }: { tenantSlug: string; ten
   const setOrderType = useCart((s) => s.setOrderType);
   const tableLabel = useCart((s) => s.tableLabel);
   const setTableLabel = useCart((s) => s.setTableLabel);
+  const orderingAvailable = useCart((s) => s.orderingAvailable);
+  const orderingUnavailableReason = useCart((s) => s.orderingUnavailableReason);
   const router = useRouter();
   const isDesktop = useMediaQuery("(min-width: 1024px)");
 
@@ -67,6 +69,10 @@ export function CartDrawer({ tenantSlug, tenantName }: { tenantSlug: string; ten
   if (empty && !isDesktop) return null;
 
   const onCheckout = () => {
+    if (!orderingAvailable) {
+      toast.error(orderingUnavailableReason ?? "This counter is not accepting orders right now");
+      return;
+    }
     if (orderType === "dine_in" && !tableLabel.trim()) {
       toast.error("Pick a table for dine-in");
       return;
@@ -126,7 +132,7 @@ export function CartDrawer({ tenantSlug, tenantName }: { tenantSlug: string; ten
       <div className="px-5 sm:px-6 pb-3 flex items-center justify-between border-b border-[color:var(--color-line)]">
         <div>
           <div className="font-display text-[22px] font-medium tracking-tight">Your tray.</div>
-          <div className="text-[11px] font-mono uppercase tracking-wider text-[color:var(--color-ink)]/55">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-[color:var(--color-ink)]/70">
             Paying to: {tenantName} · {pickupEtaCartSubline()}
           </div>
         </div>
@@ -176,7 +182,7 @@ export function CartDrawer({ tenantSlug, tenantName }: { tenantSlug: string; ten
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="text-[14px] font-semibold text-[color:var(--color-ink)] truncate">{l.name}</div>
-                  <div className="text-[12px] text-[color:var(--color-ink)]/55 tabular mt-0.5">
+                  <div className="text-[12px] text-[color:var(--color-ink)]/70 tabular mt-0.5">
                     {formatRupees(l.pricePaise)} ea
                   </div>
                 </div>
@@ -184,7 +190,7 @@ export function CartDrawer({ tenantSlug, tenantName }: { tenantSlug: string; ten
               <div className="flex items-center justify-between sm:justify-end gap-3 mt-1 sm:mt-0 pt-2 sm:pt-0 border-t border-dashed border-[color:var(--color-line)] sm:border-t-0">
                 <div className="inline-flex items-center rounded-full border border-[color:var(--color-line)] bg-[color:var(--color-paper)]">
                   <button
-                    aria-label="Decrease"
+                    aria-label={`Decrease ${l.name}`}
                     onClick={() => dec(l.menuItemId)}
                     className="h-8 w-8 inline-flex items-center justify-center text-[color:var(--color-ink)]/70 hover:text-[color:var(--color-ink)]"
                   >
@@ -192,9 +198,10 @@ export function CartDrawer({ tenantSlug, tenantName }: { tenantSlug: string; ten
                   </button>
                   <span className="text-[13px] font-medium tabular w-5 text-center">{l.qty}</span>
                   <button
-                    aria-label="Increase"
+                    aria-label={`Increase ${l.name}`}
+                    disabled={!orderingAvailable}
                     onClick={() => inc(l.menuItemId)}
-                    className="h-8 w-8 inline-flex items-center justify-center text-[color:var(--color-ink)]/70 hover:text-[color:var(--color-ink)]"
+                    className="h-8 w-8 inline-flex items-center justify-center text-[color:var(--color-ink)]/70 hover:text-[color:var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Plus size={13} />
                   </button>
@@ -204,7 +211,7 @@ export function CartDrawer({ tenantSlug, tenantName }: { tenantSlug: string; ten
                     {formatRupees(l.pricePaise * l.qty)}
                   </div>
                   <button
-                    aria-label="Remove"
+                    aria-label={`Remove ${l.name}`}
                     onClick={() => remove(l.menuItemId)}
                     className="h-8 w-8 inline-flex items-center justify-center text-[color:var(--color-ink)]/30 hover:text-rose-500 hover:bg-rose-500/5 rounded-full transition-colors"
                   >
@@ -219,6 +226,15 @@ export function CartDrawer({ tenantSlug, tenantName }: { tenantSlug: string; ten
 
       {!empty && (
         <div className="px-5 sm:px-6 py-4 border-t border-[color:var(--color-line)] flex flex-col gap-3 bg-[color:var(--color-paper-dim)]">
+          {!orderingAvailable && (
+            <p
+              role="alert"
+              className="m-0 rounded-lg border-2 border-amber-700 bg-amber-50 px-3 py-2 text-[13px] font-semibold text-amber-950"
+            >
+              {orderingUnavailableReason ?? "This counter is not accepting orders right now."}
+              {" "}You can remove items or return when ordering resumes.
+            </p>
+          )}
           <div
             role="radiogroup"
             aria-label="Order type"
@@ -271,24 +287,24 @@ export function CartDrawer({ tenantSlug, tenantName }: { tenantSlug: string; ten
           </label>
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>
-              <div className="text-[11px] font-mono uppercase tracking-wider text-[color:var(--color-ink)]/55">
+              <div className="text-[11px] font-mono uppercase tracking-wider text-[color:var(--color-ink)]/70">
                 Total · pays to {tenantName}
               </div>
               <div className="text-[26px] font-bold tabular tracking-tight" style={{ fontFamily: "var(--font-num-ns)" }}>{formatRupees(total)}</div>
             </div>
             <button
               onClick={onCheckout}
-              disabled={pending}
+              disabled={pending || !orderingAvailable}
               className={cn(
                 "inline-flex items-center gap-2 h-12 px-6 bg-ocean-500 text-white text-[14px] font-extrabold uppercase tracking-wide",
-                pending ? "opacity-70 cursor-not-allowed" : "ns-press"
+                pending || !orderingAvailable ? "opacity-70 cursor-not-allowed" : "ns-press"
               )}
               style={{ fontFamily: "var(--font-title-ns)" }}
             >
-              {pending ? "Placing order…" : "Place order →"}
+              {pending ? "Placing order…" : !orderingAvailable ? "Ordering unavailable" : "Place order →"}
             </button>
           </div>
-          <p className="text-[11px] text-[color:var(--color-ink)]/45 text-center">
+          <p className="text-[11px] text-[color:var(--color-ink)]/70 text-center">
             Tray takes 0%. Payment goes straight to {tenantName}.
           </p>
         </div>

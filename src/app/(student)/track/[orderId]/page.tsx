@@ -4,6 +4,7 @@ import { resolveTenant, getTenantSlugFromHeaders } from "@/lib/tenant";
 import { resolveFeatures } from "@/lib/features";
 import { getServerClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth/get-user";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { TrackPanel } from "@/components/portal-student/track-panel";
 
 export const dynamic = "force-dynamic";
@@ -51,6 +52,24 @@ export default async function TrackPage({ params }: { params: Promise<{ orderId:
       price_paise_snapshot: number;
     }[]>();
 
+  const admin = getAdminClient(tenant.id);
+  const { data: payment } = await admin
+    .from("payments")
+    .select("status, refund_id")
+    .eq("order_id", orderId)
+    .eq("tenant_id", tenant.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle<{ status: "initiated" | "captured" | "failed" | "refunded"; refund_id: string | null }>();
+  const refundState =
+    order.status === "refunded" || payment?.status === "refunded"
+      ? "completed"
+      : payment?.refund_id === "manual_upi_refund_owed"
+        ? "manual_required"
+        : order.status === "cancelled_by_kitchen"
+          ? "pending_reconciliation"
+          : null;
+
   return (
     <TrackPanel
       tenantSlug={tenant.slug}
@@ -58,6 +77,7 @@ export default async function TrackPage({ params }: { params: Promise<{ orderId:
       order={order}
       lines={lines ?? []}
       tokenMode={!resolveFeatures(tenant).hasKitchenQueue}
+      refundState={refundState}
     />
   );
 }

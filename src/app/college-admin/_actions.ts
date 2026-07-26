@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getServerClient } from "@/lib/supabase/server";
 import { getAdminClient } from "@/lib/supabase/admin";
+import { getVerifiedAuthUser } from "@/lib/auth/verified-user";
 
 /**
  * Toggle is_open for a canteen.
@@ -15,10 +16,7 @@ export async function setCanteenOpen(
 ): Promise<{ ok: boolean; error?: string }> {
   // Verify the requesting user is authenticated
   const serverClient = await getServerClient();
-  const {
-    data: { session },
-  } = await serverClient.auth.getSession();
-  const user = session?.user ?? null;
+  const user = await getVerifiedAuthUser(serverClient);
 
   if (!user) {
     return { ok: false, error: "Not authenticated" };

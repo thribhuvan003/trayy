@@ -2,7 +2,14 @@
 
 import React from "react";
 import Link from "next/link";
-import { getCanteen, listCanteens, type Canteen, type TicketDiet, type TicketStatus } from "@/app/demo/_lib/data";
+import {
+  DEFAULT_ID,
+  getCanteen,
+  listCanteens,
+  type Canteen,
+  type TicketDiet,
+  type TicketStatus,
+} from "@/app/demo/_lib/data";
 import {
   INBOX_KEY,
   STORAGE_CANTEEN,
@@ -47,8 +54,12 @@ function fmtClockSec(ts: number) {
   return `${h}:${String(d.getMinutes()).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")} ${ampm}`;
 }
 
-function buildTickets(c: Canteen, overrides: Record<string, TicketStatus>): QueueTicket[] {
-  const nowTs = Date.now();
+function buildTickets(
+  c: Canteen,
+  overrides: Record<string, TicketStatus>,
+  includeStoredInbox: boolean,
+  nowTs: number
+): QueueTicket[] {
   const base: QueueTicket[] = c.kitchenTickets.map((t) => ({
     id: t.id,
     items: t.items.map((it) => ({ name: it.name, diet: it.diet || "veg", tgt: it.tgt || 6, q: it.q || 1 })),
@@ -60,7 +71,7 @@ function buildTickets(c: Canteen, overrides: Record<string, TicketStatus>): Queu
     student: t.student,
     fromInbox: false,
   }));
-  const inbox: QueueTicket[] = readInbox()
+  const inbox: QueueTicket[] = (includeStoredInbox ? readInbox() : [])
     .filter((x) => x && x.canteenId === c.id)
     .map((x) => ({
       id: x.id,
@@ -142,7 +153,7 @@ function EmptyLane({ children }: { children: React.ReactNode }) {
 
 export function KitchenDemo() {
   const [ready, setReady] = React.useState(false);
-  const [canteenId, setCanteenId] = React.useState<string | null>(null);
+  const [canteenId, setCanteenId] = React.useState(DEFAULT_ID);
   const [overrides, setOverrides] = React.useState<Record<string, TicketStatus>>({});
   const [otpEntries, setOtpEntries] = React.useState<Record<string, string>>({});
   const [otpErrors, setOtpErrors] = React.useState<Record<string, boolean>>({});
@@ -188,7 +199,9 @@ export function KitchenDemo() {
   }, []);
 
   const c = getCanteen(canteenId);
-  const tickets = ready ? buildTickets(c, overrides) : [];
+  // Seed tickets are rendered on the server to reserve the live board's final
+  // layout. Browser-only inbox tickets are merged after hydration.
+  const tickets = buildTickets(c, overrides, ready, nowTs);
 
   const setStatus = (t: QueueTicket, next: TicketStatus) => {
     setOverrides((s) => ({ ...s, [t.id]: next }));

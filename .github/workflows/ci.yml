@@ -28,6 +28,10 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_e0_d-CRp71kmQbDbQmO1BQ_dGxGgNKz' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          # Build-time placeholders only. Production must provide real Upstash
+          # credentials in its deployment environment.
+          UPSTASH_REDIS_REST_URL: https://ci-placeholder.invalid
+          UPSTASH_REDIS_REST_TOKEN: ci-build-placeholder
           QSTASH_TOKEN: ${{ secrets.QSTASH_TOKEN }}
           QSTASH_CURRENT_SIGNING_KEY: ${{ secrets.QSTASH_CURRENT_SIGNING_KEY }}
           QSTASH_NEXT_SIGNING_KEY: ${{ secrets.QSTASH_NEXT_SIGNING_KEY }}

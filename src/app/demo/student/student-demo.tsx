@@ -2,7 +2,13 @@
 
 import React from "react";
 import Link from "next/link";
-import { getCanteen, listCanteens, type Canteen, type TicketDiet } from "@/app/demo/_lib/data";
+import {
+  DEFAULT_ID,
+  getCanteen,
+  listCanteens,
+  type Canteen,
+  type TicketDiet,
+} from "@/app/demo/_lib/data";
 import {
   STORAGE_CANTEEN,
   fmtClock,
@@ -39,8 +45,8 @@ interface DemoOrder {
   placedAt: number;
 }
 
-function allBoardItems(c: Canteen): BoardItem[] {
-  let specials = getSpecials(c.id);
+function allBoardItems(c: Canteen, includeStoredSpecials: boolean): BoardItem[] {
+  let specials = includeStoredSpecials ? getSpecials(c.id) : [];
   if (!specials.length && c.defaultSpecials) specials = c.defaultSpecials;
   const specialItems: BoardItem[] = specials.map((s) => ({
     id: `special-${s.id}`,
@@ -56,7 +62,7 @@ function allBoardItems(c: Canteen): BoardItem[] {
 
 export function StudentDemo() {
   const [ready, setReady] = React.useState(false);
-  const [canteenId, setCanteenId] = React.useState<string | null>(null);
+  const [canteenId, setCanteenId] = React.useState(DEFAULT_ID);
   const [cart, setCart] = React.useState<Record<string, number>>({});
   const [activeCat, setActiveCat] = React.useState("all");
   const [search, setSearch] = React.useState("");
@@ -83,7 +89,9 @@ export function StudentDemo() {
   }, [hasOrder]);
 
   const c = getCanteen(canteenId);
-  const all = ready ? allBoardItems(c) : [];
+  // Render the default menu in the server response so first paint has the same
+  // geometry as the hydrated app. Browser-stored specials are merged after mount.
+  const all = allBoardItems(c, ready);
   const chalks = ["#E8C860", "#A8D8B0", "#9FC4E8", "#E8A0A8"];
   const tilts = ["-1deg", ".8deg", "-.6deg"];
 
@@ -261,9 +269,9 @@ export function StudentDemo() {
             })}
           </div>
           <div style={{ textAlign: "right" }}>
-            <div style={{ fontFamily: CAVEAT, fontSize: 22, color: "#A8D8B0", lineHeight: 1 }}>{ready ? c.openLabel.toLowerCase() : ""}</div>
+            <div style={{ fontFamily: CAVEAT, fontSize: 22, color: "#A8D8B0", lineHeight: 1 }}>{c.openLabel.toLowerCase()}</div>
             <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".16em", color: "rgba(242,238,226,.5)", marginTop: 5 }}>
-              {ready ? c.block.toUpperCase() : ""}
+              {c.block.toUpperCase()}
             </div>
           </div>
         </header>
@@ -339,7 +347,7 @@ export function StudentDemo() {
             >
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 20 }}>
                 <h1 style={{ margin: 0, fontFamily: ROZHA, fontWeight: 400, fontSize: 40, lineHeight: 1.08, color: "#F2EEE2" }}>
-                  {ready ? c.name : "Chalking the board…"}
+                  {c.name}
                 </h1>
                 <span style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: ".16em", color: "rgba(242,238,226,.45)" }}>
                   {ready ? `CHALKED ${fmtClock(Date.now() - 42 * 60 * 1000).toUpperCase()}` : ""}
@@ -428,7 +436,7 @@ export function StudentDemo() {
                 );
               })}
 
-              {ready && visible.length === 0 && (
+              {visible.length === 0 && (
                 <div style={{ padding: "54px 0", textAlign: "center", fontFamily: CAVEAT, fontSize: 26, color: "rgba(242,238,226,.45)", transform: "rotate(-1deg)" }}>
                   nothing chalked under that name…
                 </div>

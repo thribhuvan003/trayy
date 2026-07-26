@@ -15,6 +15,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com data:",
       "img-src 'self' data: blob: https:",
+      "worker-src 'self' blob:",
       "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://qstash-eu-central-1.upstash.io https://qstash.upstash.io https://*.upstash.io https://api.razorpay.com https://*.sentry.io https://o4511462728925185.ingest.de.sentry.io",
       "frame-src 'self'",
       "frame-ancestors 'self'",
@@ -63,7 +64,9 @@ export default withSentryConfig(nextConfig, {
 
   // Disable Sentry's auto-instrumentation of the entire app
   // (we do it explicitly in the config files above)
-  autoInstrumentServerFunctions: false,
-  autoInstrumentMiddleware: true,
-  autoInstrumentAppDirectory: true,
+  webpack: {
+    autoInstrumentServerFunctions: false,
+    autoInstrumentMiddleware: true,
+    autoInstrumentAppDirectory: true,
+  },
 });

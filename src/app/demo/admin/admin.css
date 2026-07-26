@@ -13,6 +13,25 @@
   font-family: var(--font-jakarta), var(--font-familjen), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
+
+.ad-live-region {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.ad button:focus-visible,
+.ad a:focus-visible,
+.ad input:focus-visible {
+  outline: 3px solid #2c50b0;
+  outline-offset: 3px;
+}
 .ad *,
 .ad *::before,
 .ad *::after {
@@ -48,7 +67,7 @@
   font-family: var(--font-courier), monospace;
   font-size: 10px;
   letter-spacing: 0.08em;
-  color: rgba(35, 32, 25, 0.5);
+  color: rgba(35, 32, 25, 0.68);
 }
 .ad-strip-label {
   min-width: 0;
@@ -62,7 +81,7 @@
   flex-shrink: 0;
 }
 .ad-strip-link {
-  color: rgba(35, 32, 25, 0.55);
+  color: rgba(35, 32, 25, 0.72);
   text-decoration: none;
 }
 .ad-strip-link:hover {
@@ -95,6 +114,7 @@
   min-width: 0;
 }
 .ad-brand {
+  margin: 0;
   font-family: var(--font-alegreya), serif;
   font-weight: 700;
   font-size: 20px;
@@ -103,7 +123,7 @@
 }
 .ad-brand span {
   font-weight: 600;
-  color: rgba(35, 32, 25, 0.55);
+  color: rgba(35, 32, 25, 0.72);
   font-size: 0.85em;
 }
 .ad-head-sub {
@@ -111,7 +131,7 @@
   font-family: var(--font-courier), monospace;
   font-size: 11px;
   letter-spacing: 0.04em;
-  color: rgba(35, 32, 25, 0.55);
+  color: rgba(35, 32, 25, 0.72);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -177,13 +197,21 @@
   background: rgba(250, 247, 238, 0.96);
   backdrop-filter: blur(8px);
 }
+.ad-tabs-nav {
+  position: sticky;
+  top: 58px;
+  z-index: 19;
+}
+.ad-tabs-nav .ad-tabs {
+  position: static;
+}
 .ad-tab {
   min-height: 46px;
   padding: 10px 4px 8px;
   border: none;
   border-bottom: 3px solid transparent;
   background: none;
-  color: rgba(35, 32, 25, 0.5);
+  color: rgba(35, 32, 25, 0.68);
   cursor: pointer;
   font-family: var(--font-courier), monospace;
   font-size: 12px;
@@ -217,7 +245,7 @@
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(35, 32, 25, 0.5);
+  color: rgba(35, 32, 25, 0.72);
   margin-bottom: 6px;
 }
 .ad-today-rupees {
@@ -306,7 +334,7 @@
 }
 .ad-toggle-hint {
   font-size: 12.5px;
-  color: rgba(35, 32, 25, 0.55);
+  color: rgba(35, 32, 25, 0.74);
   line-height: 1.3;
 }
 
@@ -330,7 +358,7 @@
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(35, 32, 25, 0.5);
+  color: rgba(35, 32, 25, 0.72);
 }
 .ad-pipe-link {
   color: #1e5a3c;
@@ -370,7 +398,7 @@
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(35, 32, 25, 0.5);
+  color: rgba(35, 32, 25, 0.72);
 }
 
 /* Sections */
@@ -396,7 +424,7 @@
   font-size: 10.5px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(35, 32, 25, 0.45);
+  color: rgba(35, 32, 25, 0.68);
   white-space: nowrap;
 }
 
@@ -454,7 +482,7 @@
   gap: 10px;
   margin-top: 4px;
   font-size: 12px;
-  color: rgba(35, 32, 25, 0.5);
+  color: rgba(35, 32, 25, 0.72);
 }
 .ad-order-foot span {
   min-width: 0;
@@ -527,7 +555,7 @@
   font-family: var(--font-courier), monospace;
   font-size: 12px;
   font-weight: 600;
-  color: rgba(35, 32, 25, 0.55);
+  color: rgba(35, 32, 25, 0.72);
   flex-shrink: 0;
 }
 
@@ -615,6 +643,17 @@
   text-align: right;
   color: #232019;
 }
+.ad-price-input[aria-invalid="true"] {
+  border-color: #b03a2a;
+}
+.ad-price-error {
+  margin: 8px 0 0;
+  color: #8e2f22;
+  font-family: var(--font-familjen), sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+}
 .ad-menu-actions {
   display: flex;
   gap: 8px;
@@ -667,7 +706,7 @@
   font-size: 10.5px;
   letter-spacing: 0.06em;
   line-height: 1.7;
-  color: rgba(35, 32, 25, 0.45);
+  color: rgba(35, 32, 25, 0.68);
 }
 
 /* Specials */
@@ -695,14 +734,14 @@
 .ad-special-desc {
   display: block;
   font-size: 12px;
-  color: rgba(35, 32, 25, 0.5);
+  color: rgba(35, 32, 25, 0.72);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .ad-takeoff-btn {
   flex-shrink: 0;
-  min-height: 40px;
+  min-height: 44px;
   border: 1.5px solid rgba(176, 58, 42, 0.5);
   border-radius: 8px;
   background: none;
@@ -725,7 +764,7 @@
   font-family: var(--font-courier), monospace;
   font-size: 11px;
   letter-spacing: 0.1em;
-  color: rgba(35, 32, 25, 0.45);
+  color: rgba(35, 32, 25, 0.68);
   line-height: 1.9;
 }
 .ad-empty a {
@@ -779,7 +818,7 @@
 .ad-staff-role {
   display: block;
   font-size: 12px;
-  color: rgba(35, 32, 25, 0.5);
+  color: rgba(35, 32, 25, 0.72);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -817,7 +856,7 @@
 .ad-reg-meta {
   grid-column: 1;
   font-size: 12.5px;
-  color: rgba(35, 32, 25, 0.55);
+  color: rgba(35, 32, 25, 0.72);
 }
 .ad-reg-last {
   grid-column: 2;
@@ -825,7 +864,7 @@
   align-self: center;
   font-family: var(--font-courier), monospace;
   font-size: 12px;
-  color: rgba(35, 32, 25, 0.5);
+  color: rgba(35, 32, 25, 0.72);
 }
 
 /* Audit / settings */
@@ -840,7 +879,7 @@
 .ad-audit-t {
   font-family: var(--font-courier), monospace;
   font-size: 11.5px;
-  color: rgba(35, 32, 25, 0.5);
+  color: rgba(35, 32, 25, 0.72);
 }
 .ad-audit-type {
   font-family: var(--font-courier), monospace;
@@ -870,7 +909,7 @@
   font-family: var(--font-courier), monospace;
   font-size: 10px;
   letter-spacing: 0.08em;
-  color: rgba(35, 32, 25, 0.45);
+  color: rgba(35, 32, 25, 0.68);
   text-transform: uppercase;
 }
 .ad-footer-mark {
@@ -879,7 +918,7 @@
   letter-spacing: 0;
   text-transform: none;
   font-style: italic;
-  color: rgba(35, 32, 25, 0.55);
+  color: rgba(35, 32, 25, 0.72);
 }
 
 /* ---- Wider phone / tablet ---- */
@@ -953,9 +992,12 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(35, 32, 25, 0.55);
+  color: rgba(35, 32, 25, 0.72);
   padding-left: 4px;
   white-space: nowrap;
+}
+.ad-stalls-tabs {
+  display: contents;
 }
 
 /* Reconciliation summary under the order list — the hisaab must always add up */

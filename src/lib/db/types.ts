@@ -418,6 +418,7 @@ export type Database = {
           order_type: Database["public"]["Enums"]["order_type"]
           otp_attempts: number
           otp_hash: string | null
+          payment_verified: boolean
           payment_expires_at: string | null
           placed_at: string
           ready_at: string | null
@@ -438,6 +439,7 @@ export type Database = {
           order_type?: Database["public"]["Enums"]["order_type"]
           otp_attempts?: number
           otp_hash?: string | null
+          payment_verified?: boolean
           payment_expires_at?: string | null
           placed_at?: string
           ready_at?: string | null
@@ -458,6 +460,7 @@ export type Database = {
           order_type?: Database["public"]["Enums"]["order_type"]
           otp_attempts?: number
           otp_hash?: string | null
+          payment_verified?: boolean
           payment_expires_at?: string | null
           placed_at?: string
           ready_at?: string | null
@@ -485,6 +488,7 @@ export type Database = {
           id: string
           order_id: string
           raw_event_id: string | null
+          refund_id: string | null
           razorpay_order_id: string | null
           razorpay_payment_id: string | null
           status: Database["public"]["Enums"]["payment_status"]
@@ -496,6 +500,7 @@ export type Database = {
           id?: string
           order_id: string
           raw_event_id?: string | null
+          refund_id?: string | null
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
@@ -507,6 +512,7 @@ export type Database = {
           id?: string
           order_id?: string
           raw_event_id?: string | null
+          refund_id?: string | null
           razorpay_order_id?: string | null
           razorpay_payment_id?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
@@ -816,6 +822,14 @@ export type Database = {
       next_order_short_code: { Args: { p_tenant: string }; Returns: string }
       pre_request_set_tenant: { Args: never; Returns: undefined }
       read_my_pickup_otp: { Args: { p_order: string }; Returns: string }
+      safe_confirm_direct_upi_and_start: {
+        Args: {
+          p_actor_user_id: string
+          p_order_id: string
+          p_tenant_id: string
+        }
+        Returns: string
+      }
       resolve_tenant: {
         Args: { p_slug: string }
         Returns: {

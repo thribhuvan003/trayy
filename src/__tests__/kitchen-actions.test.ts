@@ -204,7 +204,7 @@ function buildKitchenAdminMock() {
         rpc: vi.fn().mockResolvedValue({ data: true, error: null }),
       };
     },
-    rpc: vi.fn().mockResolvedValue({ data: true, error: null }),
+    rpc: vi.fn().mockResolvedValue({ data: "started", error: null }),
   };
 }
 
@@ -228,22 +228,16 @@ describe("markPreparing — valid transition", () => {
     expect(result.ok).toBe(true);
   });
 
-  it("emits an order_events row with event_type 'preparing'", async () => {
+  it("uses the atomic database transition for the preparing event and audit trail", async () => {
     mockOrderRow = { status: "placed" };
-    await markPreparing("order-uuid-001");
-    const preparingEvents = insertedOrderEvents.filter(
-      (e: any) => e.event_type === "preparing"
-    );
-    expect(preparingEvents.length).toBeGreaterThanOrEqual(1);
+    const result = await markPreparing("order-uuid-001");
+    expect(result.ok).toBe(true);
   });
 
-  it("inserts an order_status_logs row from 'placed' to 'preparing'", async () => {
+  it("does not perform a second non-atomic status-log write after the RPC", async () => {
     mockOrderRow = { status: "placed" };
     await markPreparing("order-uuid-001");
-    const log = insertedStatusLogs.find(
-      (l: any) => l.from_status === "placed" && l.to_status === "preparing"
-    );
-    expect(log).toBeDefined();
+    expect(insertedStatusLogs).toHaveLength(0);
   });
 });
 

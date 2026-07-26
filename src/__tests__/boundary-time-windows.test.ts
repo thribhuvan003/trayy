@@ -10,7 +10,7 @@
  * exercise both sides of each boundary without waiting real time.
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { afterAll, describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("server-only", () => ({}));
 vi.mock("next/headers", () => ({
@@ -60,6 +60,10 @@ vi.mock("@/lib/auth/get-user", () => ({
 // ── Shared mock state ──────────────────────────────────────────────────────────
 
 const NOW = Date.now();
+// Freeze the server clock so dynamic module imports and a busy parallel CI
+// worker cannot consume the final second of either boundary.
+vi.spyOn(Date, "now").mockReturnValue(NOW);
+afterAll(() => vi.restoreAllMocks());
 let mockOrderStatus = "placed";
 let mockPlacedAt = new Date(NOW).toISOString();
 let mockOrderTotalPaise = 10000;
@@ -131,7 +135,12 @@ describe("cancelOrderByStudent — 5-minute cancel window boundary", () => {
     mockOrderStatus = "placed";
     mockUpdate.mockReturnValue({
       eq: vi.fn().mockReturnThis(),
-      select: vi.fn().mockResolvedValue({ data: [{ id: "order-1" }], error: null }),
+      select: vi.fn().mockReturnValue({
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: { id: "order-1" },
+          error: null,
+        }),
+      }),
     });
   });
 

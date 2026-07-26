@@ -18,7 +18,10 @@ type State = {
   orderType: "takeaway" | "dine_in";
   tableLabel: string;
   isOpen: boolean;
+  orderingAvailable: boolean;
+  orderingUnavailableReason: string | null;
   setIsOpen: (open: boolean) => void;
+  setOrderingAvailability: (available: boolean, reason?: string | null) => void;
   add: (item: Omit<CartLine, "qty">, qty?: number) => void;
   increment: (id: string) => void;
   decrement: (id: string) => void;
@@ -43,11 +46,16 @@ export const useCart = create<State>()(
       orderType: "takeaway",
       tableLabel: "",
       isOpen: false,
+      orderingAvailable: true,
+      orderingUnavailableReason: null,
       searchQuery: "",
       setSearchQuery: (searchQuery) => set({ searchQuery }),
       setIsOpen: (isOpen) => set({ isOpen }),
+      setOrderingAvailability: (orderingAvailable, orderingUnavailableReason = null) =>
+        set({ orderingAvailable, orderingUnavailableReason }),
       add: (item, qty = 1) =>
-        set(({ lines }) => {
+        set(({ lines, orderingAvailable }) => {
+          if (!orderingAvailable) return { lines };
           const existing = lines.find((l) => l.menuItemId === item.menuItemId);
           if (existing) {
             return {
@@ -59,8 +67,10 @@ export const useCart = create<State>()(
           return { lines: [...lines, { ...item, qty }] };
         }),
       increment: (id) =>
-        set(({ lines }) => ({
-          lines: lines.map((l) => (l.menuItemId === id ? { ...l, qty: l.qty + 1 } : l)),
+        set(({ lines, orderingAvailable }) => ({
+          lines: orderingAvailable
+            ? lines.map((l) => (l.menuItemId === id ? { ...l, qty: l.qty + 1 } : l))
+            : lines,
         })),
       decrement: (id) =>
         set(({ lines }) => ({
@@ -95,6 +105,8 @@ export const useCart = create<State>()(
           note: incoming.note,
           orderType: incoming.orderType ?? "takeaway",
           tableLabel: incoming.tableLabel ?? "",
+          orderingAvailable: true,
+          orderingUnavailableReason: null,
         });
       },
     }),

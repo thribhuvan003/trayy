@@ -17,10 +17,11 @@ vi.mock("server-only", () => ({}));
 
 // ── 2. Mock @/lib/env ──────────────────────────────────────────────────────────
 // vi.hoisted runs before vi.mock hoisting so these values are safe to use in factories
-const { FAKE_WEBHOOK_SECRET, FAKE_SERVICE_ROLE_KEY, FAKE_SUPABASE_URL } = vi.hoisted(() => ({
+const { FAKE_WEBHOOK_SECRET, FAKE_SERVICE_ROLE_KEY, FAKE_SUPABASE_URL, mockRateLimit } = vi.hoisted(() => ({
   FAKE_WEBHOOK_SECRET: "test_webhook_secret_32chars_long!",
   FAKE_SERVICE_ROLE_KEY: "service_role_test_key",
   FAKE_SUPABASE_URL: "https://test.supabase.co",
+  mockRateLimit: vi.fn().mockResolvedValue({ success: true, remaining: 99 }),
 }));
 
 vi.mock("@/lib/env", () => ({
@@ -57,7 +58,7 @@ vi.mock("@/lib/logging", () => {
 
 // ── 4. Mock @/lib/rate-limit ──────────────────────────────────────────────────
 vi.mock("@/lib/rate-limit", () => ({
-  rateLimit: vi.fn().mockResolvedValue({ success: true, remaining: 99 }),
+  rateLimit: mockRateLimit,
 }));
 
 // ── 5. Mock @/lib/payments/razorpay (signature verifier) ─────────────────────
@@ -161,6 +162,8 @@ describe("Razorpay webhook handler — signature guard", () => {
     expect(res.status).toBe(400);
     const json = await res.json();
     expect(json.ok).toBe(false);
+    expect(mockGetAdminClient).not.toHaveBeenCalled();
+    expect(mockRateLimit).not.toHaveBeenCalled();
   });
 
   it("returns 400 when the x-razorpay-signature header is missing entirely", async () => {
@@ -270,6 +273,82 @@ describe("Razorpay webhook handler — payment.captured idempotency", () => {
     // RPC was still called — idempotency is enforced inside the DB function, not here
     expect(captureRpc).toHaveBeenCalled();
   });
+
+  it("processes a high-volume burst from one shared IP without dropping signed events", async () => {
+    const captureRpc = vi.fn().mockResolvedValue({ data: "already_captured", error: null });
+
+    mockGetAdminClient.mockImplementation(() => ({
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            maybeSingle: () =>
+              Promise.resolve({
+                data: {
+                  id: "order-db-uuid-001",
+                  tenant_id: "tenant-uuid-001",
+                  status: "placed",
+                },
+                error: null,
+              }),
+          }),
+        }),
+        insert: vi.fn().mockResolvedValue({ error: null }),
+      }),
+      rpc: captureRpc,
+    }));
+
+    const requests = Array.from({ length: 150 }, () => {
+      const body = BASE_PAYMENT_CAPTURED_BODY;
+      return POST(makeRequest(body, validHmac(body), { "x-forwarded-for": "10.0.0.1" }) as any);
+    });
+    const responses = await Promise.all(requests);
+
+    expect(responses.every((response) => response.status === 200)).toBe(true);
+    expect(captureRpc).toHaveBeenCalledTimes(150);
+    expect(mockVerify).toHaveBeenCalledTimes(150);
+    expect(mockRateLimit).not.toHaveBeenCalled();
+  });
+
+  it("does not place an order for payment.authorized before funds are captured", async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: "captured", error: null });
+    mockGetAdminClient.mockImplementation(() => ({
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            maybeSingle: () =>
+              Promise.resolve({
+                data: {
+                  id: "order-db-uuid-001",
+                  tenant_id: "tenant-uuid-001",
+                  status: "pending_payment",
+                },
+                error: null,
+              }),
+          }),
+        }),
+        insert: vi.fn().mockResolvedValue({ error: null }),
+      }),
+      rpc,
+    }));
+
+    const body = {
+      ...BASE_PAYMENT_CAPTURED_BODY,
+      event: "payment.authorized",
+      payload: {
+        payment: {
+          entity: {
+            ...BASE_PAYMENT_CAPTURED_BODY.payload.payment.entity,
+            status: "authorized",
+          },
+        },
+      },
+    };
+    const req = makeRequest(body, validHmac(body));
+    const res = await POST(req as any);
+
+    expect(res.status).toBe(200);
+    expect(rpc).not.toHaveBeenCalledWith("safe_capture_payment", expect.anything());
+  });
 });
 
 describe("Razorpay webhook handler — payment.failed event", () => {
@@ -338,7 +417,7 @@ describe("Razorpay webhook handler — payment.failed event", () => {
 });
 
 describe("Razorpay webhook handler — missing order / DLQ path", () => {
-  it("queues to webhook_dlq and returns 200 skipped when order row is not found", async () => {
+  it("queues to webhook_dlq and returns 200 only after the missing order is durably recorded", async () => {
     mockVerify.mockReturnValue(true);
     const dlqInsert = vi.fn().mockResolvedValue({ error: null });
 
@@ -364,9 +443,111 @@ describe("Razorpay webhook handler — missing order / DLQ path", () => {
     const res = await POST(req as any);
     expect(res.status).toBe(200);
     const json = await res.json();
-    expect(json.skipped).toBe(true);
+    expect(json.dlq).toBe(true);
     // DLQ insert must have been attempted
     expect(dlqInsert).toHaveBeenCalled();
+  });
+
+  it("returns 503 when the order is missing and the DLQ write fails", async () => {
+    mockVerify.mockReturnValue(true);
+    const dlqInsert = vi.fn().mockResolvedValue({ error: { message: "database unavailable" } });
+
+    mockGetAdminClient.mockImplementation(() => ({
+      from: (table: string) => {
+        if (table === "webhook_dlq") return { insert: dlqInsert };
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: () => Promise.resolve({ data: null, error: null }),
+            }),
+          }),
+        };
+      },
+      rpc: vi.fn(),
+    }));
+
+    const body = BASE_PAYMENT_CAPTURED_BODY;
+    const res = await POST(makeRequest(body, validHmac(body)) as any);
+
+    expect(res.status).toBe(503);
+    expect(await res.json()).toMatchObject({ ok: false });
+    expect(dlqInsert).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns 200 when processing fails but the signed event is durably queued", async () => {
+    mockVerify.mockReturnValue(true);
+    const dlqInsert = vi.fn().mockResolvedValue({ error: null });
+    const captureRpc = vi.fn().mockResolvedValue({
+      data: null,
+      error: { message: "temporary RPC failure" },
+    });
+
+    mockGetAdminClient.mockImplementation(() => ({
+      from: (table: string) => {
+        if (table === "webhook_dlq") return { insert: dlqInsert };
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: () =>
+                Promise.resolve({
+                  data: {
+                    id: "order-db-uuid-001",
+                    tenant_id: "tenant-uuid-001",
+                    status: "pending_payment",
+                  },
+                  error: null,
+                }),
+            }),
+          }),
+        };
+      },
+      rpc: captureRpc,
+    }));
+
+    const body = BASE_PAYMENT_CAPTURED_BODY;
+    const res = await POST(makeRequest(body, validHmac(body)) as any);
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ ok: true, dlq: true });
+    expect(dlqInsert).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns 503 when both processing and durable queueing fail", async () => {
+    mockVerify.mockReturnValue(true);
+    const dlqInsert = vi.fn().mockResolvedValue({ error: { message: "DLQ unavailable" } });
+    const captureRpc = vi.fn().mockResolvedValue({
+      data: null,
+      error: { message: "temporary RPC failure" },
+    });
+
+    mockGetAdminClient.mockImplementation(() => ({
+      from: (table: string) => {
+        if (table === "webhook_dlq") return { insert: dlqInsert };
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: () =>
+                Promise.resolve({
+                  data: {
+                    id: "order-db-uuid-001",
+                    tenant_id: "tenant-uuid-001",
+                    status: "pending_payment",
+                  },
+                  error: null,
+                }),
+            }),
+          }),
+        };
+      },
+      rpc: captureRpc,
+    }));
+
+    const body = BASE_PAYMENT_CAPTURED_BODY;
+    const res = await POST(makeRequest(body, validHmac(body)) as any);
+
+    expect(res.status).toBe(503);
+    expect(await res.json()).toMatchObject({ ok: false });
+    expect(dlqInsert).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -375,7 +556,7 @@ describe("Razorpay webhook handler — payload skipping", () => {
     mockVerify.mockReturnValue(true);
   });
 
-  it("returns 200 skipped when payment entity has no order_id", async () => {
+  it("durably queues payment.captured when the entity has no order_id", async () => {
     mockGetAdminClient.mockImplementation(() => ({
       from: () => ({
         select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }) }),
@@ -403,10 +584,10 @@ describe("Razorpay webhook handler — payload skipping", () => {
     const res = await POST(req as any);
     expect(res.status).toBe(200);
     const json = await res.json();
-    expect(json.skipped).toBe(true);
+    expect(json.dlq).toBe(true);
   });
 
-  it("returns 200 skipped when payment notes are missing tenant/order", async () => {
+  it("durably queues payment.captured when tenant/order notes are missing", async () => {
     mockGetAdminClient.mockImplementation(() => ({
       from: () => ({
         select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }) }),
@@ -434,6 +615,6 @@ describe("Razorpay webhook handler — payload skipping", () => {
     const res = await POST(req as any);
     expect(res.status).toBe(200);
     const json = await res.json();
-    expect(json.skipped).toBe(true);
+    expect(json.dlq).toBe(true);
   });
 });

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getServerClient } from "@/lib/supabase/server";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { CollegeAdminShell } from "./_shell";
+import { getVerifiedAuthUser } from "@/lib/auth/verified-user";
 
 export default async function CollegeAdminLayout({
   children,
@@ -11,10 +12,7 @@ export default async function CollegeAdminLayout({
 }) {
   // Auth: get logged-in user via cookie-bound client (no tenant context needed)
   const serverClient = await getServerClient();
-  const {
-    data: { session },
-  } = await serverClient.auth.getSession();
-  const user = session?.user ?? null;
+  const user = await getVerifiedAuthUser(serverClient);
 
   if (!user) redirect("/login?next=/college-admin");
 
@@ -35,7 +33,7 @@ export default async function CollegeAdminLayout({
       className="min-h-screen bg-graphite-900 text-graphite-200 relative overflow-x-hidden"
     >
       <div className="grid-paper fixed inset-0 z-0" />
-      <CollegeAdminShell userEmail={user.email ?? null}>
+      <CollegeAdminShell userEmail={user.email}>
         {children}
       </CollegeAdminShell>
     </div>

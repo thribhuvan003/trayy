@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { cookies, headers } from "next/headers";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { requireTenantContext, requireTenantContextForJob, resolveTenant } from "@/lib/tenant";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/auth/get-user";
@@ -56,6 +57,23 @@ async function emitOrderEvent(
   }).insert(row);
 }
 
+async function settleKitchenWrites(
+  operation: string,
+  writes: PromiseLike<unknown>[],
+  context: { tenant_id: string; order_id: string }
+) {
+  const results = await Promise.allSettled(writes);
+  const failed = results.filter(
+    (result): result is PromiseRejectedResult => result.status === "rejected"
+  );
+  if (failed.length > 0) {
+    logger.error(`${operation} side-effect write failed`, failed[0].reason, {
+      ...context,
+      failed_writes: failed.length,
+    });
+  }
+}
+
 export async function markPreparing(orderId: string): Promise<Outcome> {
   const ctx = await staffContext();
   if (!ctx.ok) return ctx;
@@ -82,30 +100,39 @@ export async function markPreparing(orderId: string): Promise<Outcome> {
 
   const start = Date.now();
 
-  // CAS guard: only update if status is still "placed" (concurrent cancel race).
-  const { data: casResult } = await admin.from("orders")
-    .update({ status: "preparing" })
-    .eq("id", orderId)
-    .eq("tenant_id", ctx.tenant.id)
-    .eq("status", "placed")
-    .select("id");
-  if (!casResult || casResult.length === 0) {
-    return { ok: false, error: "Order status changed concurrently — refresh the board" };
+  // One database transaction confirms any direct-UPI claim, transitions the
+  // order, and writes its audit/event trail. This prevents a kitchen refresh or
+  // partial write from treating unverified money as paid revenue.
+  const { data: transition, error: transitionError } = await admin.rpc(
+    "safe_confirm_direct_upi_and_start",
+    {
+      p_order_id: orderId,
+      p_tenant_id: ctx.tenant.id,
+      p_actor_user_id: ctx.user.id,
+    }
+  );
+  if (transitionError) {
+    logger.error("kitchen start transaction failed", transitionError, {
+      tenant_id: ctx.tenant.id,
+      order_id: orderId,
+    });
+    return { ok: false, error: "Could not start order — refresh and try again" };
   }
-
-  // All audit/log/event writes fire in parallel — none block the response.
-  void Promise.all([
-    admin.from("order_status_logs").insert({
-      tenant_id: ctx.tenant.id, order_id: orderId,
-      from_status: "placed", to_status: "preparing", actor_user_id: ctx.user.id,
-    }),
-    admin.from("audit_logs").insert({
-      tenant_id: ctx.tenant.id, actor_user_id: ctx.user.id,
-      action: "order.preparing", target_type: "order", target_id: orderId,
-    }),
-    emitOrderEvent(admin, { order_id: orderId, tenant_id: ctx.tenant.id, event_type: "preparing", payload: { actor: "kitchen" } }),
-  ]).then(() => {
-    logger.info("kitchen status transition", { tenant_id: ctx.tenant.id, order_id: orderId, from: "placed", to: "preparing", latency_ms: Date.now() - start });
+  if (transition !== "started" && transition !== "confirmed_and_started") {
+    const message =
+      transition === "not_found"
+        ? "Order not found"
+        : transition === "unverified_payment_not_found"
+          ? "UPI claim is missing — do not start this order"
+          : "Order status changed concurrently — refresh the board";
+    return { ok: false, error: message };
+  }
+  logger.info("kitchen status transition", {
+    tenant_id: ctx.tenant.id,
+    order_id: orderId,
+    from: "placed",
+    to: "preparing",
+    latency_ms: Date.now() - start,
   });
 
   return { ok: true };
@@ -118,40 +145,63 @@ export async function markReady(orderId: string): Promise<Outcome> {
   const admin = getAdminClient(ctx.tenant.id);
   const start = Date.now();
 
-  // Generate OTP hash — bcrypt is slow by design (10 rounds ≈ 60-100ms).
-  // Run it concurrently with the CAS status update via Promise.all.
+  // Hash before changing the visible status. If crypto fails, the order stays
+  // preparing rather than becoming an uncollectable "ready" order.
   const otp = randomOtp();
   const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+  let hash: string;
+  try {
+    hash = await bcrypt.hash(otp, 10);
+  } catch (error) {
+    logger.error("kitchen OTP hashing failed", error, {
+      tenant_id: ctx.tenant.id,
+      order_id: orderId,
+    });
+    return { ok: false, error: "Could not secure pickup code — try again" };
+  }
 
-  const [hashResult, casResult] = await Promise.all([
-    bcrypt.hash(otp, 10),
-    admin.from("orders")
-      .update({ status: "ready", ready_at: new Date().toISOString() })
-      .eq("id", orderId)
-      .eq("tenant_id", ctx.tenant.id)
-      .eq("status", "preparing") // CAS guard — no pre-flight SELECT needed
-      .select("id"),
-  ]);
+  const casResult = await admin.from("orders")
+    .update({ status: "ready", ready_at: new Date().toISOString() })
+    .eq("id", orderId)
+    .eq("tenant_id", ctx.tenant.id)
+    .eq("status", "preparing")
+    .select("id");
 
-  if (!casResult.data || casResult.data.length === 0) {
+  if (casResult.error || !casResult.data || casResult.data.length === 0) {
     return { ok: false, error: "Order already moved — refresh the board" };
   }
-  const hash = hashResult;
 
-  // Store OTP hash on the order + write pickup secret — these depend on the hash
-  await Promise.all([
+  // Both pickup records must exist before we expose success. Supabase returns
+  // write failures as values (not rejected promises), so inspect both results.
+  const [hashWrite, secretWrite] = await Promise.all([
     admin.from("orders")
-      .update({ otp_hash: hash })
+      .update({ otp_hash: hash, otp_attempts: 0 })
       .eq("id", orderId)
-      .eq("tenant_id", ctx.tenant.id),
+      .eq("tenant_id", ctx.tenant.id)
+      .eq("status", "ready"),
     admin.from("pickup_secrets").upsert(
       { order_id: orderId, tenant_id: ctx.tenant.id, otp_plain: otp, expires_at: expiresAt },
       { onConflict: "order_id" }
     ),
   ]);
+  if (hashWrite.error || secretWrite.error) {
+    await Promise.allSettled([
+      admin.from("orders")
+        .update({ status: "preparing", ready_at: null, otp_hash: null })
+        .eq("id", orderId)
+        .eq("tenant_id", ctx.tenant.id)
+        .eq("status", "ready"),
+      admin.from("pickup_secrets").delete().eq("order_id", orderId),
+    ]);
+    logger.error(
+      "kitchen pickup credential write failed; ready transition rolled back",
+      hashWrite.error ?? secretWrite.error,
+      { tenant_id: ctx.tenant.id, order_id: orderId }
+    );
+    return { ok: false, error: "Could not issue pickup code — order was kept in cooking" };
+  }
 
-  // Audit + event writes in parallel — don't block the response
-  void Promise.all([
+  await settleKitchenWrites("markReady", [
     admin.from("order_status_logs").insert({
       tenant_id: ctx.tenant.id, order_id: orderId,
       from_status: "preparing", to_status: "ready", actor_user_id: ctx.user.id, note: "OTP issued",
@@ -161,8 +211,13 @@ export async function markReady(orderId: string): Promise<Outcome> {
       action: "order.ready", target_type: "order", target_id: orderId,
     }),
     emitOrderEvent(admin, { order_id: orderId, tenant_id: ctx.tenant.id, event_type: "ready", payload: { actor: "kitchen" } }),
-  ]).then(() => {
-    logger.info("kitchen status transition", { tenant_id: ctx.tenant.id, order_id: orderId, from: "preparing", to: "ready", latency_ms: Date.now() - start });
+  ], { tenant_id: ctx.tenant.id, order_id: orderId });
+  logger.info("kitchen status transition", {
+    tenant_id: ctx.tenant.id,
+    order_id: orderId,
+    from: "preparing",
+    to: "ready",
+    latency_ms: Date.now() - start,
   });
 
   return { ok: true };
@@ -238,17 +293,34 @@ export async function verifyAndCollect(
 
   const collectedAt = new Date().toISOString();
 
-  // Critical write: mark collected + delete secret in parallel
-  await Promise.all([
-    admin.from("orders")
-      .update({ status: "collected", collected_at: collectedAt })
-      .eq("id", orderId)
-      .eq("tenant_id", ctx.tenant.id),
-    admin.from("pickup_secrets").delete().eq("order_id", orderId),
-  ]);
+  // CAS prevents a concurrent reject/expiry from being overwritten after the
+  // OTP read. Only delete the pickup secret once collection is committed.
+  const collectionWrite = await admin.from("orders")
+    .update({ status: "collected", collected_at: collectedAt })
+    .eq("id", orderId)
+    .eq("tenant_id", ctx.tenant.id)
+    .eq("status", "ready")
+    .select("id");
+  if (
+    collectionWrite.error ||
+    !collectionWrite.data ||
+    collectionWrite.data.length === 0
+  ) {
+    return { ok: false, error: "Order changed before collection — refresh and try again" };
+  }
 
-  // All audit/log/event writes fire in parallel — none block the response
-  void Promise.all([
+  const { error: secretDeleteError } = await admin
+    .from("pickup_secrets")
+    .delete()
+    .eq("order_id", orderId);
+  if (secretDeleteError) {
+    logger.error("collected order pickup secret cleanup failed", secretDeleteError, {
+      tenant_id: ctx.tenant.id,
+      order_id: orderId,
+    });
+  }
+
+  await settleKitchenWrites("verifyAndCollect", [
     admin.from("order_status_logs").insert({
       tenant_id: ctx.tenant.id, order_id: orderId,
       from_status: "ready", to_status: "collected",
@@ -259,8 +331,11 @@ export async function verifyAndCollect(
       action: "order.collected", target_type: "order", target_id: orderId,
     }),
     emitOrderEvent(admin, { order_id: orderId, tenant_id: ctx.tenant.id, event_type: "collected", payload: { actor: "kitchen" } }),
-  ]).then(() => {
-    logger.info("kitchen order collected (OTP verified)", { tenant_id: ctx.tenant.id, order_id: orderId, latency_ms: Date.now() - start });
+  ], { tenant_id: ctx.tenant.id, order_id: orderId });
+  logger.info("kitchen order collected (OTP verified)", {
+    tenant_id: ctx.tenant.id,
+    order_id: orderId,
+    latency_ms: Date.now() - start,
   });
 
   return { ok: true };
@@ -373,10 +448,18 @@ export async function createWalkInOrder(opts: {
   const ids = opts.items.map((i) => i.itemId);
   const { data: menuItems } = await admin
     .from("menu_items")
-    .select("id, name, price_paise, diet, status, in_stock")
+    .select("id, name, price_paise, diet, status, in_stock, stock_qty")
     .eq("tenant_id", ctx.tenant.id)
     .in("id", ids)
-    .returns<{ id: string; name: string; price_paise: number; diet: "veg" | "nonveg" | "egg"; status: string; in_stock: boolean }[]>();
+    .returns<{
+      id: string;
+      name: string;
+      price_paise: number;
+      diet: "veg" | "nonveg" | "egg";
+      status: string;
+      in_stock: boolean;
+      stock_qty: number | null;
+    }[]>();
 
   if (!menuItems || menuItems.length !== ids.length) {
     return { ok: false, error: "One or more items not found" };
@@ -392,38 +475,43 @@ export async function createWalkInOrder(opts: {
     if (item.status !== "live") return { ok: false, error: `${item.name} is not available` };
     if (!item.in_stock) return { ok: false, error: `${item.name} is sold out` };
     if (req.qty < 1 || req.qty > 20) return { ok: false, error: "Qty must be 1–20 per item" };
+    if (item.stock_qty !== null && item.stock_qty < req.qty) {
+      return { ok: false, error: `Only ${item.stock_qty} ${item.name} left` };
+    }
     total += item.price_paise * req.qty;
     validated.push({ item, qty: req.qty });
   }
 
   const start = Date.now();
 
-  // Assign short code
-  // Generate sequential short code in JS to bypass database RPC permission restrictions
-  let codeData = "T-2401";
-  const { data: lastOrders, error: lastOrdersErr } = await admin
-    .from("orders")
-    .select("short_code")
-    .eq("tenant_id", ctx.tenant.id)
-    .order("created_at", { ascending: false })
-    .limit(1);
-
-  if (!lastOrdersErr && lastOrders && lastOrders.length > 0) {
-    const lastCode = lastOrders[0].short_code;
-    const match = lastCode.match(/^T-(\d+)$/);
-    if (match) {
-      const nextNum = parseInt(match[1], 10) + 1;
-      codeData = `T-${String(nextNum).padStart(4, "0")}`;
-    }
+  // Allocate through the row-locked database counter. During a rolling deploy
+  // where migration 0029 has not landed yet, use a collision-resistant code
+  // and retry the unique insert once.
+  const { data: allocatedCode, error: allocationError } = await (admin as any).rpc(
+    "next_order_short_code",
+    { p_tenant: ctx.tenant.id }
+  );
+  const allocatorMissing =
+    (allocationError as { code?: string } | null)?.code === "PGRST202" ||
+    (allocationError as { code?: string } | null)?.code === "42883";
+  let shortCode =
+    typeof allocatedCode === "string" && allocatedCode
+      ? allocatedCode
+      : allocatorMissing
+        ? `T-X${crypto.randomBytes(5).toString("hex").toUpperCase()}`
+        : null;
+  if (!shortCode) {
+    logger.error("walk-in short code allocation failed", allocationError, {
+      tenant_id: ctx.tenant.id,
+    });
+    return { ok: false, error: "Could not assign order code — please try again" };
   }
 
-  // Create order directly as "placed" — cash collected at counter
-  const { data: order, error: orderErr } = await admin
-    .from("orders")
-    .insert({
+  const insertWalkInOrder = (candidateCode: string) =>
+    admin.from("orders").insert({
       tenant_id: ctx.tenant.id,
       user_id: null,
-      short_code: codeData as string,
+      short_code: candidateCode,
       status: "placed",
       total_paise: total,
       order_type: opts.orderType,
@@ -434,9 +522,23 @@ export async function createWalkInOrder(opts: {
     .select("id, short_code")
     .single<{ id: string; short_code: string }>();
 
-  if (orderErr || !order) return { ok: false, error: orderErr?.message ?? "Could not create order" };
+  let orderInsert = await insertWalkInOrder(shortCode);
+  if (
+    allocatorMissing &&
+    (orderInsert.error as { code?: string } | null)?.code === "23505"
+  ) {
+    shortCode = `T-X${crypto.randomBytes(5).toString("hex").toUpperCase()}`;
+    orderInsert = await insertWalkInOrder(shortCode);
+  }
+  if (orderInsert.error || !orderInsert.data) {
+    return {
+      ok: false,
+      error: orderInsert.error?.message ?? "Could not create order",
+    };
+  }
+  const order = orderInsert.data;
 
-  await admin.from("order_items").insert(
+  const { error: itemInsertError } = await admin.from("order_items").insert(
     validated.map((v) => ({
       tenant_id: ctx.tenant.id,
       order_id: order.id,
@@ -447,14 +549,53 @@ export async function createWalkInOrder(opts: {
       qty: v.qty,
     }))
   );
+  if (itemInsertError) {
+    await admin.from("orders").delete().eq("id", order.id).eq("tenant_id", ctx.tenant.id);
+    logger.error("walk-in item ledger insert failed", itemInsertError, {
+      tenant_id: ctx.tenant.id,
+      order_id: order.id,
+    });
+    return { ok: false, error: "Could not save order items — please try again" };
+  }
 
-  await admin.from("payments").insert({
+  const { error: paymentInsertError } = await admin.from("payments").insert({
     tenant_id: ctx.tenant.id,
     order_id: order.id,
     amount_paise: total,
     status: "captured",
     raw_event_id: `walkin:${order.id}`,
   });
+  if (paymentInsertError) {
+    await admin.from("orders").delete().eq("id", order.id).eq("tenant_id", ctx.tenant.id);
+    logger.error("walk-in payment ledger insert failed", paymentInsertError, {
+      tenant_id: ctx.tenant.id,
+      order_id: order.id,
+    });
+    return { ok: false, error: "Could not record payment — please try again" };
+  }
+
+  // Reserve finite inventory only after the complete order/payment ledger
+  // exists. The RPC locks all requested rows and either decrements every item
+  // or none; on rejection the provisional order cascades away.
+  const stockBoundItems = validated.filter((v) => v.item.stock_qty !== null);
+  if (stockBoundItems.length > 0) {
+    const stockPayload = stockBoundItems.map((v) => ({
+      menu_item_id: v.item.id,
+      qty: v.qty,
+    }));
+    const { data: stockResult, error: stockError } = await (admin as any).rpc(
+      "atomic_decrement_stock",
+      { p_tenant_id: ctx.tenant.id, p_items: stockPayload }
+    );
+    if (stockError || (typeof stockResult === "string" && stockResult !== "ok")) {
+      await admin.from("orders").delete().eq("id", order.id).eq("tenant_id", ctx.tenant.id);
+      const itemName =
+        typeof stockResult === "string" && stockResult.startsWith("out_of_stock:")
+          ? stockResult.replace("out_of_stock:", "")
+          : "An item";
+      return { ok: false, error: `${itemName} just sold out — refresh and try again` };
+    }
+  }
 
   await admin.from("order_status_logs").insert({
     tenant_id: ctx.tenant.id,
@@ -593,10 +734,30 @@ export async function rejectOrder(orderId: string, reason: string): Promise<Outc
     return { ok: false, error: `Cannot reject a "${cur.status}" order` };
   }
 
-  await admin.from("orders").update({ status: "rejected" }).eq("id", orderId).eq("tenant_id", ctx.tenant.id);
-  // Initiate the refund and only mark the payment refunded if it succeeds.
-  // The reconcile cron sweeps rejected orders with captured payments as a safety net.
-  void initiateRefundForOrder(orderId, ctx.tenant.id).catch(() => {});
+  const rejectionWrite = await admin.from("orders")
+    .update({ status: "rejected" })
+    .eq("id", orderId)
+    .eq("tenant_id", ctx.tenant.id)
+    .eq("status", cur.status as "pending_payment" | "placed" | "preparing" | "ready")
+    .select("id");
+  if (
+    rejectionWrite.error ||
+    !rejectionWrite.data ||
+    rejectionWrite.data.length === 0
+  ) {
+    return { ok: false, error: "Order changed before rejection — refresh and try again" };
+  }
+  // Complete the refund attempt before the serverless invocation returns.
+  // The reconcile cron retries failed gateway refunds; direct UPI records a
+  // manual-refund obligation.
+  try {
+    await initiateRefundForOrder(orderId, ctx.tenant.id);
+  } catch (error) {
+    logger.error("kitchen rejection refund attempt failed", error, {
+      tenant_id: ctx.tenant.id,
+      order_id: orderId,
+    });
+  }
   await admin.from("order_status_logs").insert({
     tenant_id: ctx.tenant.id,
     order_id: orderId,
@@ -623,7 +784,7 @@ export async function rejectOrder(orderId: string, reason: string): Promise<Outc
 }
 
 /**
- * 5-second "I made a mistake" undo for status advances.
+ * 10-second "I made a mistake" undo for status advances.
  * Only allows safe backward transitions that kitchen staff commonly fat-finger:
  *   preparing → placed   (tapped "Start" on wrong ticket)
  *   ready → preparing    (tapped "Ready" too soon)
@@ -653,7 +814,7 @@ export async function revertStatus(
     return { ok: false, error: `Cannot undo from "${cur.status}" to "${toStatus}"` };
   }
 
-  // P0-6 FIX: Enforce the 5-second undo window server-side.
+  // P0-6 FIX: Enforce the 10-second undo window server-side.
   // The client timer is cosmetic only — a delayed request on flaky Wi-Fi
   // could arrive minutes later and revert an already-handed-out order.
   // Check order_status_logs for the most recent forward transition timestamp.
@@ -693,7 +854,7 @@ export async function revertStatus(
     from_status: cur.status as "placed" | "preparing" | "ready",
     to_status: toStatus,
     actor_user_id: ctx.user.id,
-    note: "staff undo (5s mistake window)",
+    note: "staff undo (10s mistake window)",
   });
   await admin.from("audit_logs").insert({
     tenant_id: ctx.tenant.id,
@@ -701,13 +862,13 @@ export async function revertStatus(
     action: "order.revert",
     target_type: "order",
     target_id: orderId,
-    meta: { from: cur.status, to: toStatus, window: "5s" },
+    meta: { from: cur.status, to: toStatus, window: "10s" },
   });
   await emitOrderEvent(admin, {
     order_id: orderId,
     tenant_id: ctx.tenant.id,
     event_type: "reverted",
-    payload: { actor: "kitchen", from: cur.status, to: toStatus, reason: "5s undo" },
+    payload: { actor: "kitchen", from: cur.status, to: toStatus, reason: "10s undo" },
   });
 
   return { ok: true };

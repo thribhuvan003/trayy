@@ -3,6 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 import { env } from "@/lib/env";
 import { GetStartedWizard } from "./wizard";
 import type { Metadata } from "next";
+import { getVerifiedAuthUser } from "@/lib/auth/verified-user";
 
 export const metadata: Metadata = {
   title: "Get started — Tray",
@@ -38,13 +39,13 @@ export default async function GetStartedPage({
         },
       }
     );
-    const { data: { session: _gsSession } } = await Promise.race([
-      supabase.auth.getSession(),
-      new Promise<Awaited<ReturnType<typeof supabase.auth.getSession>>>((resolve) =>
-        setTimeout(() => resolve({ data: { session: null }, error: null }), 1200),
+    const verifiedUser = await Promise.race([
+      getVerifiedAuthUser(supabase),
+      new Promise<null>((resolve) =>
+        setTimeout(() => resolve(null), 1200),
       ),
     ]);
-    if (_gsSession?.user) isSignedIn = true;
+    if (verifiedUser) isSignedIn = true;
   } catch {
     // Show wizard anyway
   }

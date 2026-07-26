@@ -34,7 +34,20 @@ function makeCartHash(lines: PlaceArgs): string {
 // Refund itself is handled out-of-band by the reconciliation cron / admin —
 // we just flip status and emit an append-only event for Realtime listeners.
 
-type CancelResult = { ok: true } | { ok: false; error: string };
+type RefundStatus = "initiated" | "manual_required" | "pending_reconciliation";
+
+type CancelResult =
+  | { ok: true; refundStatus: RefundStatus; warning?: string }
+  | { ok: false; error: string };
+
+type RefundResult =
+  | { ok: true; state: "initiated"; refundId: string }
+  | {
+      ok: false;
+      state: "manual_required" | "pending_reconciliation";
+      error: string;
+      refundId?: string;
+    };
 
 export async function cancelOrderByStudent(orderId: string): Promise<CancelResult> {
   // Production-grade tenant context — guarantees every order/payment is scoped to the student's chosen canteen.
@@ -83,8 +96,16 @@ export async function cancelOrderByStudent(orderId: string): Promise<CancelResul
     .update({ status: "cancelled_by_kitchen" as unknown as "rejected" })
     .eq("id", orderId)
     .eq("tenant_id", tenant.id)
-    .eq("status", "placed"); // optimistic guard against concurrent updates
+    .eq("status", "placed") // optimistic guard against concurrent updates
+    .select("id")
+    .maybeSingle<{ id: string }>();
   if (upd.error) return { ok: false, error: upd.error.message };
+  if (!upd.data) {
+    return {
+      ok: false,
+      error: "The kitchen already started this order — it was not cancelled or refunded.",
+    };
+  }
 
   await admin.from("order_status_logs").insert({
     tenant_id: tenant.id,
@@ -132,15 +153,30 @@ export async function cancelOrderByStudent(orderId: string): Promise<CancelResul
     elapsed_ms: elapsedMs, total_paise: order.total_paise,
   });
 
-  // Best-effort refund — don't block the cancellation on refund success.
-  // P1-3: Fire-and-forget BUT log failures via initiateRefundForOrder's own error handling
-  void initiateRefundForOrder(orderId, tenant.id).catch((err) => {
+  // Complete the refund attempt before this serverless invocation returns.
+  // Direct-UPI payments record a manual-refund obligation inside the helper.
+  let refund: RefundResult;
+  try {
+    refund = await initiateRefundForOrder(orderId, tenant.id);
+  } catch (err) {
     logger.error("refund.failed_on_student_cancel", err, { tenant_id: tenant.id, order_id: orderId });
-  });
+    refund = {
+      ok: false,
+      state: "pending_reconciliation",
+      error: "The order was cancelled, but the refund still needs reconciliation.",
+    };
+  }
 
   revalidatePath(`/c/${tenant.slug}/track/${orderId}`);
   revalidatePath(`/c/${tenant.slug}/orders`);
-  return { ok: true };
+  if (refund.ok) {
+    return { ok: true, refundStatus: refund.state };
+  }
+  return {
+    ok: true,
+    refundStatus: refund.state,
+    warning: refund.error,
+  };
 }
 
 type PlaceArgs = { menuItemId: string; qty: number }[];
@@ -322,50 +358,37 @@ export async function placeOrder(
   // We own this idemKey. Proceed with creation.
   const admin = getAdminClient(tenant.id);
 
-  // ── Priority 7: Atomic stock decrement (row-level locked, prevents overselling) ──
-  // For items with a finite stock_qty, call the DB function that holds FOR UPDATE
-  // locks on each menu_item row and decrements atomically. If ANY item has run out,
-  // the function returns immediately with 'out_of_stock:<name>' — no partial decrement.
-  // This is the only correct way to prevent overselling under 500+ concurrent checkouts.
-  const stockBoundItems = validated.filter((v) => v.item.stock_qty !== null);
-  if (stockBoundItems.length > 0) {
-    const stockPayload = stockBoundItems.map((v) => ({ menu_item_id: v.item.id, qty: v.qty }));
-    const { data: stockResult, error: stockErr } = await (admin as any).rpc(
-      "atomic_decrement_stock",
-      { p_tenant_id: tenant.id, p_items: stockPayload }
-    );
-
-    if (stockErr || (typeof stockResult === "string" && stockResult !== "ok")) {
-      // Release the idempotency claim so the student can retry cleanly
-      await getAdminClient(tenant.id)
-        .from("idempotency_keys" as any)
-        .delete()
-        .eq("key", idemKey);
-
-      const itemName =
-        typeof stockResult === "string" && stockResult.startsWith("out_of_stock:")
-          ? stockResult.replace("out_of_stock:", "")
-          : "an item";
-      log.warn("stock decrement rejected", { result: stockResult });
-      return {
-        ok: false,
-        error: `${itemName} just sold out — please remove it and try again`,
-        code: "OUT_OF_STOCK" as const,
-      };
-    }
-  }
-
-  // Atomic per-tenant sequence — race-safe under any concurrency.
-  // Postgres sequence nextval() is instantaneous and guaranteed unique;
-  // no two concurrent requests can ever receive the same short code.
+  // Allocate the human-readable code before reserving finite stock. A failed or
+  // not-yet-deployed allocator can leave a harmless number gap, but must never
+  // decrement inventory for an order that cannot be created.
   const { data: codeData, error: codeErr } = await (admin as any).rpc(
     "next_order_short_code",
     { p_tenant: tenant.id }
   );
-  if (codeErr || !codeData) {
-    await getAdminClient(tenant.id).from("idempotency_keys" as any).delete().eq("key", idemKey);
-    log.error("placeOrder: short code RPC failed", codeErr, { tenant_id: tenant.id });
+  const allocatorMissing =
+    (codeErr as { code?: string } | null)?.code === "PGRST202" ||
+    (codeErr as { code?: string } | null)?.code === "42883";
+  let shortCode =
+    typeof codeData === "string" && codeData
+      ? codeData
+      : allocatorMissing
+        ? `T-X${crypto.randomBytes(5).toString("hex").toUpperCase()}`
+        : null;
+
+  if (!shortCode) {
+    await admin.from("idempotency_keys" as any).delete().eq("key", idemKey);
+    log.error("placeOrder: short code allocation failed", codeErr, {
+      tenant_id: tenant.id,
+      database_code: (codeErr as { code?: string } | null)?.code,
+      database_hint: (codeErr as { hint?: string } | null)?.hint,
+    });
     return { ok: false, error: "Could not assign order code — please try again" };
+  }
+  if (allocatorMissing) {
+    log.warn("placeOrder: allocator migration missing; using collision-resistant fallback", {
+      tenant_id: tenant.id,
+      database_code: (codeErr as { code?: string } | null)?.code,
+    });
   }
 
   // Direct-UPI auto-verify: give the order a unique final amount (total + 1..999 paise)
@@ -385,12 +408,11 @@ export async function placeOrder(
     verifyPaise = tag === 0 ? null : tag; // 0 = all 999 slots taken → manual net
   }
 
-  const orderInsert = await admin
-    .from("orders")
-    .insert({
+  const insertOrder = (candidateCode: string) =>
+    admin.from("orders").insert({
       tenant_id: tenant.id,
       user_id: user.id,
-      short_code: codeData as string,
+      short_code: candidateCode,
       status: "pending_payment",
       total_paise: total,
       upi_verify_paise: verifyPaise,
@@ -404,7 +426,17 @@ export async function placeOrder(
     } as any)
     .select("id, short_code")
     .single<{ id: string; short_code: string }>();
+
+  let orderInsert = await insertOrder(shortCode);
+  // The migration-backed allocator is deterministic and collision-safe. The
+  // emergency fallback is random; retry a vanishingly unlikely unique collision
+  // before touching inventory or exposing an error to the customer.
+  if (allocatorMissing && (orderInsert.error as { code?: string } | null)?.code === "23505") {
+    shortCode = `T-X${crypto.randomBytes(5).toString("hex").toUpperCase()}`;
+    orderInsert = await insertOrder(shortCode);
+  }
   if (orderInsert.error || !orderInsert.data) {
+    await admin.from("idempotency_keys" as any).delete().eq("key", idemKey);
     return { ok: false, error: orderInsert.error?.message ?? "Could not create order" };
   }
   const order = orderInsert.data;
@@ -433,6 +465,94 @@ export async function placeOrder(
     return { ok: false, error: "Could not save order items — please try again" };
   }
 
+  // ── Payment-rail branch ──────────────────────────────────────────────────
+  // direct_upi: student pays the canteen's VPA directly. There is NOTHING for
+  // Razorpay to capture, so we never create a Razorpay order (that was the bug —
+  // orphan Razorpay orders that webhooks/reconcile waited on forever). The
+  // payment row carries a null razorpay_order_id; the reconcile cron already
+  // skips rows with no razorpay_order_id.
+  // razorpay: money flows through the gateway — create the order so the existing
+  // webhook / safe_capture_payment / reconcile machinery can capture it.
+  let razorpayOrderId: string | null = null;
+  let simulated = false;
+  if (paymentMode === "razorpay") {
+    try {
+      const rzpStart = Date.now();
+      const rzp = await createRazorpayOrder({
+        amountPaise: total,
+        receipt: order.short_code,
+        notes: { tenant: tenant.slug, order: order.id },
+      });
+      razorpayOrderId = rzp.id;
+      simulated = rzp.simulated;
+      log.info("razorpay order created", {
+        razorpay_order_id: rzp.id,
+        simulated: rzp.simulated,
+        latency_ms: Date.now() - rzpStart,
+      });
+    } catch (error) {
+      await admin.from("orders").delete().eq("id", order.id).eq("tenant_id", tenant.id);
+      await admin.from("idempotency_keys" as any).delete().eq("key", idemKey);
+      log.error("placeOrder: Razorpay order creation failed", error, {
+        order_id: order.id,
+        tenant_id: tenant.id,
+      });
+      return { ok: false, error: "Payment setup failed — no charge was made. Please try again." };
+    }
+  } else {
+    log.info("direct_upi order — no Razorpay order created (pays canteen VPA directly)", {
+      order_id: order.id,
+    });
+  }
+
+  const { error: paymentInsertErr } = await admin.from("payments").insert({
+    tenant_id: tenant.id,
+    order_id: order.id,
+    razorpay_order_id: razorpayOrderId,
+    amount_paise: total,
+    status: "initiated",
+  });
+  if (paymentInsertErr) {
+    await admin.from("orders").delete().eq("id", order.id).eq("tenant_id", tenant.id);
+    await admin.from("idempotency_keys" as any).delete().eq("key", idemKey);
+    log.error("placeOrder: payment ledger insert failed", paymentInsertErr, {
+      order_id: order.id,
+      tenant_id: tenant.id,
+    });
+    return { ok: false, error: "Could not prepare payment — no charge was made. Please try again." };
+  }
+
+  // Reserve finite stock only after every fallible order/payment write above has
+  // succeeded. If the locked reservation loses a race, deleting the order rolls
+  // back its items and payment row without ever decrementing inventory.
+  const stockBoundItems = validated.filter((v) => v.item.stock_qty !== null);
+  if (stockBoundItems.length > 0) {
+    const stockPayload = stockBoundItems.map((v) => ({ menu_item_id: v.item.id, qty: v.qty }));
+    const { data: stockResult, error: stockErr } = await (admin as any).rpc(
+      "atomic_decrement_stock",
+      { p_tenant_id: tenant.id, p_items: stockPayload }
+    );
+
+    if (stockErr || (typeof stockResult === "string" && stockResult !== "ok")) {
+      await admin.from("orders").delete().eq("id", order.id).eq("tenant_id", tenant.id);
+      await admin.from("idempotency_keys" as any).delete().eq("key", idemKey);
+
+      const itemName =
+        typeof stockResult === "string" && stockResult.startsWith("out_of_stock:")
+          ? stockResult.replace("out_of_stock:", "")
+          : "an item";
+      log.warn("stock reservation rejected; provisional order removed", {
+        order_id: order.id,
+        result: stockResult,
+      });
+      return {
+        ok: false,
+        error: `${itemName} just sold out — please remove it and try again`,
+        code: "OUT_OF_STOCK" as const,
+      };
+    }
+  }
+
   await admin.from("order_status_logs").insert({
     tenant_id: tenant.id,
     order_id: order.id,
@@ -448,44 +568,6 @@ export async function placeOrder(
     target_type: "order",
     target_id: order.id,
     meta: { total_paise: total, items: validated.length, order_type: orderType },
-  });
-
-  // ── Payment-rail branch ──────────────────────────────────────────────────
-  // direct_upi: student pays the canteen's VPA directly. There is NOTHING for
-  // Razorpay to capture, so we never create a Razorpay order (that was the bug —
-  // orphan Razorpay orders that webhooks/reconcile waited on forever). The
-  // payment row carries a null razorpay_order_id; the reconcile cron already
-  // skips rows with no razorpay_order_id.
-  // razorpay: money flows through the gateway — create the order so the existing
-  // webhook / safe_capture_payment / reconcile machinery can capture it.
-  let razorpayOrderId: string | null = null;
-  let simulated = false;
-  if (paymentMode === "razorpay") {
-    const rzpStart = Date.now();
-    const rzp = await createRazorpayOrder({
-      amountPaise: total,
-      receipt: order.short_code,
-      notes: { tenant: tenant.slug, order: order.id },
-    });
-    razorpayOrderId = rzp.id;
-    simulated = rzp.simulated;
-    log.info("razorpay order created", {
-      razorpay_order_id: rzp.id,
-      simulated: rzp.simulated,
-      latency_ms: Date.now() - rzpStart,
-    });
-  } else {
-    log.info("direct_upi order — no Razorpay order created (pays canteen VPA directly)", {
-      order_id: order.id,
-    });
-  }
-
-  await admin.from("payments").insert({
-    tenant_id: tenant.id,
-    order_id: order.id,
-    razorpay_order_id: razorpayOrderId,
-    amount_paise: total,
-    status: "initiated",
   });
 
   log.info("placeOrder success — order created", {
@@ -646,11 +728,27 @@ export async function verifyPaymentNow(orderId: string): Promise<VerifyResult> {
   const paymentMode: "direct_upi" | "razorpay" =
     tModeRow?.payment_mode === "razorpay" ? "razorpay" : "direct_upi";
 
-  // Already past pending_payment — map to the right result so the UI gets a
-  // truthful status. payment_failed/expired → "failed"; everything else → "paid".
+  // Never infer payment from order status alone. A cancelled/rejected order can
+  // be past pending_payment without proving that money was captured.
   if (orderRow.status !== "pending_payment") {
     const failedStatuses = ["payment_failed", "expired", "rejected"];
-    return { status: failedStatuses.includes(orderRow.status) ? "failed" : "paid" };
+    if (failedStatuses.includes(orderRow.status)) return { status: "failed" };
+
+    const { data: durablePayment, error: durablePaymentError } = await admin
+      .from("payments")
+      .select("status, razorpay_payment_id")
+      .eq("order_id", orderId)
+      .eq("tenant_id", tenant.id)
+      .in("status", ["captured", "refunded"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle<{ status: string; razorpay_payment_id: string | null }>();
+
+    return !durablePaymentError &&
+      durablePayment?.razorpay_payment_id &&
+      (durablePayment.status === "captured" || durablePayment.status === "refunded")
+      ? { status: "paid" }
+      : { status: "pending" };
   }
 
   // Server-side expiry check — client timer can be bypassed
@@ -728,68 +826,43 @@ export async function verifyPaymentNow(orderId: string): Promise<VerifyResult> {
     // move the order into the kitchen queue flagged UNVERIFIED: the pickup OTP +
     // the staff's own UPI-app/soundbox glance at the counter is the real
     // verification. No Razorpay is involved on this rail.
-    const { data: payRow } = await admin
-      .from("payments")
-      .select("razorpay_order_id, amount_paise")
-      .eq("order_id", orderId)
-      .eq("tenant_id", tenant.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle<{ razorpay_order_id: string | null; amount_paise: number }>();
+    const { data: claimResult, error: claimError } = await (admin as unknown as {
+      rpc: (
+        fn: string,
+        args: Record<string, unknown>
+      ) => Promise<{ data: string | null; error: unknown }>;
+    }).rpc("safe_claim_direct_upi", {
+      p_order_id: orderId,
+      p_tenant_id: tenant.id,
+      p_user_id: user.id,
+      p_payment_id: `pay_upi_${orderId.replace(/-/g, "")}`,
+      p_raw_event_id: `upi_trust_${orderId}`,
+    });
 
-    // Mark payment as "pending_verification" — not "captured"
-    // Kitchen sees an unverified badge until staff confirms receipt in their UPI app
-    await admin.from("payments").upsert(
-      {
-        tenant_id: tenant.id,
+    if (claimError) {
+      await admin.from("idempotency_keys" as any).delete().eq("key", idemKey);
+      log.error("verifyPaymentNow: direct-UPI atomic claim failed", claimError, {
         order_id: orderId,
-        razorpay_order_id: payRow?.razorpay_order_id ?? null,
-        amount_paise: payRow?.amount_paise ?? 0,
-        status: "captured", // still 'captured' so order flow continues — unverified flag is in event payload
-        razorpay_payment_id: `pay_upi_${orderId.slice(0, 8)}`,
-        raw_event_id: `upi_trust_${orderId}`,
-      },
-      { onConflict: "raw_event_id", ignoreDuplicates: true }
-    );
-
-    const { data: updated } = await admin
-      .from("orders")
-      .update({ status: "placed" })
-      .eq("id", orderId)
-      .eq("tenant_id", tenant.id)
-      .eq("status", "pending_payment")
-      .select("id");
-
-    if (updated && updated.length > 0) {
-      type OrderEventInsert = {
-        tenant_id: string;
-        order_id: string;
-        event_type: string;
-        payload: Record<string, unknown>;
-      };
-      await (
-        admin.from("order_events") as unknown as {
-          insert: (row: OrderEventInsert) => Promise<unknown>;
-        }
-      ).insert({
-        tenant_id: tenant.id,
-        order_id: orderId,
-        event_type: "status_changed",
-        // upi_unverified flag surfaces "⚠️ UNVERIFIED UPI" in kitchen board
-        payload: { from: "pending_payment", to: "placed", source: "upi_trust", upi_unverified: true },
       });
-      await admin.from("order_status_logs").insert({
-        tenant_id: tenant.id,
-        order_id: orderId,
-        from_status: "pending_payment",
-        to_status: "placed",
-        actor_user_id: user.id,
-        note: "UPI payment claimed by student (UNVERIFIED — staff must confirm in UPI app)",
-      });
-      log.warn("UPI-trust order placed — staff verification required", { order_id: orderId });
-      // Fire SMS to admin — fire-and-forget, never blocks the student flow
-      void notifyAdminNewOrder(orderId, tenant.id);
+      return { status: "pending" };
     }
+    if (claimResult === "expired") {
+      await admin.from("idempotency_keys" as any).delete().eq("key", idemKey);
+      return { status: "failed" };
+    }
+    if (claimResult !== "claimed") {
+      await admin.from("idempotency_keys" as any).delete().eq("key", idemKey);
+      log.warn("verifyPaymentNow: direct-UPI claim did not transition", {
+        order_id: orderId,
+        claim_result: claimResult,
+      });
+      return { status: "pending" };
+    }
+
+    log.warn("UPI-trust order placed — staff verification required", { order_id: orderId });
+    // Await the dispatch attempt so the serverless invocation cannot terminate
+    // before the notification provider receives the request.
+    await Promise.allSettled([notifyAdminNewOrder(orderId, tenant.id)]);
 
     const success: VerifyResult = { status: "paid" };
     await admin.from("idempotency_keys" as any).update({ response: success }).eq("key", idemKey);
@@ -797,15 +870,23 @@ export async function verifyPaymentNow(orderId: string): Promise<VerifyResult> {
   }
 
   // ── Live Razorpay mode: poll the API as webhook-drop fallback ─────────────────
-  const { data: paymentRow } = await admin
+  const { data: paymentRow, error: paymentLookupError } = await admin
     .from("payments")
-    .select("razorpay_order_id, amount_paise")
+    .select("razorpay_order_id, razorpay_payment_id, amount_paise, status")
     .eq("order_id", orderId)
     .eq("tenant_id", tenant.id)
     .order("created_at", { ascending: false })
     .limit(1)
-    .maybeSingle<{ razorpay_order_id: string | null; amount_paise: number }>();
-  if (!paymentRow?.razorpay_order_id) return { status: "pending" };
+    .maybeSingle<{
+      razorpay_order_id: string | null;
+      razorpay_payment_id: string | null;
+      amount_paise: number;
+      status: string;
+    }>();
+  if (paymentLookupError || !paymentRow?.razorpay_order_id) {
+    await admin.from("idempotency_keys" as any).delete().eq("key", idemKey);
+    return { status: "pending" };
+  }
 
   const { fetchRazorpayOrderStatus, fetchRazorpayOrderPayments } = await import("@/lib/payments/razorpay");
   const remote = await fetchRazorpayOrderStatus(paymentRow.razorpay_order_id);
@@ -817,13 +898,31 @@ export async function verifyPaymentNow(orderId: string): Promise<VerifyResult> {
   // order total) — same path as the webhook. Prevents tampered amount from
   // being accepted on the manual verify path.
   const capturedPayment = await fetchRazorpayOrderPayments(paymentRow.razorpay_order_id);
-  const paymentId = capturedPayment?.paymentId ?? `pay_manual_${orderId.slice(0, 8)}`;
-  const amountPaise = capturedPayment?.amountPaise ?? paymentRow.amount_paise;
+  if (!capturedPayment) {
+    // A paid Razorpay order is not enough to invent a capture identifier or
+    // amount. Only trust a capture already durably recorded by the webhook.
+    if (
+      paymentRow.status === "captured" &&
+      paymentRow.razorpay_payment_id
+    ) {
+      const success: VerifyResult = { status: "paid" };
+      await admin.from("idempotency_keys" as any).update({ response: success }).eq("key", idemKey);
+      return success;
+    }
+    await admin.from("idempotency_keys" as any).delete().eq("key", idemKey);
+    log.warn("verifyPaymentNow: Razorpay order is paid but no captured payment was verified", {
+      order_id: orderId,
+      razorpay_order_id: paymentRow.razorpay_order_id,
+    });
+    return { status: "pending" };
+  }
+  const paymentId = capturedPayment.paymentId;
+  const amountPaise = capturedPayment.amountPaise;
   const rawEventId = `manual_verify_${paymentRow.razorpay_order_id}`;
 
   // Use same atomic DB function as the webhook: validates amount, inserts payment,
   // transitions order status, and fires order_events in one transaction.
-  const { data: captureResult } = await (admin as unknown as {
+  const { data: captureResult, error: captureError } = await (admin as unknown as {
     rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: string | null; error: unknown }>;
   }).rpc("safe_capture_payment", {
     p_order_id: orderId,
@@ -839,6 +938,46 @@ export async function verifyPaymentNow(orderId: string): Promise<VerifyResult> {
       order_id: orderId, razorpay_amount: amountPaise,
     });
     return { status: "failed" };
+  }
+
+  if (captureError) {
+    await admin.from("idempotency_keys" as any).delete().eq("key", idemKey);
+    log.error("verifyPaymentNow: atomic capture failed", captureError, {
+      order_id: orderId,
+      razorpay_order_id: paymentRow.razorpay_order_id,
+    });
+    return { status: "pending" };
+  }
+
+  if (captureResult === "already_captured") {
+    const { data: durablePayment, error: durablePaymentError } = await admin
+      .from("payments")
+      .select("status, razorpay_payment_id")
+      .eq("order_id", orderId)
+      .eq("tenant_id", tenant.id)
+      .eq("status", "captured")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle<{ status: string; razorpay_payment_id: string | null }>();
+    if (
+      durablePaymentError ||
+      durablePayment?.status !== "captured" ||
+      !durablePayment.razorpay_payment_id
+    ) {
+      await admin.from("idempotency_keys" as any).delete().eq("key", idemKey);
+      log.warn("verifyPaymentNow: capture RPC reported already captured without durable proof", {
+        order_id: orderId,
+        capture_result: captureResult,
+      });
+      return { status: "pending" };
+    }
+  } else if (captureResult !== "captured") {
+    await admin.from("idempotency_keys" as any).delete().eq("key", idemKey);
+    log.warn("verifyPaymentNow: capture RPC did not succeed", {
+      order_id: orderId,
+      capture_result: captureResult,
+    });
+    return { status: "pending" };
   }
 
   const success: VerifyResult = { status: "paid" };
@@ -864,13 +1003,13 @@ type OrderEventInsertUntyped = {
 
 /**
  * Internal helper — called by cancelOrderByStudent and the reconcile cron.
- * Looks up the captured payment for an order and initiates a Razorpay refund.
- * Safe to call multiple times — idempotent via payment status check.
+ * Looks up the payment ledger and either initiates a captured gateway refund
+ * or records the manual obligation for a claimed direct-UPI payment.
  */
 export async function initiateRefundForOrder(
   orderId: string,
   tenantId: string
-): Promise<{ ok: boolean; error?: string; refundId?: string }> {
+): Promise<RefundResult> {
   const admin = getAdminClient(tenantId);
 
   const { data: payment } = await admin
@@ -878,10 +1017,17 @@ export async function initiateRefundForOrder(
     .select("id, razorpay_payment_id, amount_paise, status")
     .eq("order_id", orderId)
     .eq("tenant_id", tenantId)
+    .in("status", ["captured", "initiated"])
+    .order("created_at", { ascending: false })
+    .limit(1)
     .maybeSingle<PaymentRow>();
 
-  if (!payment || payment.status !== "captured") {
-    return { ok: false, error: "No captured payment found" };
+  if (!payment) {
+    return {
+      ok: false,
+      state: "pending_reconciliation",
+      error: "No captured payment found; refund requires reconciliation.",
+    };
   }
 
   // ── Direct-UPI: no gateway to refund through ─────────────────────────────────
@@ -898,48 +1044,68 @@ export async function initiateRefundForOrder(
     !payment.razorpay_payment_id.startsWith("pay_upi_") &&
     !payment.razorpay_payment_id.startsWith("pay_sim_");
 
-  if (!isGatewayPayment) {
-    await admin
-      .from("payments")
-      .update({ refund_id: "manual_upi_refund_owed" } as any)
-      .eq("id", payment.id)
-      .eq("tenant_id", tenantId);
+  if (isGatewayPayment && payment.status !== "captured") {
+    return {
+      ok: false,
+      state: "pending_reconciliation",
+      error: "Gateway payment is not captured; refund requires reconciliation.",
+    };
+  }
 
-    await (
-      admin as unknown as {
-        from: (t: string) => {
-          insert: (row: OrderEventInsertUntyped) => Promise<{ error: { message: string } | null }>;
-        };
-      }
-    )
-      .from("order_events")
-      .insert({
+  if (!isGatewayPayment) {
+    const { data: markResult, error: markError } = await (admin as unknown as {
+      rpc: (
+        fn: string,
+        args: Record<string, unknown>
+      ) => Promise<{ data: string | null; error: unknown }>;
+    }).rpc("safe_mark_direct_upi_refund_owed", {
+      p_payment_id: payment.id,
+      p_order_id: orderId,
+      p_tenant_id: tenantId,
+    });
+
+    if (
+      markError ||
+      (markResult !== "recorded" && markResult !== "already_recorded")
+    ) {
+      logger.error("refund.manual_obligation_record_failed", markError, {
         tenant_id: tenantId,
         order_id: orderId,
-        event_type: "refund_owed",
-        payload: {
-          amount_paise: payment.amount_paise,
-          reason: "direct_upi_manual_refund",
-          source: "initiateRefundForOrder",
-        },
+        payment_id: payment.id,
+        result: markResult,
       });
+      return {
+        ok: false,
+        state: "pending_reconciliation",
+        error: "Failed to record manual refund obligation",
+      };
+    }
 
     logger.warn("refund.manual_required — direct UPI, canteen must repay via UPI app", {
       tenant_id: tenantId,
       order_id: orderId,
       amount_paise: payment.amount_paise,
     });
-    return { ok: false, error: "manual_refund_required" };
+    return {
+      ok: false,
+      state: "manual_required",
+      error: "Payment was made directly by UPI; the canteen must return it manually.",
+    };
   }
 
   if (!payment.razorpay_payment_id) {
-    return { ok: false, error: "No razorpay_payment_id on payment row" };
+    return {
+      ok: false,
+      state: "pending_reconciliation",
+      error: "Captured payment has no gateway payment ID; refund requires reconciliation.",
+    };
   }
 
   const result = await initiateRazorpayRefund({
     razorpayPaymentId: payment.razorpay_payment_id,
     amountPaise: payment.amount_paise,
     notes: { order_id: orderId },
+    idempotencyKey: `refund_${orderId.replaceAll("-", "_")}`,
   });
 
   if ("error" in result) {
@@ -955,7 +1121,7 @@ export async function initiateRefundForOrder(
     // Do NOT change payment status on refund failure — keep it as "captured" so the
     // reconcile cron (WHERE status='captured' AND refund_id IS NULL) will retry it.
     // Setting it to "refunded" on failure was corrupting the reconciliation query.
-    return { ok: false, error: result.error };
+    return { ok: false, state: "pending_reconciliation", error: result.error };
   }
 
   const { refundId } = result;
@@ -969,26 +1135,57 @@ export async function initiateRefundForOrder(
   // P1-9 FIX: Store refund_id atomically with the status transition.
   // The reconcile cron now queries WHERE refund_id IS NULL — so if this update
   // succeeds, the cron will never retry the refund. If it fails, the next cron
-  // run sees no refund_id, retries Razorpay, but Razorpay deduplicates via
-  // the payment_id + amount, so no double-refund is possible.
-  await admin
+  // run sees no refund_id and retries with the same X-Refund-Idempotency key,
+  // so Razorpay returns the original refund instead of creating a duplicate.
+  const paymentUpdate = await admin
     .from("payments")
     .update({
       status: "refunded" as unknown as "initiated",
       refund_id: refundId,
     } as any)
     .eq("id", payment.id)
-    .eq("tenant_id", tenantId);
+    .eq("tenant_id", tenantId)
+    .select("id")
+    .maybeSingle<{ id: string }>();
+  if (paymentUpdate.error || !paymentUpdate.data) {
+    logger.error("refund.persistence_failed", paymentUpdate.error, {
+      tenant_id: tenantId,
+      order_id: orderId,
+      payment_id: payment.id,
+      refund_id: refundId,
+    });
+    return {
+      ok: false,
+      state: "pending_reconciliation",
+      error: "Refund was initiated, but its payment record needs reconciliation.",
+      refundId,
+    };
+  }
 
   // Flip order status to refunded.
-  await admin
+  const orderUpdate = await admin
     .from("orders")
     .update({ status: "refunded" as unknown as "rejected" })
     .eq("id", orderId)
-    .eq("tenant_id", tenantId);
+    .eq("tenant_id", tenantId)
+    .select("id")
+    .maybeSingle<{ id: string }>();
+  if (orderUpdate.error || !orderUpdate.data) {
+    logger.error("refund.order_persistence_failed", orderUpdate.error, {
+      tenant_id: tenantId,
+      order_id: orderId,
+      refund_id: refundId,
+    });
+    return {
+      ok: false,
+      state: "pending_reconciliation",
+      error: "Refund was initiated, but the order status needs reconciliation.",
+      refundId,
+    };
+  }
 
   // Append-only event row for Realtime listeners.
-  await (
+  const eventInsert = await (
     admin as unknown as {
       from: (t: string) => {
         insert: (row: OrderEventInsertUntyped) => Promise<{ error: { message: string } | null }>;
@@ -1002,6 +1199,19 @@ export async function initiateRefundForOrder(
       event_type: "refunded",
       payload: { refund_id: refundId, source: "initiateRefundForOrder" },
     });
+  if (eventInsert.error) {
+    logger.error("refund.event_persistence_failed", eventInsert.error, {
+      tenant_id: tenantId,
+      order_id: orderId,
+      refund_id: refundId,
+    });
+    return {
+      ok: false,
+      state: "pending_reconciliation",
+      error: "Refund was initiated, but its audit event needs reconciliation.",
+      refundId,
+    };
+  }
 
-  return { ok: true, refundId };
+  return { ok: true, state: "initiated", refundId };
 }

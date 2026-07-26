@@ -194,8 +194,11 @@ export async function initiateRazorpayRefund(opts: {
   razorpayPaymentId: string;
   amountPaise: number;
   notes?: Record<string, string>;
+  idempotencyKey?: string;
 }): Promise<{ refundId: string; simulated: boolean } | { error: string }> {
   const { razorpayPaymentId, amountPaise, notes } = opts;
+  const idempotencyKey =
+    opts.idempotencyKey ?? `refund_${razorpayPaymentId}_${amountPaise}`;
 
   // Use simulator when live keys are absent or the payment ID itself is simulated.
   if (!featureFlags.razorpayLive || razorpayPaymentId.startsWith("pay_sim_")) {
@@ -212,7 +215,14 @@ export async function initiateRazorpayRefund(opts: {
       `https://api.razorpay.com/v1/payments/${razorpayPaymentId}/refund`,
       {
         method: "POST",
-        headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
+        headers: {
+          Authorization: `Basic ${auth}`,
+          "Content-Type": "application/json",
+          // Razorpay returns the original refund for a retry with the same
+          // key, including after a network timeout where we never received
+          // the first response.
+          "X-Refund-Idempotency": idempotencyKey,
+        },
         body: JSON.stringify({ amount: amountPaise, notes }),
       },
       { timeoutMs: 12000, maxAttempts: 2 } // Refunds: longer timeout, fewer retries

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { tenantSlugFromHost } from "@/lib/tenant";
+import { getLegacyDemoRedirect } from "@/lib/demo-routes";
 
 const DEFAULT_TENANT_SLUG = process.env.DEFAULT_TENANT_SLUG ?? "";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -88,6 +89,13 @@ export async function middleware(req: NextRequest) {
   const url = req.nextUrl;
   const pathname = url.pathname;
 
+  // Keep previously shared demo URLs useful without weakening auth on any
+  // real tenant. Only these three exact aliases bypass tenant resolution.
+  const demoRedirect = getLegacyDemoRedirect(pathname);
+  if (demoRedirect) {
+    return NextResponse.redirect(new URL(demoRedirect, req.url), 308);
+  }
+
   // Fast pass: skip static assets and webhook handlers — no tenant resolution needed
   if (
     pathname.startsWith("/_next") ||
@@ -170,17 +178,35 @@ export async function middleware(req: NextRequest) {
 
   // OPTIMIZATION: Only verify token if a Supabase session cookie exists.
   // This cuts redundant auth API calls on public/unauthenticated routes.
-  // getSession() reads the JWT from cookies locally + auto-refreshes via
-  // refresh token — no Supabase auth network round-trip. Using getUser()
-  // (which calls the auth API) caused random null returns on timeout/flakiness,
-  // silently logging out admins mid-session and redirecting sidebars to login.
+  // getClaims() verifies the cookie JWT signature/expiry and normally uses the
+  // cached JWKS locally, avoiding both untrusted getSession() identity data and
+  // a per-request getUser() round trip.
   const hasSessionCookie = req.cookies.getAll().some(
     (c) => c.name.startsWith("sb-") || c.name.startsWith("sb_")
   );
+  const applySessionState = (response: NextResponse) => {
+    for (const { name, value, options } of refreshedCookies) {
+      response.cookies.set(name, value, options);
+    }
+    if (hasSessionCookie || refreshedCookies.length > 0) {
+      response.headers.set("Cache-Control", "private, no-store");
+      response.headers.set("Pragma", "no-cache");
+    }
+    return response;
+  };
   let user = null;
   if (hasSessionCookie) {
-    const { data: { session } } = await supabase.auth.getSession();
-    user = session?.user ?? null;
+    const { data: claimsData } = await supabase.auth.getClaims();
+    const claims = claimsData?.claims;
+    const sub = claims?.sub;
+    user = typeof sub === "string"
+      ? {
+          id: sub,
+          email: typeof claims?.email === "string"
+            ? claims.email
+            : null,
+        }
+      : null;
   }
 
   // 3. Edge-level role guard for kitchen and admin routes.
@@ -193,13 +219,15 @@ export async function middleware(req: NextRequest) {
   if (isKitchenPath || isAdminPath) {
     const targetSlug = resolvedTenantSlug;
     if (!user) {
-      return NextResponse.redirect(
-        new URL(`/c/${targetSlug}/login?next=${encodeURIComponent(pathname)}`, req.url)
+      return applySessionState(
+        NextResponse.redirect(
+          new URL(`/c/${targetSlug}/login?next=${encodeURIComponent(pathname)}`, req.url)
+        )
       );
     }
     const tenant = await getMiddlewareTenant(targetSlug);
     if (!tenant) {
-      return new NextResponse("Tenant Not Found", { status: 404 });
+      return applySessionState(new NextResponse("Tenant Not Found", { status: 404 }));
     }
     const role = await getMiddlewareUserRole(supabase, user.id, tenant.id, tenant.college_id);
 
@@ -208,11 +236,15 @@ export async function middleware(req: NextRequest) {
     // handle it rather than false-positively locking out a valid admin.
     if (isKitchenPath) {
       if (role !== null && role !== "kitchen_staff" && role !== "canteen_admin" && role !== "super_admin") {
-        return NextResponse.redirect(new URL(`/c/${targetSlug}/unauthorised`, req.url));
+        return applySessionState(
+          NextResponse.redirect(new URL(`/c/${targetSlug}/unauthorised`, req.url))
+        );
       }
     } else if (isAdminPath) {
       if (role !== null && role !== "canteen_admin" && role !== "super_admin") {
-        return NextResponse.redirect(new URL(`/c/${targetSlug}/unauthorised`, req.url));
+        return applySessionState(
+          NextResponse.redirect(new URL(`/c/${targetSlug}/unauthorised`, req.url))
+        );
       }
     }
   }
@@ -227,7 +259,12 @@ export async function middleware(req: NextRequest) {
   // 4. Build response — rewrite /c/[slug]/<rest> to internal portal routes.
   //    The browser URL stays as /c/[slug]/menu but Next.js serves /menu internally.
   let res: NextResponse;
-  if (canteenMatch && canteenMatch[2] && canteenMatch[2] !== "/") {
+  if (pathname === "/" && tenantSlug) {
+    // A tenant subdomain/custom host is an ordering surface, not the generic
+    // marketing site. Keep the canonical root static while preserving the
+    // expected tenant-host entry flow.
+    res = NextResponse.redirect(new URL(`/c/${tenantSlug}/menu`, req.url));
+  } else if (canteenMatch && canteenMatch[2] && canteenMatch[2] !== "/") {
     const rewriteUrl = url.clone();
     rewriteUrl.pathname = canteenMatch[2];
     res = NextResponse.rewrite(rewriteUrl, { request: { headers: requestHeaders } });
@@ -238,12 +275,9 @@ export async function middleware(req: NextRequest) {
   res.headers.set("x-tenant-slug", resolvedTenantSlug);
   if (collegeSlug) res.headers.set("x-college-slug", collegeSlug);
 
-  // 5. Apply refreshed session cookies to the browser response
-  for (const { name, value, options } of refreshedCookies) {
-    res.cookies.set(name, value, options);
-  }
-
-  return res;
+  // 5. Apply refreshed session cookies and prevent shared caching of
+  // authenticated responses.
+  return applySessionState(res);
 }
 
 export const config = {

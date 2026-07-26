@@ -228,7 +228,7 @@ describe("Priority 2 — Amount validation in webhook", () => {
     const res = await POST(req as any);
     const json = await res.json();
     expect(res.status).toBe(200);
-    expect(json.skipped).toBe(true);
+    expect(json.dlq).toBe(true);
     // DLQ must be written for the reconcile cron to pick up
     expect(mockInsert).toHaveBeenCalledWith(
       expect.objectContaining({

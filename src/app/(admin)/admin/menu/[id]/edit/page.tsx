@@ -8,18 +8,25 @@ import { requireTenantContext } from "@/lib/tenant";
 import { ImageUploadField } from "@/components/portal-admin/image-upload-field";
 import { CategorySelect } from "@/components/portal-admin/category-select";
 import { AdminSelect } from "@/components/portal-admin/admin-select";
+import { AdminSubmitButton } from "@/components/portal-admin/admin-submit-button";
+import { sanitizeMenuImageUrl } from "@/lib/menu-image";
 
 export const dynamic = "force-dynamic";
 
-type Props = { params: Promise<{ id: string }> };
+type Props = {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
 
-export default async function EditMenuItemPage({ params }: Props) {
+export default async function EditMenuItemPage({ params, searchParams }: Props) {
   const { id } = await params;
+  const query = await searchParams;
+  const formError = typeof query.error === "string" ? query.error : null;
   // Production-grade tenant context for editing menu items in the owner's dedicated canteen only.
   const { tenant } = await requireTenantContext();
   const supabase = getAdminClient(tenant.id);
 
-  const [{ data: item }, { data: cats }] = await Promise.all([
+  const [{ data: item, error: itemError }, { data: cats, error: categoriesError }] = await Promise.all([
     supabase
       .from("menu_items")
       .select(
@@ -37,7 +44,47 @@ export default async function EditMenuItemPage({ params }: Props) {
       .returns<{ id: string; name: string }[]>(),
   ]);
 
+  if (itemError) {
+    return (
+      <div className="max-w-lg">
+        <h1 className="font-display text-[26px] font-semibold text-admin-ink">Edit item</h1>
+        <div
+          role="alert"
+          className="mt-5 rounded-lg border border-admin-rose/40 bg-admin-rose/10 px-4 py-3 text-[13px] text-admin-rose"
+        >
+          This item could not be loaded. No changes were made. Return to the menu and
+          try again.
+        </div>
+        <Link
+          href={`/c/${tenant.slug}/admin/menu`}
+          className="mt-4 inline-flex min-h-11 items-center text-[13px] font-medium text-admin-ink-2"
+        >
+          ← Back to menu
+        </Link>
+      </div>
+    );
+  }
   if (!item) notFound();
+  if (categoriesError) {
+    return (
+      <div className="max-w-lg">
+        <h1 className="font-display text-[26px] font-semibold text-admin-ink">Edit item</h1>
+        <div
+          role="alert"
+          className="mt-5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-[13px] text-amber-700"
+        >
+          Categories could not be loaded, so editing is temporarily disabled to protect
+          this item&apos;s current category. Return to the menu and try again.
+        </div>
+        <Link
+          href={`/c/${tenant.slug}/admin/menu`}
+          className="mt-4 inline-flex min-h-11 items-center text-[13px] font-medium text-admin-ink-2"
+        >
+          ← Back to menu
+        </Link>
+      </div>
+    );
+  }
 
   async function handleUpdate(formData: FormData) {
     "use server";
@@ -45,13 +92,25 @@ export default async function EditMenuItemPage({ params }: Props) {
     const priceRaw = formData.get("price") as string | null;
     const price_paise = Math.round(parseFloat(priceRaw ?? "0") * 100);
 
-    if (!name) return;
-    if (!(price_paise > 0)) return;
+    if (!name) {
+      redirect(
+        `/c/${tenant.slug}/admin/menu/${id}/edit?error=${encodeURIComponent(
+          "Enter an item name"
+        )}`
+      );
+    }
+    if (!(price_paise > 0) || price_paise > 10_000_000) {
+      redirect(
+        `/c/${tenant.slug}/admin/menu/${id}/edit?error=${encodeURIComponent(
+          "Enter a price between ₹0.01 and ₹1,00,000"
+        )}`
+      );
+    }
 
     const description = (formData.get("description") as string | null)?.trim() || null;
     const diet = (formData.get("diet") as "veg" | "nonveg" | "egg") ?? "veg";
     const category_id = (formData.get("category_id") as string | null) || null;
-    const image_url = (formData.get("image_url") as string | null)?.trim() || null;
+    const image_url = sanitizeMenuImageUrl(formData.get("image_url"));
     const sort_order = parseInt((formData.get("sort_order") as string | null) ?? "0", 10) || 0;
     const status = (formData.get("status") as "draft" | "live" | "archived") ?? "draft";
     const in_stock = formData.get("in_stock") === "on";
@@ -70,17 +129,27 @@ export default async function EditMenuItemPage({ params }: Props) {
       is_special,
     });
 
-    if (result.ok) {
-      redirect(`/c/${tenant.slug}/admin/menu`);
+    if (!result.ok) {
+      redirect(
+        `/c/${tenant.slug}/admin/menu/${id}/edit?error=${encodeURIComponent(
+          result.error ?? "Changes could not be saved"
+        )}`
+      );
     }
+    redirect(`/c/${tenant.slug}/admin/menu`);
   }
 
   async function handleDelete() {
     "use server";
     const result = await deleteMenuItem(id);
-    if (result.ok) {
-      redirect(`/c/${tenant.slug}/admin/menu`);
+    if (!result.ok) {
+      redirect(
+        `/c/${tenant.slug}/admin/menu/${id}/edit?error=${encodeURIComponent(
+          result.error ?? "The item could not be archived"
+        )}`
+      );
     }
+    redirect(`/c/${tenant.slug}/admin/menu`);
   }
 
   const priceRupees = (item.price_paise / 100).toFixed(2);
@@ -100,6 +169,14 @@ export default async function EditMenuItemPage({ params }: Props) {
         </h1>
       </div>
 
+      {formError && (
+        <div
+          role="alert"
+          className="mb-5 max-w-lg rounded-lg border border-admin-rose/40 bg-admin-rose/10 px-4 py-3 text-[13px] text-admin-rose"
+        >
+          {formError}
+        </div>
+      )}
       <form action={handleUpdate} className="max-w-lg space-y-5">
         {/* Name */}
         <div>
@@ -142,6 +219,7 @@ export default async function EditMenuItemPage({ params }: Props) {
             type="number"
             required
             min="0.01"
+            max="100000"
             step="0.01"
             defaultValue={priceRupees}
             className="w-full rounded-lg border border-admin-line-2 bg-admin-bg-card px-3 py-2 text-[14px] text-admin-ink placeholder:text-admin-ink-4 focus:outline-none focus:ring-2 focus:ring-admin-lime-soft focus:border-admin-lime"
@@ -257,12 +335,12 @@ export default async function EditMenuItemPage({ params }: Props) {
 
         {/* Actions */}
         <div className="flex items-center gap-3 pt-2">
-          <button
-            type="submit"
+          <AdminSubmitButton
+            pendingLabel="Saving…"
             className="rounded-lg bg-admin-lime px-5 py-2 text-[14px] font-medium text-admin-bg hover:bg-admin-lime-2 transition-colors cursor-pointer"
           >
             Save changes
-          </button>
+          </AdminSubmitButton>
           <Link
             href={`/c/${tenant.slug}/admin/menu`}
             className="rounded-lg px-5 py-2 text-[14px] font-medium text-admin-ink-3 hover:text-admin-ink transition-colors"

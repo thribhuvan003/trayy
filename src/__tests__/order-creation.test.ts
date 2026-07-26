@@ -111,7 +111,10 @@ let mockOrderInsertResult: { data: { id: string; short_code: string } | null; er
   data: { id: "new-order-uuid-001", short_code: "A001" },
   error: null,
 };
+let mockOrderInsertPayload: unknown = null;
+let mockPaymentInsertError: { message: string } | null = null;
 let mockShortCodeRpc: { data: string | null; error: unknown } = { data: "A001", error: null };
+let mockRpcCalls: string[] = [];
 
 vi.mock("@/lib/supabase/admin", () => ({
   getAdminClient: vi.fn().mockImplementation(() => buildAdminMock()),
@@ -132,6 +135,7 @@ function buildAdminMock() {
   return {
     from: (table: string) => buildTableMock(table, "admin"),
     rpc: (fn: string) => {
+      mockRpcCalls.push(fn);
       if (fn === "next_order_short_code") return Promise.resolve(mockShortCodeRpc);
       return Promise.resolve({ data: null, error: null });
     },
@@ -189,12 +193,16 @@ function buildTableMock(table: string, role: string) {
         return Promise.resolve({ data: {}, error: null });
       }
       if (table === "orders") {
+        mockOrderInsertPayload = data;
         // Chainable: .insert(...).select(...).single()
         return {
           select: () => ({
             single: () => Promise.resolve(mockOrderInsertResult),
           }),
         };
+      }
+      if (table === "payments") {
+        return Promise.resolve({ data: null, error: mockPaymentInsertError });
       }
       // order_items, order_status_logs, audit_logs, payments
       return Promise.resolve({ data: {}, error: null });
@@ -205,7 +213,13 @@ function buildTableMock(table: string, role: string) {
       }),
     }),
     upsert: () => Promise.resolve({ data: {}, error: null }),
-    delete: () => ({ eq: () => Promise.resolve({ data: {}, error: null }) }),
+    delete: () => ({
+      eq: () => ({
+        eq: () => Promise.resolve({ data: {}, error: null }),
+        then: (resolve: (value: unknown) => unknown) =>
+          Promise.resolve({ data: {}, error: null }).then(resolve),
+      }),
+    }),
   };
 }
 
@@ -223,7 +237,10 @@ describe("placeOrder — guard rails", () => {
     mockIdempotencyRow = null;
     mockClaimError = null;
     mockOrderInsertResult = { data: { id: "new-order-uuid-001", short_code: "A001" }, error: null };
+    mockOrderInsertPayload = null;
+    mockPaymentInsertError = null;
     mockShortCodeRpc = { data: "A001", error: null };
+    mockRpcCalls = [];
   });
 
   it("returns EMPTY error code when cart is empty", async () => {
@@ -337,6 +354,7 @@ describe("placeOrder — idempotency ledger", () => {
     mockIdempotencyRow = null;
     mockOrderInsertResult = { data: { id: "new-order-uuid-001", short_code: "A001" }, error: null };
     mockShortCodeRpc = { data: "A001", error: null };
+    mockRpcCalls = [];
   });
 
   it("returns the existing order (replay) when an idempotency key exists with a stored response", async () => {
@@ -400,6 +418,7 @@ describe("placeOrder — successful order creation", () => {
     mockIdempotencyRow = null;
     mockOrderInsertResult = { data: { id: "new-order-uuid-001", short_code: "A001" }, error: null };
     mockShortCodeRpc = { data: "A001", error: null };
+    mockRpcCalls = [];
   });
 
   it("direct_upi (default): returns ok:true with orderId and NO Razorpay order", async () => {
@@ -488,5 +507,90 @@ describe("placeOrder — successful order creation", () => {
     if (result.ok) {
       expect(result.orderId).toBe("new-order-uuid-001");
     }
+  });
+
+  it("uses a collision-resistant fallback when the short-code migration is not deployed", async () => {
+    mockMenuItems = [
+      {
+        id: "item-uuid-001",
+        name: "Masala Chai",
+        price_paise: 1500,
+        diet: "veg",
+        status: "live",
+        in_stock: true,
+        stock_qty: 10,
+      },
+    ];
+    mockShortCodeRpc = {
+      data: null,
+      error: { code: "PGRST202", message: "function not found" },
+    };
+
+    const result = await placeOrder(
+      [{ menuItemId: "item-uuid-001", qty: 1 }],
+      "",
+      "takeaway"
+    );
+
+    expect(result.ok).toBe(true);
+    expect((mockOrderInsertPayload as { short_code: string }).short_code)
+      .toMatch(/^T-X[A-F0-9]{10}$/);
+    expect(mockRpcCalls).toEqual(["next_order_short_code", "atomic_decrement_stock"]);
+  });
+
+  it("does not reserve stock when the payment ledger cannot be created", async () => {
+    mockMenuItems = [{
+      id: "item-uuid-001",
+      name: "Masala Chai",
+      price_paise: 1500,
+      diet: "veg",
+      status: "live",
+      in_stock: true,
+      stock_qty: 10,
+    }];
+    mockPaymentInsertError = { message: "payments unavailable" };
+
+    const result = await placeOrder(
+      [{ menuItemId: "item-uuid-001", qty: 1 }],
+      "",
+      "takeaway"
+    );
+
+    expect(result).toEqual({
+      ok: false,
+      error: "Could not prepare payment — no charge was made. Please try again.",
+    });
+    expect(mockRpcCalls).toEqual(["next_order_short_code"]);
+  });
+
+  it("does not reserve stock when Razorpay setup fails", async () => {
+    mockMenuItems = [{
+      id: "item-uuid-001",
+      name: "Masala Chai",
+      price_paise: 1500,
+      diet: "veg",
+      status: "live",
+      in_stock: true,
+      stock_qty: 10,
+    }];
+    mockTenantsRow = {
+      is_open: true,
+      paused_until: null,
+      payment_mode: "razorpay",
+    };
+    const { createRazorpayOrder } = await import("@/lib/payments/razorpay");
+    vi.mocked(createRazorpayOrder).mockRejectedValueOnce(new Error("gateway unavailable"));
+
+    const result = await placeOrder(
+      [{ menuItemId: "item-uuid-001", qty: 1 }],
+      "",
+      "takeaway"
+    );
+
+    expect(result).toEqual({
+      ok: false,
+      error: "Payment setup failed — no charge was made. Please try again.",
+    });
+    expect(mockRpcCalls).toEqual(["next_order_short_code"]);
   });
 });

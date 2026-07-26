@@ -5,15 +5,13 @@ import { getServerClient } from "@/lib/supabase/server";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { ExternalLink } from "lucide-react";
 import { OpenToggle } from "./_open-toggle";
+import { getVerifiedAuthUser } from "@/lib/auth/verified-user";
 
 export const dynamic = "force-dynamic";
 
 export default async function CanteensPage() {
   const serverClient = await getServerClient();
-  const {
-    data: { session },
-  } = await serverClient.auth.getSession();
-  const user = session?.user ?? null;
+  const user = await getVerifiedAuthUser(serverClient);
   if (!user) redirect("/login?next=/college-admin/canteens");
 
   const admin = getAdminClient();

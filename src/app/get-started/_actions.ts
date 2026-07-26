@@ -15,6 +15,8 @@ function toSlug(name: string): string {
     .replace(/^-+|-+$/g, ""); // strip leading/trailing dashes ("so " → "so" not "so-")
 }
 
+const RESERVED_TENANT_SLUGS = new Set(["aditya", "demo"]);
+
 async function resolveUniqueCollegeSlug(
   admin: ReturnType<typeof getAdminClient>,
   base: string
@@ -25,10 +27,10 @@ async function resolveUniqueCollegeSlug(
     .ilike("slug", `${base}%`);
 
   const existing = new Set((data ?? []).map((r) => r.slug));
-  if (!existing.has(base)) return base;
+  if (!existing.has(base) && !RESERVED_TENANT_SLUGS.has(base)) return base;
   for (let i = 2; i < 100; i++) {
     const candidate = `${base}-${i}`;
-    if (!existing.has(candidate)) return candidate;
+    if (!existing.has(candidate) && !RESERVED_TENANT_SLUGS.has(candidate)) return candidate;
   }
   return `${base}-${Date.now()}`;
 }

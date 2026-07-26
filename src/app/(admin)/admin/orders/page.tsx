@@ -46,7 +46,7 @@ export default async function OrdersPage() {
     .reduce((acc, o) => acc + o.total_paise, 0);
 
   // Build today's export URL
-  const todayExportUrl = `/api/admin/export/orders?from=${encodeURIComponent(todayIso)}`;
+  const todayExportUrl = `/api/admin/export/orders?slug=${encodeURIComponent(tenant.slug)}&from=${encodeURIComponent(todayIso)}`;
 
   return (
     <div>
@@ -65,7 +65,7 @@ export default async function OrdersPage() {
             <Download size={11} /> Export today&apos;s CSV
           </a>
           <a
-            href="/api/admin/export/orders"
+            href={`/api/admin/export/orders?slug=${encodeURIComponent(tenant.slug)}`}
             className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-graphite-200/15 text-[11px] font-mono uppercase tracking-wider text-graphite-300 hover:border-lime hover:text-lime transition-colors"
           >
             <Download size={11} /> Export all

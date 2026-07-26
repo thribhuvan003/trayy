@@ -34,7 +34,7 @@ export function UpiVpaField({ currentVpa }: { currentVpa: string | null }) {
     <div className="border-t border-graphite-200/10 pt-4 flex flex-col gap-2">
       <label htmlFor="upi_vpa" className="text-[11px] font-mono uppercase tracking-[0.1em] text-graphite-400">
         UPI ID{" "}
-        <span className="normal-case tracking-normal font-sans text-graphite-500">
+        <span className="normal-case tracking-normal font-sans text-[#5f574e] dark:text-graphite-400">
           (students pay directly to this — money goes straight to your bank)
         </span>
       </label>
@@ -79,7 +79,7 @@ export function UpiVpaField({ currentVpa }: { currentVpa: string | null }) {
         <p className="text-[11px] text-rose-400">✗ {errorMsg}</p>
       )}
       {status === "idle" && (
-        <p className="text-[11px] text-graphite-500">
+        <p className="text-[11px] text-[#5f574e] dark:text-graphite-400">
           Students pay <strong className="text-graphite-300">directly</strong> to this UPI — money goes instantly to your bank. Always test with ₹1 first before going live.
         </p>
       )}

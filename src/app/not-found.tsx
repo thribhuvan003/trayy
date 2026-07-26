@@ -73,7 +73,7 @@ export default function NotFound() {
               Back to Tray
             </Link>
             <Link
-              href="/#portals"
+              href="/demo/student"
               className="inline-flex justify-center rounded-full border border-[var(--tray-border)] px-7 py-4 text-sm font-semibold transition hover:bg-white/30"
             >
               Open live demo

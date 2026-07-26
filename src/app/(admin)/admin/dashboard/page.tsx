@@ -9,7 +9,19 @@ import { requireTenantContext } from "@/lib/tenant";
 type OrderRow = {
   id: string;
   short_code: string;
-  status: "pending_payment" | "placed" | "preparing" | "ready" | "collected" | "rejected" | "expired";
+  status:
+    | "pending_payment"
+    | "placed"
+    | "preparing"
+    | "ready"
+    | "collected"
+    | "rejected"
+    | "expired"
+    | "cancelled_by_kitchen"
+    | "partially_ready"
+    | "refunded"
+    | "payment_failed";
+  payment_verified: boolean;
   total_paise: number;
   placed_at: string;
   collected_at: string | null;
@@ -80,7 +92,7 @@ export default async function DashboardPage({
   const [{ data: orders14 }, { data: logs }] = await Promise.all([
     supabase
       .from("orders")
-      .select("id, short_code, status, total_paise, placed_at, collected_at, ready_at, customer_name, order_type")
+      .select("id, short_code, status, total_paise, placed_at, collected_at, ready_at, customer_name, order_type, payment_verified")
       .eq("tenant_id", tenant.id)
       .gte("placed_at", start14d.toISOString())
       .order("placed_at", { ascending: false })
@@ -103,7 +115,10 @@ export default async function DashboardPage({
   const start7dIso = start7d.toISOString();
   const ordersWeek = (orders14 ?? []).filter((o) => o.placed_at >= start7dIso);
   const todayOrders = ordersWeek.filter((o) => o.placed_at >= todayIso);
-  const todayIds = todayOrders.map((o) => o.id);
+  const revenueStatuses = new Set(["placed", "preparing", "ready", "collected"]);
+  const todayIds = todayOrders
+    .filter((order) => order.payment_verified && revenueStatuses.has(order.status))
+    .map((order) => order.id);
 
   // Scope order_items to today only — the previous version pulled every row
   // in the tenant.

@@ -5,14 +5,22 @@ import { createMenuItem } from "@/app/(admin)/admin/_actions";
 import { requireTenantContext } from "@/lib/tenant";
 import { ImageUploadField } from "@/components/portal-admin/image-upload-field";
 import { CategorySelect } from "@/components/portal-admin/category-select";
+import { AdminSubmitButton } from "@/components/portal-admin/admin-submit-button";
+import { sanitizeMenuImageUrl } from "@/lib/menu-image";
 
 export const dynamic = "force-dynamic";
 
-export default async function NewMenuItemPage() {
+export default async function NewMenuItemPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const query = await searchParams;
+  const formError = typeof query.error === "string" ? query.error : null;
   // Production-grade tenant context for creating menu items in the owner's dedicated canteen only.
   const { tenant } = await requireTenantContext();
   const supabase = await getServerClient(tenant.id);
-  const { data: cats } = await supabase
+  const { data: cats, error: categoriesError } = await supabase
     .from("menu_categories")
     .select("id, name")
     .eq("tenant_id", tenant.id)
@@ -25,13 +33,21 @@ export default async function NewMenuItemPage() {
     const priceRaw = formData.get("price") as string | null;
     const price_paise = Math.round(parseFloat(priceRaw ?? "0") * 100);
 
-    if (!name) return;
-    if (!(price_paise > 0)) return;
+    if (!name) {
+      redirect(`/c/${tenant.slug}/admin/menu/new?error=${encodeURIComponent("Enter an item name")}`);
+    }
+    if (!(price_paise > 0) || price_paise > 10_000_000) {
+      redirect(
+        `/c/${tenant.slug}/admin/menu/new?error=${encodeURIComponent(
+          "Enter a price between ₹0.01 and ₹1,00,000"
+        )}`
+      );
+    }
 
     const description = (formData.get("description") as string | null)?.trim() || null;
     const diet = (formData.get("diet") as "veg" | "nonveg" | "egg") ?? "veg";
     const category_id = (formData.get("category_id") as string | null) || null;
-    const image_url = (formData.get("image_url") as string | null)?.trim() || null;
+    const image_url = sanitizeMenuImageUrl(formData.get("image_url"));
     const sort_order = parseInt((formData.get("sort_order") as string | null) ?? "0", 10) || 0;
     const is_special = formData.get("is_special") === "on";
 
@@ -46,9 +62,14 @@ export default async function NewMenuItemPage() {
       is_special,
     });
 
-    if (result.ok) {
-      redirect(`/c/${tenant.slug}/admin/menu`);
+    if (!result.ok) {
+      redirect(
+        `/c/${tenant.slug}/admin/menu/new?error=${encodeURIComponent(
+          result.error ?? "The item could not be created"
+        )}`
+      );
     }
+    redirect(`/c/${tenant.slug}/admin/menu`);
   }
 
   return (
@@ -65,6 +86,24 @@ export default async function NewMenuItemPage() {
           New item
         </h1>
       </div>
+
+      {formError && (
+        <div
+          role="alert"
+          className="mb-5 max-w-lg rounded-lg border border-admin-rose/40 bg-admin-rose/10 px-4 py-3 text-[13px] text-admin-rose"
+        >
+          {formError}
+        </div>
+      )}
+      {categoriesError && (
+        <div
+          role="alert"
+          className="mb-5 max-w-lg rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-[13px] text-amber-700"
+        >
+          Categories could not be loaded. You can still create the item without a
+          category.
+        </div>
+      )}
 
       <form action={handleCreate} className="max-w-lg space-y-5">
         {/* Name */}
@@ -107,6 +146,7 @@ export default async function NewMenuItemPage() {
             type="number"
             required
             min="0.01"
+            max="100000"
             step="0.01"
             className="w-full rounded-lg border border-admin-line-2 bg-admin-bg-card px-3 py-2 text-[14px] text-admin-ink placeholder:text-admin-ink-4 focus:outline-none focus:ring-2 focus:ring-admin-lime-soft focus:border-admin-lime"
             placeholder="0.00"
@@ -182,12 +222,12 @@ export default async function NewMenuItemPage() {
 
         {/* Actions */}
         <div className="flex items-center gap-3 pt-2">
-          <button
-            type="submit"
+          <AdminSubmitButton
+            pendingLabel="Creating…"
             className="rounded-lg bg-admin-lime px-5 py-2 text-[14px] font-medium text-admin-bg hover:bg-admin-lime-2 transition-colors cursor-pointer"
           >
             Create item
-          </button>
+          </AdminSubmitButton>
           <Link
             href={`/c/${tenant.slug}/admin/menu`}
             className="rounded-lg px-5 py-2 text-[14px] font-medium text-admin-ink-3 hover:text-admin-ink transition-colors"
