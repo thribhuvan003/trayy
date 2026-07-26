@@ -3,6 +3,8 @@ import Link from "next/link";
 import type { ResolvedTenant } from "@/lib/tenant";
 import { landingFontVars } from "@/components/landing/fonts";
 import { Masthead } from "@/components/landing/masthead";
+import { LandingIntro } from "@/components/landing/intro";
+import { Reveal } from "@/components/landing/reveal";
 import { CouponsSection } from "@/components/landing/sections/CouponsSection";
 import { WalkthroughSection } from "@/components/landing/sections/WalkthroughSection";
 import { LedgerSection } from "@/components/landing/sections/LedgerSection";
@@ -188,11 +190,14 @@ export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
 
   return (
     <div className={`lp ${landingFontVars}`}>
+      <LandingIntro />
       <div className="lp-shell">
         <Masthead />
         <main id="main">
           <Hero label={label} />
-          <RegisterLine />
+          <Reveal as="div" from="none">
+            <RegisterLine />
+          </Reveal>
           <CouponsSection />
           <WalkthroughSection />
           <LedgerSection />
@@ -200,7 +205,9 @@ export function LandingPage({ tenant }: { tenant: ResolvedTenant | null }) {
           <BackPageSection />
           <QuoteSection />
         </main>
-        <Footer menuHref={menuHref} />
+        <Reveal as="div" from="up">
+          <Footer menuHref={menuHref} />
+        </Reveal>
       </div>
     </div>
   );

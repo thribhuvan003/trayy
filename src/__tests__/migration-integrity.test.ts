@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -6,6 +6,22 @@ const migration = (name: string) =>
   readFileSync(resolve(process.cwd(), "supabase", "migrations", name), "utf8");
 
 describe("production migration integrity", () => {
+  it("keeps every migration version numeric so the Supabase CLI applies it", () => {
+    const names = readdirSync(resolve(process.cwd(), "supabase", "migrations")).filter(
+      (name) => name.endsWith(".sql")
+    );
+    expect(names.every((name) => /^\d+_[a-z0-9_]+\.sql$/.test(name))).toBe(true);
+  });
+
+  it("commits enum extensions before later migrations use the new values", () => {
+    const foundation = migration("0009_multi_canteen_foundation.sql");
+    const enums = migration("0032_enum_extensions.sql");
+    expect(foundation).not.toContain("'partially_ready'");
+    expect(enums).toContain("add value if not exists 'cancelled_by_kitchen'");
+    expect(enums).toContain("add value if not exists 'partially_ready'");
+    expect(enums).toContain("add value if not exists 'refunded'");
+  });
+
   it("defines the historical bootstrap functions before migration 0008 alters them", () => {
     const m0006 = migration("0006_security.sql");
     for (const fn of [
@@ -27,10 +43,19 @@ describe("production migration integrity", () => {
   });
 
   it("restores stock for every pre-fulfilment cancellation state", () => {
-    const m0030 = migration("0030_restore_reserved_stock.sql");
-    expect(m0030).toContain(
+    const m0033 = migration("0033_restore_all_terminal_order_stock.sql");
+    expect(m0033).toContain(
       "old.status in ('pending_payment', 'placed', 'preparing', 'ready')"
     );
+    for (const state of [
+      "expired",
+      "rejected",
+      "cancelled_by_kitchen",
+      "payment_failed",
+      "refunded",
+    ]) {
+      expect(m0033).toContain(`'${state}'`);
+    }
   });
 
   it("validates the whole aggregated cart before the set-based stock update", () => {

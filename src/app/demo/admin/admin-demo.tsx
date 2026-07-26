@@ -14,6 +14,7 @@ import {
   fmtClock,
   getSelectedCanteenId,
   getSpecials,
+  hasStoredSpecials,
   readInbox,
   setSelectedCanteenId,
   setSpecials,
@@ -38,7 +39,7 @@ const STATUS_META: Record<TicketStatus, { label: string; color: string }> = {
   incoming: { label: "New", color: "#232019" },
   preparing: { label: "Cooking", color: "#2C50B0" },
   ready: { label: "Serve", color: "#1E5A3C" },
-  collected: { label: "Done", color: "rgba(35,32,25,.45)" },
+  collected: { label: "Done", color: "rgba(35,32,25,.68)" },
 };
 
 const TYPE_COLORS: Record<string, string> = {
@@ -75,6 +76,8 @@ interface AuditEntry {
   msg: string;
 }
 
+type ServiceState = { open: boolean; paused: boolean };
+
 const DEMO_REFERENCE_TS = Date.UTC(2026, 0, 1, 12, 0, 0);
 
 export function AdminDemo() {
@@ -85,12 +88,13 @@ export function AdminDemo() {
   const [priceDrafts, setPriceDrafts] = React.useState<Record<string, string>>({});
   const [savedPrices, setSavedPrices] = React.useState<Record<string, number>>({});
   const [editing, setEditing] = React.useState<Record<string, boolean>>({});
-  const [localAudit, setLocalAudit] = React.useState<AuditEntry[]>([]);
+  const [priceErrors, setPriceErrors] = React.useState<Record<string, string>>({});
+  const [localAudit, setLocalAudit] = React.useState<Record<string, AuditEntry[]>>({});
+  const [serviceState, setServiceState] = React.useState<Record<string, ServiceState>>({});
+  const [liveMessage, setLiveMessage] = React.useState("");
   // Keep the server and first browser render identical. The effect switches to
   // the live clock immediately after hydration.
   const [nowTs, setNowTs] = React.useState(DEMO_REFERENCE_TS);
-  const [stallOpen, setStallOpen] = React.useState(true);
-  const [paused, setPaused] = React.useState(false);
   const [, forceRender] = React.useReducer((x: number) => x + 1, 0);
 
   React.useEffect(() => {
@@ -111,7 +115,13 @@ export function AdminDemo() {
   const k = c.kpis;
 
   const logAction = (type: string, msg: string) => {
-    setLocalAudit((s) => [{ t: fmtClock(Date.now()), type, who: "admin (you)", msg }, ...s].slice(0, 12));
+    setLocalAudit((state) => ({
+      ...state,
+      [c.id]: [
+        { t: fmtClock(Date.now()), type, who: "admin (you)", msg },
+        ...(state[c.id] ?? []),
+      ].slice(0, 12),
+    }));
   };
 
   // ---- orders (static + live inbox) ----
@@ -147,12 +157,13 @@ export function AdminDemo() {
   };
 
   // ---- specials ----
-  const storedSpecials = ready ? getSpecials(c.id) : [];
-  const specials = storedSpecials.length ? storedSpecials : c.defaultSpecials;
+  const specialsWereStored = ready && hasStoredSpecials(c.id);
+  const storedSpecials = specialsWereStored ? getSpecials(c.id) : null;
+  const specials = storedSpecials ?? c.defaultSpecials;
 
   // ---- audit (seed rows shown relative to now) ----
   const auditRows: AuditEntry[] = [
-    ...localAudit,
+    ...(localAudit[c.id] ?? []),
     ...c.audit.map((a, i) => ({
       t: fmtClock(nowTs - (i + 1) * 11 * 60000),
       type: a.type.toUpperCase(),
@@ -162,23 +173,55 @@ export function AdminDemo() {
   ];
 
   const today = new Date(nowTs).toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+  const currentService = serviceState[c.id] ?? { open: true, paused: false };
+  const stallOpen = currentService.open;
+  const paused = currentService.paused;
   const stallStatusLabel = !stallOpen ? "Closed" : paused ? "Paused" : "Open";
-  const stallStatusColor = !stallOpen ? "#B03A2A" : paused ? "#9A6B00" : "#1E5A3C";
+  const stallStatusColor = !stallOpen ? "#A52F23" : paused ? "#835900" : "#1E5A3C";
 
   const switchStall = (id: string) => {
     setSelectedCanteenId(id);
     setCanteenId(id);
-    setMenuState({});
-    setPriceDrafts({});
-    setSavedPrices({});
-    setEditing({});
-    setLocalAudit([]);
+    setLiveMessage(`Switched to ${getCanteen(id).name}`);
+  };
+
+  const updateService = (next: ServiceState) => {
+    setServiceState((state) => ({ ...state, [c.id]: next }));
+  };
+
+  const announce = (message: string) => {
+    setLiveMessage("");
+    requestAnimationFrame(() => setLiveMessage(message));
+  };
+
+  const selectView = (nextView: ViewId) => {
+    setView(nextView);
+    announce(`${VIEWS.find((item) => item.id === nextView)?.label ?? nextView} view`);
+  };
+
+  const onViewKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    const nextIndex =
+      event.key === "Home"
+        ? 0
+        : event.key === "End"
+          ? VIEWS.length - 1
+          : (index + (event.key === "ArrowRight" ? 1 : -1) + VIEWS.length) % VIEWS.length;
+    const nextView = VIEWS[nextIndex];
+    selectView(nextView.id);
+    requestAnimationFrame(() => {
+      document.getElementById(`ad-tab-${nextView.id}`)?.focus();
+    });
   };
 
   return (
     <div className={`ad ${adminFontVars}`}>
+      <p className="ad-live-region" aria-live="polite" aria-atomic="true">
+        {liveMessage}
+      </p>
       {/* Demo strip */}
-      <div className="ad-strip">
+      <div className="ad-strip" role="region" aria-label="Demo navigation">
         <span className="ad-strip-label">Sample stall · no real money</span>
         <span className="ad-strip-links">
           <Link href="/" className="ad-strip-link">
@@ -196,9 +239,9 @@ export function AdminDemo() {
       {/* Sticky phone header — aaj ka hisaab */}
       <header className="ad-head">
         <div className="ad-head-main">
-          <div className="ad-brand">
+          <h1 className="ad-brand">
             Tray <span>· aaj ka hisaab</span>
-          </div>
+          </h1>
           <div className="ad-head-sub">
             {c.name} · {today} · {fmtClock(nowTs)}
           </div>
@@ -209,7 +252,8 @@ export function AdminDemo() {
       </header>
 
       {/* Stall picker — horizontal chips */}
-      <div className="ad-stalls" role="tablist" aria-label="Stall">
+      <div className="ad-stalls" role="region" aria-label="Stall picker">
+        <div className="ad-stalls-tabs" role="tablist" aria-label="Stall">
         {listCanteens().map((x) => {
           const active = x.id === c.id;
           return (
@@ -225,32 +269,45 @@ export function AdminDemo() {
             </button>
           );
         })}
+        </div>
         <span className="ad-stalls-note">3 sample stalls — each sealed &amp; separate</span>
       </div>
 
       {/* Bottom-ish segment tabs (also sticky under header) */}
-      <nav className="ad-tabs" role="tablist" aria-label="Views">
-        {VIEWS.map((v) => {
+      <nav className="ad-tabs-nav" aria-label="Admin views">
+      <div className="ad-tabs" role="tablist" aria-label="Views">
+        {VIEWS.map((v, index) => {
           const active = view === v.id;
           return (
             <button
               key={v.id}
+              id={`ad-tab-${v.id}`}
               type="button"
               role="tab"
               aria-selected={active}
+              aria-controls={`ad-panel-${v.id}`}
+              tabIndex={active ? 0 : -1}
               className={`ad-tab${active ? " is-active" : ""}`}
-              onClick={() => setView(v.id)}
+              onClick={() => selectView(v.id)}
+              onKeyDown={(event) => onViewKeyDown(event, index)}
             >
               {v.label}
             </button>
           );
         })}
+      </div>
       </nav>
 
       <main className="ad-main">
         {/* ============ TODAY ============ */}
         {view === "today" && (
-          <div className="ad-panel" style={{ animation: "adRowIn .28s ease both" }}>
+          <div
+            id="ad-panel-today"
+            role="tabpanel"
+            aria-labelledby="ad-tab-today"
+            className="ad-panel"
+            style={{ animation: "adRowIn .28s ease both" }}
+          >
             <div className="ad-col ad-col--a">
             {/* Huge Today ₹ */}
             <section className="ad-today-hero">
@@ -274,11 +331,12 @@ export function AdminDemo() {
               <button
                 type="button"
                 className={`ad-toggle${stallOpen ? " is-on" : ""}`}
+                aria-pressed={stallOpen}
                 onClick={() => {
                   const next = !stallOpen;
-                  setStallOpen(next);
-                  if (next) setPaused(false);
+                  updateService({ open: next, paused: next ? false : paused });
                   logAction("MENU", next ? "opened the stall for orders" : "closed the stall");
+                  announce(next ? `${c.name} opened for orders` : `${c.name} closed`);
                 }}
               >
                 <span className="ad-toggle-title">{stallOpen ? "Open" : "Closed"}</span>
@@ -288,11 +346,13 @@ export function AdminDemo() {
                 type="button"
                 className={`ad-toggle ad-toggle--pause${paused && stallOpen ? " is-paused" : ""}`}
                 disabled={!stallOpen}
+                aria-pressed={paused && stallOpen}
                 onClick={() => {
                   if (!stallOpen) return;
                   const next = !paused;
-                  setPaused(next);
+                  updateService({ open: true, paused: next });
                   logAction("MENU", next ? "paused new orders (kitchen catching up)" : "resumed new orders");
+                  announce(next ? `${c.name} paused new orders` : `${c.name} resumed new orders`);
                 }}
               >
                 <span className="ad-toggle-title">{paused && stallOpen ? "Paused" : "Pause"}</span>
@@ -401,7 +461,13 @@ export function AdminDemo() {
 
         {/* ============ MENU ============ */}
         {view === "menu" && (
-          <div className="ad-panel" style={{ animation: "adRowIn .28s ease both" }}>
+          <div
+            id="ad-panel-menu"
+            role="tabpanel"
+            aria-labelledby="ad-tab-menu"
+            className="ad-panel"
+            style={{ animation: "adRowIn .28s ease both" }}
+          >
             <div className="ad-col ad-col--a">
             <section className="ad-section">
               <div className="ad-section-head">
@@ -421,10 +487,14 @@ export function AdminDemo() {
                         {isEditing ? (
                           <input
                             className="ad-price-input"
+                            type="text"
                             value={priceDrafts[key] != null ? priceDrafts[key] : String(price)}
                             onChange={(e) => setPriceDrafts((s) => ({ ...s, [key]: e.target.value.replace(/[^0-9]/g, "") }))}
                             inputMode="numeric"
+                            maxLength={6}
                             aria-label={`Price for ${m.name}`}
+                            aria-invalid={Boolean(priceErrors[key])}
+                            aria-describedby={priceErrors[key] ? `ad-price-error-${key}` : undefined}
                           />
                         ) : (
                           <span className="ad-menu-price">₹{fmtMoney(price)}</span>
@@ -434,10 +504,13 @@ export function AdminDemo() {
                         <button
                           type="button"
                           className={`ad-stock-btn${live ? " is-live" : " is-out"}`}
+                          aria-pressed={live}
+                          aria-label={`${m.name}: ${live ? "on menu" : "sold out"}`}
                           onClick={() => {
                             const next = !live;
                             setMenuState((s) => ({ ...s, [key]: next }));
                             logAction("MENU", `${next ? "put " : "marked "}${m.name}${next ? " back on the menu" : " sold out"}`);
+                            announce(`${m.name} ${next ? "is back on the menu" : "marked sold out"}`);
                           }}
                         >
                           {live ? "On menu" : "Sold out"}
@@ -448,20 +521,38 @@ export function AdminDemo() {
                           onClick={() => {
                             if (isEditing) {
                               const v = parseInt(priceDrafts[key] || "", 10);
-                              if (v > 0) {
-                                setSavedPrices((s) => ({ ...s, [key]: v }));
-                                logAction("PRICE", `changed ${m.name} to ₹${v}`);
+                              if (!Number.isInteger(v) || v < 1 || v > 100000) {
+                                setPriceErrors((state) => ({
+                                  ...state,
+                                  [key]: "Enter a whole-rupee price between ₹1 and ₹1,00,000.",
+                                }));
+                                announce(`Price for ${m.name} was not saved`);
+                                return;
                               }
+                              setSavedPrices((s) => ({ ...s, [key]: v }));
+                              setPriceErrors((state) => ({ ...state, [key]: "" }));
+                              logAction("PRICE", `changed ${m.name} to ₹${v}`);
+                              announce(`${m.name} price saved at ₹${v}`);
                               setEditing((s) => ({ ...s, [key]: false }));
                             } else {
                               setEditing((s) => ({ ...s, [key]: true }));
                               setPriceDrafts((s) => ({ ...s, [key]: String(price) }));
+                              setPriceErrors((state) => ({ ...state, [key]: "" }));
                             }
                           }}
                         >
                           {isEditing ? "Save" : "Edit ₹"}
                         </button>
                       </div>
+                      {priceErrors[key] && (
+                        <p
+                          id={`ad-price-error-${key}`}
+                          className="ad-price-error"
+                          role="alert"
+                        >
+                          {priceErrors[key]}
+                        </p>
+                      )}
                     </li>
                   );
                 })}
@@ -490,13 +581,15 @@ export function AdminDemo() {
                       type="button"
                       className="ad-takeoff-btn"
                       title="Take off the board"
+                      aria-label={`Take ${s.name} off the specials board`}
                       onClick={() => {
-                        const base = storedSpecials.length ? storedSpecials : specials;
+                        const base = storedSpecials ?? specials;
                         setSpecials(
                           c.id,
                           base.filter((x) => x.id !== s.id)
                         );
                         logAction("MENU", `took ${s.name} off the specials board`);
+                        announce(`${s.name} removed from the specials board`);
                         forceRender();
                       }}
                     >
@@ -519,7 +612,13 @@ export function AdminDemo() {
 
         {/* ============ STAFF ============ */}
         {view === "staff" && (
-          <div className="ad-panel" style={{ animation: "adRowIn .28s ease both" }}>
+          <div
+            id="ad-panel-staff"
+            role="tabpanel"
+            aria-labelledby="ad-tab-staff"
+            className="ad-panel"
+            style={{ animation: "adRowIn .28s ease both" }}
+          >
             <div className="ad-col ad-col--a">
             <section className="ad-section">
               <div className="ad-section-head">
@@ -568,7 +667,13 @@ export function AdminDemo() {
 
         {/* ============ SETTINGS ============ */}
         {view === "settings" && (
-          <div className="ad-panel" style={{ animation: "adRowIn .28s ease both" }}>
+          <div
+            id="ad-panel-settings"
+            role="tabpanel"
+            aria-labelledby="ad-tab-settings"
+            className="ad-panel"
+            style={{ animation: "adRowIn .28s ease both" }}
+          >
             <div className="ad-col ad-col--a">
             <section className="ad-section">
               <div className="ad-section-head">

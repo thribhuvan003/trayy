@@ -121,7 +121,7 @@ The scripts also accept `--base=https://example.com`.
 
 ```text
 .
-├── docs/                  architecture decisions
+├── docs/                  architecture decisions and implementation specs
 ├── public/                public verification and discovery assets
 ├── scripts/               browser and source verification
 ├── src/

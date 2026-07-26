@@ -1,9 +1,6 @@
--- Restore finite inventory exactly once when an order ends before fulfilment.
--- Checkout reserves stock while payment is pending; without this trigger,
--- abandoned, failed, cancelled, or rejected orders permanently consume stock.
-
-alter table public.orders
-  add column if not exists stock_released_at timestamptz;
+-- Extend the inventory-restoration trigger after the terminal enum values from
+-- 0032 are committed. This keeps fresh database resets and existing projects
+-- idempotent while covering every pre-fulfilment terminal transition.
 
 create or replace function public.restore_terminal_order_stock()
 returns trigger
@@ -17,7 +14,9 @@ begin
      and new.status in (
        'expired',
        'rejected',
-       'payment_failed'
+       'cancelled_by_kitchen',
+       'payment_failed',
+       'refunded'
      )
      and new.status is distinct from old.status
   then
@@ -47,12 +46,3 @@ begin
   return new;
 end;
 $$;
-
-drop trigger if exists restore_terminal_order_stock on public.orders;
-create trigger restore_terminal_order_stock
-before update of status on public.orders
-for each row
-execute function public.restore_terminal_order_stock();
-
-comment on column public.orders.stock_released_at is
-  'Set atomically when reserved finite inventory is returned after a pre-fulfilment terminal transition.';

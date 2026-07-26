@@ -213,7 +213,7 @@ as $$
     t.building, t.zone, t.mess_type,
     t.is_open, t.paused_until, t.opens_at, t.closes_at,
     t.logo_url,
-    coalesce(count(o.id) filter (where o.status in ('placed','preparing','partially_ready')), 0) as pending_orders_count
+    coalesce(count(o.id) filter (where o.status in ('placed','preparing')), 0) as pending_orders_count
   from public.tenants t
   join public.colleges c on t.college_id = c.id
   left join public.orders o on o.tenant_id = t.id and o.placed_at > now() - interval '2 hours'

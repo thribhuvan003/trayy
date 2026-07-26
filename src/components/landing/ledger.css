@@ -183,6 +183,7 @@
   position: fixed;
   inset: 0;
   z-index: 100;
+  pointer-events: none;
   display: grid;
   place-items: center;
   background: #141210;
@@ -360,8 +361,10 @@
 @media (prefers-reduced-motion: reduce) {
   .lp *, .lp *::before, .lp *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
   }
   .lp-intro { display: none; }
   .lp::before { display: none; }
@@ -1252,7 +1255,7 @@
   font-weight: 400;
   color: #1e3a5f;
 }
-.lp-coupon-kpis strong.is-zero { color: var(--signal); }
+.lp-coupon-kpis strong.is-zero { color: #b33426; }
 .lp-coupon-preview-note {
   margin: 0;
   font-family: var(--font-mono), monospace;
@@ -2460,13 +2463,13 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  width: min(168px, 46vw);
+  width: min(168px, calc(100% - 16px));
   padding: 14px 12px 12px;
   border: 3px solid #e8b84a;
   background: #1c1916;
-  /* Imperfection: slight CW rotation + nudge toward right edge of viewport */
-  transform: rotate(3.5deg) translateX(10px);
-  margin-right: max(-8px, calc(var(--lp-pad-x, 20px) * -0.55));
+  /* Keep the ink-pad character without letting the rotated corners clip. */
+  transform: rotate(2.5deg);
+  margin-right: 6px;
   margin-top: 4px;
   user-select: none;
   box-shadow:
@@ -2522,9 +2525,8 @@
     align-self: flex-end;
     width: 180px;
     padding: 16px 14px 14px;
-    /* Desktop: further right of content column, still imperfect */
-    transform: rotate(4deg) translateX(18px);
-    margin-right: max(-28px, calc(var(--lp-pad-x, 32px) * -0.85));
+    transform: rotate(3deg);
+    margin-right: 8px;
   }
   .lp-foot-stamp-word {
     font-size: 52px;
@@ -2551,8 +2553,8 @@
   .lp-foot-stamp {
     width: 200px;
     padding: 18px 16px 16px;
-    transform: rotate(3.8deg) translateX(28px);
-    margin-right: max(-40px, calc(var(--lp-pad-x, 40px) * -1.1));
+    transform: rotate(3deg);
+    margin-right: 10px;
   }
   .lp-foot-stamp-word {
     font-size: 56px;

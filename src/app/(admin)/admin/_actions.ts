@@ -28,7 +28,7 @@ import { requireTenantContext } from "@/lib/tenant";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/auth/get-user";
 import { sendEmail } from "@/lib/email/resend";
-import { env } from "@/lib/env";
+import { env, featureFlags } from "@/lib/env";
 import { logger } from "@/lib/logging";
 import { tenantRateLimit } from "@/lib/rate-limit/tenant";
 import { initiateRefundForOrder } from "@/app/(student)/_actions";
@@ -299,6 +299,14 @@ export async function updateCanteenHours(opts: {
   const c = await adminContext();
   if (!c.ok) return { ok: false, error: c.error };
 
+  const timePattern = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+  if (opts.opensAt && !timePattern.test(opts.opensAt)) {
+    return { ok: false, error: "Opening time must use a valid 24-hour HH:MM value" };
+  }
+  if (opts.closesAt && !timePattern.test(opts.closesAt)) {
+    return { ok: false, error: "Closing time must use a valid 24-hour HH:MM value" };
+  }
+
   const rate = await tenantRateLimit(c.tenant.id, "admin_action", c.user.id);
   if (!rate.success) {
     return { ok: false, error: "Too many admin actions — slow down a little" };
@@ -334,6 +342,9 @@ export async function updateCanteenHours(opts: {
 export async function pauseCanteen(minutes: number): Promise<{ ok: boolean; error?: string }> {
   const c = await adminContext();
   if (!c.ok) return { ok: false, error: c.error };
+  if (![0, 15, 30, 60].includes(minutes)) {
+    return { ok: false, error: "Choose a supported pause duration" };
+  }
 
   const rate = await tenantRateLimit(c.tenant.id, "admin_action", c.user.id);
   if (!rate.success) {
@@ -374,11 +385,32 @@ export async function updateCanteenSettings(opts: {
 }): Promise<{ ok: boolean; error?: string }> {
   const c = await adminContext();
   if (!c.ok) return { ok: false, error: c.error };
+  const normalizedVpa = opts.upiVpa?.trim().toLowerCase() || null;
+  const vpaPattern = /^[a-z0-9.\-_+]{2,256}@[a-z]{2,64}$/;
+  if (normalizedVpa && !vpaPattern.test(normalizedVpa)) {
+    return { ok: false, error: "Enter a valid UPI ID, such as canteen@okaxis" };
+  }
+  if (opts.paymentMode === "direct_upi" && !normalizedVpa) {
+    return { ok: false, error: "Direct UPI requires a merchant UPI ID" };
+  }
+  if (opts.paymentMode === "razorpay" && !featureFlags.razorpayLive) {
+    return {
+      ok: false,
+      error: "Razorpay Automatic is unavailable until live gateway keys are configured",
+    };
+  }
   if (opts.paymentMode === "direct_upi" && opts.orderMode === "token_prepaid") {
     return {
       ok: false,
       error:
         "Token counter requires Razorpay Automatic so every PAID token is verified. Use Kitchen board with Direct UPI.",
+    };
+  }
+  const normalizedPhone = opts.adminPhone?.replace(/[\s()-]/g, "") || null;
+  if (normalizedPhone && !/^\+?[1-9]\d{7,14}$/.test(normalizedPhone)) {
+    return {
+      ok: false,
+      error: "Enter a valid phone number with country code, for example +919876543210",
     };
   }
 
@@ -393,9 +425,9 @@ export async function updateCanteenSettings(opts: {
     .from("tenants")
     .update({
       guest_orders_enabled: opts.guestOrdersEnabled,
-      upi_vpa: opts.upiVpa ? opts.upiVpa.toLowerCase() : null,
+      upi_vpa: normalizedVpa,
       ...(opts.paymentMode ? { payment_mode: opts.paymentMode } : {}),
-      ...(opts.adminPhone !== undefined ? { admin_phone: opts.adminPhone } : {}),
+      ...(opts.adminPhone !== undefined ? { admin_phone: normalizedPhone } : {}),
       ...(opts.orderMode ? { order_mode: opts.orderMode } : {}),
     } as any)
     .eq("id", c.tenant.id);

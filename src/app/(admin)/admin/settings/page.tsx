@@ -3,6 +3,9 @@ import { updateCanteenHours, pauseCanteen, updateCanteenSettings } from "../_act
 import type { Tenant } from "@/lib/db/types";
 import { requireTenantContext } from "@/lib/tenant";
 import { UpiVpaField } from "@/components/portal-admin/upi-vpa-field";
+import { AdminSubmitButton } from "@/components/portal-admin/admin-submit-button";
+import { PaymentOrderModeFields } from "@/components/portal-admin/payment-order-mode-fields";
+import { featureFlags } from "@/lib/env";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -30,13 +33,13 @@ export default async function SettingsPage({
   const settingsParams = await searchParams;
   const settingsError =
     typeof settingsParams.error === "string" ? settingsParams.error : null;
-  const settingsSaved = settingsParams.saved === "1";
+  const settingsSaved = typeof settingsParams.saved === "string";
   // Production-grade tenant context — UPI VPA changes here must instantly affect the student pay QR for this canteen only.
   const { tenant } = await requireTenantContext();
 
   // Fetch full tenant row (resolveTenant only returns a subset)
   const admin = getAdminClient(tenant.id);
-  const { data: tenantRow } = await admin
+  const { data: tenantRow, error: tenantError } = await admin
     .from("tenants")
     .select("is_open, opens_at, closes_at, paused_until, guest_orders_enabled, upi_vpa, payment_mode, admin_phone, order_mode")
     .eq("id", tenant.id)
@@ -44,17 +47,24 @@ export default async function SettingsPage({
       Pick<Tenant, "is_open" | "opens_at" | "closes_at" | "paused_until" | "guest_orders_enabled" | "upi_vpa"> & { payment_mode?: string; admin_phone?: string | null; order_mode?: string }
     >();
 
-  const row = tenantRow ?? {
-    is_open: false,
-    opens_at: null,
-    closes_at: null,
-    paused_until: null,
-    guest_orders_enabled: false,
-    upi_vpa: null,
-    payment_mode: "direct_upi" as string,
-    admin_phone: null,
-    order_mode: "kitchen_flow" as string,
-  };
+  if (tenantError || !tenantRow) {
+    return (
+      <div className="max-w-xl">
+        <h1 className="font-display text-[26px] sm:text-[30px] font-semibold tracking-tight">
+          Settings
+        </h1>
+        <div
+          role="alert"
+          className="mt-6 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-4 text-[13px] leading-relaxed text-red-200"
+        >
+          Settings could not be loaded. No changes were made. Reload this page and try
+          again.
+        </div>
+      </div>
+    );
+  }
+
+  const row = tenantRow;
   const currentPaymentMode = (row as any).payment_mode === "razorpay" ? "razorpay" : "direct_upi";
   const currentOrderMode = (row as any).order_mode === "token_prepaid" ? "token_prepaid" : "kitchen_flow";
 
@@ -68,49 +78,78 @@ export default async function SettingsPage({
     const isOpen = fd.get("is_open") === "on";
     const opensAt = (fd.get("opens_at") as string | null) || null;
     const closesAt = (fd.get("closes_at") as string | null) || null;
-    await updateCanteenHours({ isOpen, opensAt, closesAt });
+    const result = await updateCanteenHours({ isOpen, opensAt, closesAt });
+    if (!result.ok) {
+      redirect(
+        `/c/${tenant.slug}/admin/settings?error=${encodeURIComponent(
+          result.error ?? "Hours could not be saved"
+        )}`
+      );
+    }
+    redirect(`/c/${tenant.slug}/admin/settings?saved=hours`);
   }
 
   async function handlePause15(fd: FormData) {
     "use server";
     void fd;
-    await pauseCanteen(15);
+    const result = await pauseCanteen(15);
+    if (!result.ok) {
+      redirect(
+        `/c/${tenant.slug}/admin/settings?error=${encodeURIComponent(
+          result.error ?? "Orders could not be paused"
+        )}`
+      );
+    }
+    redirect(`/c/${tenant.slug}/admin/settings?saved=pause`);
   }
 
   async function handlePause30(fd: FormData) {
     "use server";
     void fd;
-    await pauseCanteen(30);
+    const result = await pauseCanteen(30);
+    if (!result.ok) {
+      redirect(
+        `/c/${tenant.slug}/admin/settings?error=${encodeURIComponent(
+          result.error ?? "Orders could not be paused"
+        )}`
+      );
+    }
+    redirect(`/c/${tenant.slug}/admin/settings?saved=pause`);
   }
 
   async function handlePause60(fd: FormData) {
     "use server";
     void fd;
-    await pauseCanteen(60);
+    const result = await pauseCanteen(60);
+    if (!result.ok) {
+      redirect(
+        `/c/${tenant.slug}/admin/settings?error=${encodeURIComponent(
+          result.error ?? "Orders could not be paused"
+        )}`
+      );
+    }
+    redirect(`/c/${tenant.slug}/admin/settings?saved=pause`);
   }
 
   async function handleClearPause(fd: FormData) {
     "use server";
     void fd;
-    await pauseCanteen(0);
+    const result = await pauseCanteen(0);
+    if (!result.ok) {
+      redirect(
+        `/c/${tenant.slug}/admin/settings?error=${encodeURIComponent(
+          result.error ?? "Pause could not be cleared"
+        )}`
+      );
+    }
+    redirect(`/c/${tenant.slug}/admin/settings?saved=pause`);
   }
 
   async function handleSettings(fd: FormData) {
     "use server";
     const guestOrdersEnabled = fd.get("guest_orders_enabled") === "on";
     const rawVpa = (fd.get("upi_vpa") as string | null)?.trim().toLowerCase() || null;
-    const vpaVerified = fd.get("upi_vpa_verified") === "1";
     const adminPhone = (fd.get("admin_phone") as string | null)?.trim() || null;
-
-    // Only format-check the VPA — no Razorpay API call required.
-    // The Verify button in the UI is a convenience check, not a hard gate.
-    if (rawVpa) {
-      const vpaRegex = /^[a-zA-Z0-9.\-_+]{2,256}@[a-zA-Z]{2,64}$/;
-      if (!vpaRegex.test(rawVpa)) {
-        throw new Error(`"${rawVpa}" doesn't look like a UPI ID. Use format: 9876543210@ybl or canteen@okaxis`);
-      }
-    }
-    void vpaVerified; // no longer a hard gate
     const paymentMode = (fd.get("payment_mode") as string | null) === "razorpay" ? "razorpay" : "direct_upi";
     const orderMode = (fd.get("order_mode") as string | null) === "token_prepaid" ? "token_prepaid" : "kitchen_flow";
     const result = await updateCanteenSettings({
@@ -184,12 +223,12 @@ export default async function SettingsPage({
                 Canteen is open
               </span>
             </label>
-            <button
-              type="submit"
+            <AdminSubmitButton
+              pendingLabel="Saving…"
               className="mt-3 h-8 px-4 rounded-md bg-[#1b6b3a] text-white text-[12px] font-semibold hover:bg-[#155b31] transition-colors"
             >
               Save open/close
-            </button>
+            </AdminSubmitButton>
           </form>
 
           {/* Pause orders */}
@@ -204,37 +243,37 @@ export default async function SettingsPage({
             </div>
             <div className="flex flex-wrap gap-2">
               <form action={handlePause15}>
-                <button
-                  type="submit"
+                <AdminSubmitButton
+                  pendingLabel="Pausing…"
                   className="h-8 px-3 rounded-md border border-graphite-200/15 text-[11px] font-mono text-graphite-300 hover:border-amber-400 hover:text-amber-400 transition-colors"
                 >
                   15 min
-                </button>
+                </AdminSubmitButton>
               </form>
               <form action={handlePause30}>
-                <button
-                  type="submit"
+                <AdminSubmitButton
+                  pendingLabel="Pausing…"
                   className="h-8 px-3 rounded-md border border-graphite-200/15 text-[11px] font-mono text-graphite-300 hover:border-amber-400 hover:text-amber-400 transition-colors"
                 >
                   30 min
-                </button>
+                </AdminSubmitButton>
               </form>
               <form action={handlePause60}>
-                <button
-                  type="submit"
+                <AdminSubmitButton
+                  pendingLabel="Pausing…"
                   className="h-8 px-3 rounded-md border border-graphite-200/15 text-[11px] font-mono text-graphite-300 hover:border-amber-400 hover:text-amber-400 transition-colors"
                 >
                   60 min
-                </button>
+                </AdminSubmitButton>
               </form>
               {isPaused && (
                 <form action={handleClearPause}>
-                  <button
-                    type="submit"
+                  <AdminSubmitButton
+                    pendingLabel="Clearing…"
                     className="h-8 px-3 rounded-md border border-emerald-500/40 text-[11px] font-mono text-emerald-400 hover:bg-emerald-500/10 transition-colors"
                   >
                     Clear pause
-                  </button>
+                  </AdminSubmitButton>
                 </form>
               )}
             </div>
@@ -274,12 +313,12 @@ export default async function SettingsPage({
               </label>
             </div>
             <div>
-              <button
-                type="submit"
+              <AdminSubmitButton
+                pendingLabel="Saving…"
                 className="h-8 px-4 rounded-md bg-[#1b6b3a] text-white text-[12px] font-semibold hover:bg-[#155b31] transition-colors"
               >
                 Save hours
-              </button>
+              </AdminSubmitButton>
             </div>
           </form>
         </section>
@@ -329,109 +368,27 @@ export default async function SettingsPage({
                 type="tel"
                 name="admin_phone"
                 defaultValue={(row as any).admin_phone ?? ""}
-                placeholder="9876543210"
+                placeholder="+919876543210"
                 autoComplete="tel"
+                inputMode="tel"
+                maxLength={16}
                 className="h-9 px-3 rounded-md border border-graphite-200/15 bg-graphite-700/60 text-[13px] text-graphite-200 placeholder-graphite-500 focus:outline-none focus:border-lime/60 transition-colors w-full max-w-xs"
               />
             </div>
 
-            {/* Payment Mode selector */}
-            <div className="border-t border-graphite-200/10 pt-4">
-              <p className="text-[11px] font-mono uppercase tracking-[0.1em] text-graphite-400 mb-3">
-                Payment Mode
-              </p>
-              <div className="flex flex-col gap-3">
-
-                {/* Direct UPI */}
-                <label className="flex items-start gap-3 cursor-pointer select-none rounded-lg border border-graphite-200/10 p-3 hover:border-graphite-200/25 transition-colors"
-                  style={{ background: currentPaymentMode === "direct_upi" ? "rgba(210,251,80,0.05)" : "transparent", borderColor: currentPaymentMode === "direct_upi" ? "rgba(210,251,80,0.3)" : undefined }}>
-                  <input type="radio" name="payment_mode" value="direct_upi"
-                    defaultChecked={currentPaymentMode === "direct_upi"}
-                    className="mt-0.5 accent-lime h-4 w-4 shrink-0" />
-                  <div>
-                    <div className="text-[13px] text-graphite-200 font-semibold flex items-center gap-2">
-                      Direct UPI
-                      <span className="text-[9px] font-mono bg-lime/20 text-lime px-1.5 py-0.5 rounded font-bold tracking-wide">DEFAULT</span>
-                    </div>
-                    <div className="text-[11.5px] text-graphite-400 mt-1 leading-[1.6]">
-                      Money lands in your bank <strong className="text-graphite-300">the moment</strong> a student pays — instant, directly to your UPI. Kitchen staff must check their PhonePe soundbox before cooking each order.
-                    </div>
-                  </div>
-                </label>
-
-                {/* Razorpay Automatic */}
-                <label className="flex items-start gap-3 cursor-pointer select-none rounded-lg border border-graphite-200/10 p-3 hover:border-graphite-200/25 transition-colors"
-                  style={{ background: currentPaymentMode === "razorpay" ? "rgba(210,251,80,0.05)" : "transparent", borderColor: currentPaymentMode === "razorpay" ? "rgba(210,251,80,0.3)" : undefined }}>
-                  <input type="radio" name="payment_mode" value="razorpay"
-                    defaultChecked={currentPaymentMode === "razorpay"}
-                    className="mt-0.5 accent-lime h-4 w-4 shrink-0" />
-                  <div>
-                    <div className="text-[13px] text-graphite-200 font-semibold">
-                      Razorpay Automatic
-                    </div>
-                    <div className="text-[11.5px] text-graphite-400 mt-1 leading-[1.6]">
-                      System verifies payment automatically via Razorpay. No &quot;I&apos;ve paid&quot; button, no kitchen manual check needed — orders reach the board <strong className="text-graphite-300">only when money is genuinely captured</strong>. Requires live Razorpay keys in Vercel.
-                    </div>
-                    <div className="mt-2 rounded-md px-3 py-2 text-[11px] leading-snug" style={{ background: "#fff4d6", border: "1px solid #9a6700", color: "#704800" }}>
-                      ⏱ <strong>Important:</strong> Money settles to your bank in <strong>1–2 business days</strong> (T+1/T+2) via Razorpay — not instantly. Students see &ldquo;Order confirmed&rdquo; right away, but the bank transfer to you takes 1–2 days. This is how Swiggy, Zomato, and all Razorpay merchants work in India.
-                    </div>
-                  </div>
-                </label>
-
-              </div>
-            </div>
-
-            {/* Order Flow selector */}
-            <div className="border-t border-graphite-200/10 pt-4">
-              <p className="text-[11px] font-mono uppercase tracking-[0.1em] text-graphite-400 mb-3">
-                Order Flow
-              </p>
-              <div className="flex flex-col gap-3">
-
-                {/* Kitchen board */}
-                <label className="flex items-start gap-3 cursor-pointer select-none rounded-lg border border-graphite-200/10 p-3 hover:border-graphite-200/25 transition-colors"
-                  style={{ background: currentOrderMode === "kitchen_flow" ? "rgba(210,251,80,0.05)" : "transparent", borderColor: currentOrderMode === "kitchen_flow" ? "rgba(210,251,80,0.3)" : undefined }}>
-                  <input type="radio" name="order_mode" value="kitchen_flow"
-                    defaultChecked={currentOrderMode === "kitchen_flow"}
-                    className="mt-0.5 accent-lime h-4 w-4 shrink-0" />
-                  <div>
-                    <div className="text-[13px] text-graphite-200 font-semibold flex items-center gap-2">
-                      Kitchen board
-                      <span className="text-[9px] font-mono bg-lime/20 text-lime px-1.5 py-0.5 rounded font-bold tracking-wide">DEFAULT</span>
-                    </div>
-                    <div className="text-[11.5px] text-graphite-400 mt-1 leading-[1.6]">
-                      Staff work each order on the kitchen screen: accept, prepare, mark ready, verify the pickup code at handover. Right for canteens and messes with kitchen staff.
-                    </div>
-                  </div>
-                </label>
-
-                {/* Token counter */}
-                <label className="flex items-start gap-3 cursor-pointer select-none rounded-lg border border-graphite-200/10 p-3 hover:border-graphite-200/25 transition-colors"
-                  style={{ background: currentOrderMode === "token_prepaid" ? "rgba(210,251,80,0.05)" : "transparent", borderColor: currentOrderMode === "token_prepaid" ? "rgba(210,251,80,0.3)" : undefined }}>
-                  <input type="radio" name="order_mode" value="token_prepaid"
-                    defaultChecked={currentOrderMode === "token_prepaid"}
-                    disabled={currentPaymentMode === "direct_upi"}
-                    className="mt-0.5 accent-lime h-4 w-4 shrink-0 disabled:opacity-40" />
-                  <div>
-                    <div className="text-[13px] text-graphite-200 font-semibold">
-                      Token counter
-                    </div>
-                    <div className="text-[11.5px] text-graphite-400 mt-1 leading-[1.6]">
-                      No screens while you cook. Paid orders are confirmed automatically; the customer&apos;s phone shows a token number (like T-2431) and a PAID stamp — they show it at the counter, you hand over the food. Requires Razorpay Automatic so the PAID stamp cannot be self-claimed.
-                    </div>
-                  </div>
-                </label>
-
-              </div>
-            </div>
+            <PaymentOrderModeFields
+              initialPaymentMode={currentPaymentMode}
+              initialOrderMode={currentOrderMode}
+              razorpayAvailable={featureFlags.razorpayLive}
+            />
 
             <div>
-              <button
-                type="submit"
+              <AdminSubmitButton
+                pendingLabel="Saving…"
                 className="h-8 px-4 rounded-md bg-[#1b6b3a] text-white text-[12px] font-semibold hover:bg-[#155b31] transition-colors"
               >
                 Save settings
-              </button>
+              </AdminSubmitButton>
             </div>
           </form>
         </section>

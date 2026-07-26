@@ -47,7 +47,7 @@ function SceneStudent() {
               fontFamily: MONO,
               fontSize: 10.5,
               letterSpacing: ".12em",
-              color: "rgba(242,238,226,.5)",
+              color: "rgba(242,238,226,.68)",
               whiteSpace: "nowrap",
             }}
           >

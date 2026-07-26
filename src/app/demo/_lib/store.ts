@@ -64,6 +64,13 @@ export function getSpecials(canteenId: string): Special[] {
   }
 }
 
+export function hasStoredSpecials(canteenId: string): boolean {
+  return (
+    typeof window !== "undefined" &&
+    localStorage.getItem(specialsKey(canteenId)) !== null
+  );
+}
+
 export function setSpecials(canteenId: string, list: Special[]) {
   const key = specialsKey(canteenId);
   const val = JSON.stringify(list);
