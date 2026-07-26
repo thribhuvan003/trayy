@@ -1,7 +1,13 @@
 # 0004 — Per-tenant payment_mode; direct-UPI as the default rail
 
 ## Status
-Accepted
+Accepted; implementation updated through migration `0031`
+
+This record preserves the production failure and decision that introduced
+per-tenant payment modes. The current Razorpay path now loads Razorpay Checkout
+and verifies capture on the server. The direct-UPI path is confirmed atomically
+by staff through `safe_confirm_direct_upi_and_start`. Migration `0031` is the
+current deployment prerequisite for these payment and inventory guarantees.
 
 ## Context
 Production symptom: a student paid (money debited) but the order never reached the
@@ -56,7 +62,6 @@ The canteen repays manually from their UPI app.
   payment at the counter (the UNVERIFIED badge already exists in the kitchen
   board). A dishonest student could tap-without-paying; the counter check is the
   guard, exactly like every small UPI shop in India.
-- Direct UPI refunds are manual (admin "refunds owed" payout — UI to follow).
-- **Deploy ordering:** migration `0024` MUST be applied to the database BEFORE the
-  new code is deployed. The combined `select(is_open, paused_until, payment_mode)`
-  errors out if the column is missing, which silently skips the open/paused guard.
+- Direct UPI refunds are manual and are tracked as refunds owed to the customer.
+- **Deploy ordering:** migrations must be applied in filename order before the
+  matching application code. The current implementation requires migration `0031`.

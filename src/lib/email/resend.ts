@@ -8,6 +8,10 @@ export async function sendEmail(args: SendArgs) {
     console.log("[email:noop]", { to: args.to, subject: args.subject });
     return { id: "noop", queued: false };
   }
+  const from = args.from ?? env.RESEND_FROM_EMAIL;
+  if (!from) {
+    throw new Error("RESEND_FROM_EMAIL is required when transactional email is enabled");
+  }
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -15,7 +19,7 @@ export async function sendEmail(args: SendArgs) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: args.from ?? "Tray <hello@tray.app>",
+      from,
       to: args.to,
       subject: args.subject,
       html: args.html,

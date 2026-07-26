@@ -95,7 +95,7 @@ export function CollegeAdminShell({
         <header className="sticky top-0 z-20 bg-graphite-900/80 backdrop-blur-xl border-b border-graphite-200/10">
           <div className="px-5 sm:px-6 h-12 flex items-center justify-between gap-3">
             <div className="text-[11px] font-mono text-graphite-400">
-              tray.app/college-admin
+              trayy.vercel.app/college-admin
             </div>
           </div>
         </header>

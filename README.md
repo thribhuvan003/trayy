@@ -1,6 +1,6 @@
 # Tray
 
-Tray is a multi-tenant ordering system for campus canteens. Students order from a live menu, kitchen staff move tickets through preparation, and canteen administrators manage service, stock, staff, and reports.
+Tray is a multi-tenant ordering system for food stalls, tiffin centres, and canteens. Customers order from a live menu, kitchen staff move tickets through preparation, and operators manage service, stock, staff, and reports.
 
 Live: [trayy.vercel.app](https://trayy.vercel.app)
 
@@ -10,18 +10,18 @@ The demos use local browser storage and do not require an account.
 
 | Portal | Demo |
 | --- | --- |
-| Student ordering | [trayy.vercel.app/demo/student](https://trayy.vercel.app/demo/student) |
+| Customer ordering | [trayy.vercel.app/demo/student](https://trayy.vercel.app/demo/student) |
 | Kitchen board | [trayy.vercel.app/demo/kitchen](https://trayy.vercel.app/demo/kitchen) |
-| Canteen admin | [trayy.vercel.app/demo/admin](https://trayy.vercel.app/demo/admin) |
+| Operator dashboard | [trayy.vercel.app/demo/admin](https://trayy.vercel.app/demo/admin) |
 
 Previously shared links such as `/c/aditya/menu`, `/c/aditya/kitchen`, and `/c/aditya/admin/dashboard` redirect to the matching demos.
 
 ## Product flow
 
-- Students browse an open canteen, add available items, place an order, pay, track its status, and present a pickup OTP.
+- Customers browse an open outlet, add available items, place an order, pay, track its status, and present a pickup OTP.
 - Kitchen staff accept tickets, mark them ready, verify pickup, handle walk-ins, and announce specials.
-- Canteen administrators control service availability, menu stock, staff access, orders, refunds, exports, and reporting.
-- College administrators can view and manage the canteens in their college.
+- Operators control service availability, menu stock, staff access, orders, refunds, exports, and reporting.
+- Institution administrators can view and manage the outlets in their institution.
 
 Production data is isolated by tenant in PostgreSQL with row-level security. Supabase Realtime updates active portals, with a polling fallback when a realtime connection is unavailable.
 
@@ -44,7 +44,7 @@ Direct UPI transfers cannot be automatically reversed by the application. A reje
 
 ## Local setup
 
-Requirements: Node.js 20+ and pnpm.
+Requirements: Node.js 22 and pnpm 10 (the versions used in CI).
 
 ```bash
 git clone https://github.com/thribhuvan003/trayy.git
@@ -76,7 +76,9 @@ APP_URL
 DEFAULT_TENANT_SLUG
 ```
 
-Resend and QStash variables are optional. Upstash Redis is optional for local
+Resend and QStash variables are optional. To enable email, configure both
+`RESEND_API_KEY` and `RESEND_FROM_EMAIL` with a sender verified in Resend.
+Upstash Redis is optional for local
 development but both Upstash variables are required in production so rate
 limits remain effective across serverless instances. Their purpose is
 documented in `.env.example`.
@@ -119,16 +121,17 @@ The scripts also accept `--base=https://example.com`.
 
 ```text
 .
-├── docs/                  architecture decisions and operational notes
+├── docs/                  architecture decisions
 ├── public/                public verification and discovery assets
 ├── scripts/               browser and source verification
 ├── src/
+│   ├── __tests__/         unit and integration tests
 │   ├── app/               routes, actions, API handlers, and demos
 │   ├── components/        portal and shared UI
 │   └── lib/               auth, payments, data, and utilities
 ├── supabase/
 │   └── migrations/        ordered database changes
-└── src/__tests__/         unit and integration tests
+└── package.json           scripts and dependency manifest
 ```
 
 See `CONTRIBUTING.md` for the development workflow and `SECURITY.md` for private vulnerability reporting.

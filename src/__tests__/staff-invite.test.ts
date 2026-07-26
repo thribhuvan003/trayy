@@ -117,6 +117,24 @@ describe("inviteStaff", () => {
     expect(mocks.revalidatePath).not.toHaveBeenCalled();
   });
 
+  it("returns a copyable invite link when email delivery is not configured", async () => {
+    const db = adminClient();
+    mocks.getAdminClient.mockReturnValue(db.client);
+    mocks.sendEmail.mockResolvedValue({ id: "noop", queued: false });
+
+    const result = await inviteStaff("staff@example.com", "kitchen_staff");
+
+    expect(result.ok).toBe(false);
+    expect(result.deliveryFailed).toBe(true);
+    expect(result.error).toBe(
+      "Email delivery is not configured. Copy and share the invite link."
+    );
+    expect(result.url).toMatch(
+      /^https:\/\/trayy\.vercel\.app\/auth\/invite\/[a-f0-9]{48}$/
+    );
+    expect(db.rollbackTokenEq).not.toHaveBeenCalled();
+  });
+
   it("returns the usable link if delivery and compensating delete both fail", async () => {
     const db = adminClient({ message: "database unavailable" });
     mocks.getAdminClient.mockReturnValue(db.client);

@@ -176,11 +176,19 @@ export async function inviteStaff(
   if (error) return { ok: false, error: error.message };
   const url = `${env.APP_URL}/auth/invite/${token}`;
   try {
-    await sendEmail({
+    const delivery = await sendEmail({
       to: normalizedEmail,
       subject: `You're invited to join ${c.tenant.name} on Tray`,
       html: `<p>You've been invited as a ${role.replace("_", " ")}.</p><p><a href="${url}">Accept invite</a></p>`,
     });
+    if (!delivery.queued) {
+      return {
+        ok: false,
+        error: "Email delivery is not configured. Copy and share the invite link.",
+        url,
+        deliveryFailed: true,
+      };
+    }
   } catch (emailError) {
     // The invite row is written before delivery so the link is valid when the
     // recipient opens it. Compensate on delivery failure to avoid silently

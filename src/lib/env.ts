@@ -8,6 +8,7 @@ const schema = z.object({
   RAZORPAY_KEY_SECRET: z.string().optional(),
   RAZORPAY_WEBHOOK_SECRET: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
+  RESEND_FROM_EMAIL: z.string().min(3).optional(),
   TWILIO_ACCOUNT_SID: z.string().optional(),
   TWILIO_AUTH_TOKEN: z.string().optional(),
   TWILIO_FROM_NUMBER: z.string().optional(),
@@ -29,6 +30,7 @@ const parsed = schema.safeParse({
   RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET,
   RAZORPAY_WEBHOOK_SECRET: process.env.RAZORPAY_WEBHOOK_SECRET,
   RESEND_API_KEY: process.env.RESEND_API_KEY,
+  RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
   TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID,
   TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN,
   TWILIO_FROM_NUMBER: process.env.TWILIO_FROM_NUMBER,
@@ -66,7 +68,7 @@ if (env.NODE_ENV === "production") {
 
 export const featureFlags = {
   razorpayLive: Boolean(env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_SECRET),
-  resendLive: Boolean(env.RESEND_API_KEY),
+  resendLive: Boolean(env.RESEND_API_KEY && env.RESEND_FROM_EMAIL),
   upstashLive: Boolean(env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN),
   qstashLive: Boolean(
     env.QSTASH_TOKEN && env.QSTASH_CURRENT_SIGNING_KEY && env.QSTASH_NEXT_SIGNING_KEY
